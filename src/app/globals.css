@@ -1,19 +1,32 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand */
+  --color-primary: #01b763;
+  --color-on-primary: #0b1f14;
+
+  /* Light theme */
+  --color-bg: #ededed;
+  --color-surface: #ffffff;
+  --color-surface-2: #f7f7f7;
+  --color-text: #0f172a;
+  --color-text-muted: #475569;
+  --color-border: rgba(15, 23, 42, 0.12);
+
+  /* Aliases (legacy) */
+  --foreground: var(--color-text);
+  --background: var(--color-bg);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+
 
 html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
+  text-rendering: optimizeLegibility;
 }
 
 
@@ -24,11 +37,20 @@ body {
 }
 
 a {
-  color: inherit;
+  color: var(--color-primary);
   text-decoration: none;
 }
 
 @media (prefers-color-scheme: dark) {
+  :root {
+    /* Dark theme */
+    --color-bg: #0b1220;
+    --color-surface: #0f172a;
+    --color-surface-2: #111c33;
+    --color-text: #e5e7eb;
+    --color-text-muted: #a1a1aa;
+    --color-border: rgba(229, 231, 235, 0.14);
+  }
   html {
     color-scheme: dark;
   }
