@@ -10,13 +10,13 @@ export default function Home() {
             <span className={styles.brandName}>Safaricharger</span>
           </div>
           <nav className={styles.nav} aria-label="Primary">
-            <a className={styles.navLink} href="#quick-actions">
-              Quick actions
+            <a className={styles.navLink} href="/login">
+              Login
             </a>
-            <a className={styles.navLink} href="#capabilities">
-              Capabilities
+            <a className={styles.navLink} href="#">
+              List chargers
             </a>
-            <a className={styles.navLink} href="#status">
+            <a className={styles.navLink} href="#">
               Status
             </a>
           </nav>
@@ -32,12 +32,12 @@ export default function Home() {
                 Manage charging stations with confidence.
               </h1>
               <p className={styles.subtitle}>
-              Safaricharger is the web interface for monitoring chargers, managing
-              stations, sessions, users, pricing, and operational health.
+              Safaricharger Web Interface allows you to monitor chargers, manage
+              stations, sessions, users, and operational health.
               </p>
               <div className={styles.ctaRow}>
-                <a className={styles.primaryButton} href="#quick-actions">
-                  Open dashboard
+                <a className={styles.primaryButton} href="/login">
+                  Sign in
                 </a>
                 <a className={styles.secondaryButton} href="#capabilities">
                   Explore features
@@ -75,8 +75,7 @@ export default function Home() {
               </div>
 
               <p className={styles.previewHint}>
-                Connect your backend to populate real-time metrics and station
-                status.
+                Get real time info on the status of your chargers.
               </p>
             </div>
           </div>
@@ -96,25 +95,19 @@ export default function Home() {
             <a className={styles.card} href="/stations">
               <h3 className={styles.cardTitle}>Stations</h3>
               <p className={styles.cardText}>
-                View chargers, connectors, availability, and faults.
+                View your chargers, connectors, availability, and faults.
               </p>
             </a>
             <a className={styles.card} href="/sessions">
               <h3 className={styles.cardTitle}>Charging sessions</h3>
               <p className={styles.cardText}>
-                Search sessions, refunds, and operational events.
+                Manage ongoing sessions and other operational events.
               </p>
             </a>
             <a className={styles.card} href="/users">
               <h3 className={styles.cardTitle}>Users & access</h3>
               <p className={styles.cardText}>
-                Roles, permissions, and operator accounts.
-              </p>
-            </a>
-            <a className={styles.card} href="/settings">
-              <h3 className={styles.cardTitle}>Pricing & settings</h3>
-              <p className={styles.cardText}>
-                Tariffs, site metadata, and integrations.
+                Manage your organization users, roles, and permissions.
               </p>
             </a>
           </div>
@@ -124,26 +117,33 @@ export default function Home() {
       <section id="capabilities">
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Built for operations</h2>
+            <h2 className={styles.sectionTitle}>What you can manage</h2>
+            <p className={styles.sectionSubtitle}>
+              Safaricharger gives you one place to understand how your network is
+              performing and act on it.
+            </p>
           </div>
 
           <div className={styles.featureGrid}>
             <div className={styles.feature}>
-              <h3 className={styles.featureTitle}>Station health</h3>
+              <h3 className={styles.featureTitle}>Network overview</h3>
               <p className={styles.featureText}>
-                Track uptime, alerts, and connector-level faults.
+                See every station at a glance: online status, utilization, and
+                faulted connectors.
               </p>
             </div>
             <div className={styles.feature}>
-              <h3 className={styles.featureTitle}>Session insights</h3>
+              <h3 className={styles.featureTitle}>Sessions & revenue</h3>
               <p className={styles.featureText}>
-                Energy delivered, revenue, and usage by site.
+                Follow charging sessions from start to stop, and tie usage back to
+                energy delivered and revenue.
               </p>
             </div>
             <div className={styles.feature}>
-              <h3 className={styles.featureTitle}>Remote actions</h3>
+              <h3 className={styles.featureTitle}>Teams & access</h3>
               <p className={styles.featureText}>
-                Start/stop sessions and manage availability.
+                Keep operations, support, and partners in sync with roles and
+                permissions that match how you work.
               </p>
             </div>
           </div>
@@ -154,25 +154,25 @@ export default function Home() {
         <div className={styles.container}>
           <div className={styles.statusRow}>
             <div className={styles.statusCopy}>
-              <h2 className={styles.sectionTitle}>Ready when you are</h2>
+              <h2 className={styles.sectionTitle}>See the bigger picture</h2>
               <p className={styles.sectionSubtitle}>
-              This homepage is a clean starting point. Hook it up to your API and
-              we’ll turn the placeholders into live data.
+                Safaricharger provides visibility into reports, transactions, and charge boxes on a
+                map so you always know what&apos;s happening across your stations.
               </p>
             </div>
 
             <div className={styles.pills}>
               <div className={styles.pill}>
-                <span className={styles.pillLabel}>Theme</span>
-                <strong className={styles.pillValue}>Light/Dark</strong>
+                <span className={styles.pillLabel}>Reports</span>
+                <strong className={styles.pillValue}>Usage & performance</strong>
               </div>
               <div className={styles.pill}>
-                <span className={styles.pillLabel}>Primary</span>
-                <strong className={styles.pillValue}>#01b763</strong>
+                <span className={styles.pillLabel}>Transactions</span>
+                <strong className={styles.pillValue}>Sessions & payments</strong>
               </div>
               <div className={styles.pill}>
-                <span className={styles.pillLabel}>Build</span>
-                <strong className={styles.pillValue}>Next.js App Router</strong>
+                <span className={styles.pillLabel}>Charge boxes</span>
+                <strong className={styles.pillValue}>Live map view</strong>
               </div>
             </div>
           </div>
