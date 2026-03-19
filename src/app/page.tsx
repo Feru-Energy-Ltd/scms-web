@@ -1,3 +1,4 @@
+import Image from "next/image";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -6,7 +7,16 @@ export default function Home() {
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <div className={styles.brand}>
-            <span className={styles.brandMark} aria-hidden="true" />
+            <span className={styles.brandMark} aria-hidden="true">
+              <Image
+                src="/assets/logo.png"
+                alt="Safaricharger"
+                width={112}
+                height={40}
+                className={styles.brandLogo}
+                priority
+              />
+            </span>
             <span className={styles.brandName}>Safaricharger</span>
           </div>
           <nav className={styles.nav} aria-label="Primary">

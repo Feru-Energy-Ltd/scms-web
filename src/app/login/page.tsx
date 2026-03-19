@@ -1,4 +1,5 @@
- "use client";
+"use client";
+import Image from "next/image";
 import styles from "./login.module.css";
 
 export default function LoginPage() {
@@ -7,7 +8,16 @@ export default function LoginPage() {
       <div className={styles.shell}>
         <header className={styles.header}>
           <div className={styles.brand}>
-            <span className={styles.brandMark} aria-hidden="true" />
+            <span className={styles.brandMark} aria-hidden="true">
+              <Image
+                src="/assets/logo.png"
+                alt="Safaricharger"
+                width={112}
+                height={40}
+                className={styles.brandLogo}
+                priority
+              />
+            </span>
             <span className={styles.brandName}>Safaricharger</span>
           </div>
           <p className={styles.subtitle}>
