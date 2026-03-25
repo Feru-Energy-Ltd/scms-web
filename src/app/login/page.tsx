@@ -1,8 +1,43 @@
 "use client";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import styles from "./login.module.css";
+import { login } from "@/lib/api/auth";
+import { setSessionFromLogin } from "@/lib/auth/session";
+import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
+import PasswordEyeIcon from "./PasswordEyeIcon";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    const formData = new FormData(e.currentTarget);
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
+
+    setIsSubmitting(true);
+    try {
+      const res = await login(email, password);
+      setSessionFromLogin(res);
+      toast.success("Signed in successfully");
+      router.push("/");
+    } catch (err) {
+      showApiErrorToast(err, {
+        fallbackMessage: "Login failed. Please check your credentials.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <main className={styles.main}>
       <div className={styles.shell}>
@@ -25,7 +60,7 @@ export default function LoginPage() {
           </p>
         </header>
 
-        <form className={styles.form}>
+        <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.fieldGroup}>
             <label className={styles.label} htmlFor="email">
               Email
@@ -44,28 +79,48 @@ export default function LoginPage() {
             <label className={styles.label} htmlFor="password">
               Password
             </label>
-            <input
-              className={styles.input}
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-            />
+            <div className={styles.passwordWrapper}>
+              <input
+                className={`${styles.input} ${styles.passwordInput}`}
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                className={styles.passwordToggleButton}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword((s) => !s)}
+              >
+                <PasswordEyeIcon open={showPassword} />
+              </button>
+            </div>
           </div>
 
           <div className={styles.actionsRow}>
-            <button className={styles.primaryButton} type="submit">
-              Sign in
+            <button
+              className={styles.primaryButton}
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Signing in..." : "Sign in"}
             </button>
-            <button className={styles.secondaryButton} type="button">
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => toast.error("SSO flow is not implemented yet.")}
+            >
               Use SSO
             </button>
           </div>
         </form>
 
         <footer className={styles.footer}>
-          <a href="/">Back to homepage</a>
+          <Link href="/">Back to homepage</Link>
         </footer>
       </div>
     </main>
