@@ -83,7 +83,7 @@ export default function LoginPage() {
       }
 
       toast.success("Signed in successfully");
-      router.push(`/role/${encodeURIComponent(redirectRole)}`);
+      router.push("/account");
     } catch (err) {
       showApiErrorToast(err, {
         fallbackMessage: "Login failed. Please check your credentials.",

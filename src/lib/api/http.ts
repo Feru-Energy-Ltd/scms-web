@@ -1,3 +1,4 @@
+import { getAccessToken } from "../auth/session";
 import { API_BASE_URL } from "../config";
 
 export type ProblemDetail = {
@@ -72,5 +73,18 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 
   const json = await res.json().catch(() => undefined);
   return json as T;
+}
+
+/** Same as `apiRequest`, but attaches `Authorization: Bearer` when an access token exists (client-only). */
+export async function apiRequestAuth<T>(
+  path: string,
+  options: ApiRequestOptions = {},
+) {
+  const token = typeof window !== "undefined" ? getAccessToken() : null;
+  const nextHeaders: HeadersInit = {
+    ...(options.headers ?? {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  return apiRequest<T>(path, { ...options, headers: nextHeaders });
 }
 
