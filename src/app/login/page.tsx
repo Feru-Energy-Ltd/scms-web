@@ -108,10 +108,10 @@ export default function LoginPage() {
                 priority
               />
             </span>
-            <span className={styles.brandName}>Safaricharger</span>
+            <span className={styles.brandName}>Safaricharge</span>
           </div>
           <p className={styles.subtitle}>
-            Sign in to access the Safaricharger web CMS.
+            Sign in to access the Safaricharge web CMS.
           </p>
         </header>
 
@@ -163,20 +163,24 @@ export default function LoginPage() {
             >
               {isSubmitting ? "Signing in..." : "Sign in"}
             </button>
-            <button
-              className={styles.secondaryButton}
-              type="button"
-              disabled={isSubmitting}
-              onClick={() => toast.error("SSO flow is not implemented yet.")}
-            >
-              Use SSO
-            </button>
+        
           </div>
         </form>
 
         <footer className={styles.footer}>
-          <Link href="/">Back to homepage</Link>
+          <Link href="/">Forgot password</Link>
         </footer>
+        <div className={styles.signUpCta}>
+          <p className={styles.signUpText}>Are you a service provider?</p>
+          <button
+            className={styles.secondaryButton}
+            type="button"
+            disabled={isSubmitting}
+            onClick={() => router.push("/sign-up")}
+          >
+            Sign up
+          </button>
+        </div>
       </div>
     </main>
   );
