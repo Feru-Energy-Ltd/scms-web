@@ -25,14 +25,17 @@ export default function SignUpPage() {
     try {
       const result = await signup(new FormData(e.currentTarget));
 
-      if (!result.ok) {
-        setFieldErrors(result.fieldErrors);
-        toast.error("Please correct the highlighted fields.");
-        return;
-      }
+      if (result !== undefined) {
 
+        if (result.ok === false) {
+          setFieldErrors(result.fieldErrors ?? {});
+          toast.error("Please correct the highlighted fields.");
+          return;
+        }
+        
+      }
       toast.success("Check your email for verification code to continue");
-      router.push("/verification/email");
+      router.push("/verify/email");
     } catch (err) {
       showApiErrorToast(err, {
         fallbackMessage: "Sign up failed. Please try again.",
