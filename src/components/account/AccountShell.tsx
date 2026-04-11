@@ -38,7 +38,7 @@ export default function AccountShell({
         <header className={styles.header}>
           <div>
             <p className={styles.heading}>Account workspace</p>
-            <p className={styles.role}>Role: {role ?? "unknown"}</p>
+            {/* <p className={styles.role}>Role: {role ?? "unknown"}</p> */}
           </div>
 
           <button

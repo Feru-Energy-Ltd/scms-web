@@ -1,16 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  CircleMarker,
-  MapContainer,
-  Popup,
-  TileLayer,
-  useMap,
-} from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+  GoogleMap,
+  InfoWindow,
+  Marker,
+  useJsApiLoader,
+} from "@react-google-maps/api";
 import { fetchChargingStations } from "@/lib/api/chargingStations";
 import { asArray } from "@/lib/api/normalize";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
@@ -18,8 +15,16 @@ import styles from "./dashboard-map.module.css";
 
 type ChargerRow = Record<string, unknown>;
 
-const DEFAULT_CENTER: [number, number] = [-1.9441, 30.0619];
+const DEFAULT_CENTER = { lat: -1.9441, lng: 30.0619 };
 const FETCH_SIZE = 200;
+
+type MapMarker = {
+  key: string;
+  id: string;
+  lat: number;
+  lng: number;
+  address: string;
+};
 
 function cell(row: ChargerRow, ...keys: string[]) {
   for (const k of keys) {
@@ -41,25 +46,112 @@ function parseCoord(row: ChargerRow, ...keys: string[]): number | null {
   return null;
 }
 
-function FitBounds({ positions }: { positions: [number, number][] }) {
-  const map = useMap();
+function GoogleStationsMap({ markers }: { markers: MapMarker[] }) {
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const active = markers.find((m) => m.key === activeKey) ?? null;
+
+  const onMapLoad = useCallback((map: google.maps.Map) => {
+    mapRef.current = map;
+  }, []);
 
   useEffect(() => {
-    if (positions.length === 0) return;
-    if (positions.length === 1) {
-      map.setView(positions[0], 14);
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (markers.length === 0) {
+      map.setCenter(DEFAULT_CENTER);
+      map.setZoom(12);
       return;
     }
-    const bounds = L.latLngBounds(
-      positions.map((p) => L.latLng(p[0], p[1])),
-    );
-    map.fitBounds(bounds, { padding: [48, 48], maxZoom: 15 });
-  }, [map, positions]);
 
-  return null;
+    if (markers.length === 1) {
+      const m = markers[0];
+      map.setCenter({ lat: m.lat, lng: m.lng });
+      map.setZoom(14);
+      return;
+    }
+
+    const bounds = new google.maps.LatLngBounds();
+    markers.forEach((m) => bounds.extend({ lat: m.lat, lng: m.lng }));
+    map.fitBounds(bounds, { top: 48, right: 48, bottom: 48, left: 48 });
+
+    const listener = google.maps.event.addListenerOnce(map, "idle", () => {
+      const z = map.getZoom();
+      if (z != null && z > 15) map.setZoom(15);
+    });
+    return () => {
+      google.maps.event.removeListener(listener);
+    };
+  }, [markers]);
+
+  return (
+    <GoogleMap
+      mapContainerClassName={styles.map}
+      center={DEFAULT_CENTER}
+      zoom={12}
+      onLoad={onMapLoad}
+      options={{
+        mapTypeControl: true,
+        streetViewControl: false,
+        fullscreenControl: true,
+      }}
+    >
+      {markers.map((m) => (
+        <Marker
+          key={m.key}
+          position={{ lat: m.lat, lng: m.lng }}
+          onClick={() => setActiveKey(m.key)}
+        />
+      ))}
+      {active ? (
+        <InfoWindow
+          position={{ lat: active.lat, lng: active.lng }}
+          onCloseClick={() => setActiveKey(null)}
+        >
+          <div className={styles.infoWindow}>
+            <strong>{active.id}</strong>
+            {active.address ? (
+              <>
+                <br />
+                {active.address}
+              </>
+            ) : null}
+            <br />
+            <Link href={`/account/charge-boxes/update/${encodeURIComponent(active.id)}`}>
+              Edit charge box
+            </Link>
+          </div>
+        </InfoWindow>
+      ) : null}
+    </GoogleMap>
+  );
+}
+
+function GoogleMapShell({ apiKey, markers }: { apiKey: string; markers: MapMarker[] }) {
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: apiKey,
+  });
+
+  if (loadError) {
+    return (
+      <div className={styles.mapFallback} role="alert">
+        Could not load Google Maps. Check the browser console and your API key configuration
+        (Maps JavaScript API enabled, billing, HTTP referrers).
+      </div>
+    );
+  }
+
+  if (!isLoaded) {
+    return <div className={styles.mapFallback}>Loading map…</div>;
+  }
+
+  return <GoogleStationsMap markers={markers} />;
 }
 
 export default function ChargingStationsMap() {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ?? "";
   const [rows, setRows] = useState<ChargerRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -81,13 +173,7 @@ export default function ChargingStationsMap() {
   }, [load]);
 
   const markers = useMemo(() => {
-    const out: {
-      key: string;
-      id: string;
-      lat: number;
-      lng: number;
-      address: string;
-    }[] = [];
+    const out: MapMarker[] = [];
 
     rows.forEach((row, i) => {
       const lat = parseCoord(row, "locationLatitude", "latitude");
@@ -110,11 +196,6 @@ export default function ChargingStationsMap() {
     return out;
   }, [rows]);
 
-  const positions = useMemo(
-    () => markers.map((m) => [m.lat, m.lng] as [number, number]),
-    [markers],
-  );
-
   return (
     <>
       <div className={styles.toolbar}>
@@ -129,45 +210,15 @@ export default function ChargingStationsMap() {
       </div>
 
       <div className={styles.mapWrap}>
-        <MapContainer
-          center={DEFAULT_CENTER}
-          zoom={12}
-          className={styles.map}
-          scrollWheelZoom
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {positions.length > 0 ? <FitBounds positions={positions} /> : null}
-          {markers.map((m) => (
-            <CircleMarker
-              key={m.key}
-              center={[m.lat, m.lng]}
-              radius={9}
-              pathOptions={{
-                color: "#0f766e",
-                fillColor: "#2dd4bf",
-                fillOpacity: 0.9,
-                weight: 2,
-              }}
-            >
-              <Popup>
-                <strong>{m.id}</strong>
-                {m.address ? (
-                  <>
-                    <br />
-                    {m.address}
-                  </>
-                ) : null}
-                <br />
-                <Link href={`/account/charge-boxes/update/${encodeURIComponent(m.id)}`}>
-                  Edit charge box
-                </Link>
-              </Popup>
-            </CircleMarker>
-          ))}
-        </MapContainer>
+        {!apiKey ? (
+          <div className={styles.mapFallback}>
+            Add <code className={styles.code}>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> to your{" "}
+            <code className={styles.code}>.env</code> file to show the map (enable the Maps
+            JavaScript API for this key).
+          </div>
+        ) : (
+          <GoogleMapShell apiKey={apiKey} markers={markers} />
+        )}
       </div>
     </>
   );

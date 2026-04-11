@@ -41,14 +41,34 @@
   z-index: 0;
 }
 
-/* Leaflet popup: keep readable inside shell */
-.map :global(.leaflet-popup-content) {
-  margin: 10px 12px;
-  font-size: 13px;
-  line-height: 1.4;
+.mapFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  height: 100%;
+  padding: 24px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
 }
 
-.map :global(.leaflet-popup-content a) {
+.code {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--color-surface) 85%, var(--color-border));
+  color: var(--color-text);
+}
+
+.infoWindow {
+  font-size: 13px;
+  line-height: 1.4;
+  max-width: 220px;
+}
+
+.infoWindow a {
   color: var(--color-primary);
   font-weight: 600;
 }
