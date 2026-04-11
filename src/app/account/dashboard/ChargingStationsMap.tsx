@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import toast from "react-hot-toast";
 import {
   GoogleMap,
   InfoWindow,
@@ -46,14 +54,60 @@ function parseCoord(row: ChargerRow, ...keys: string[]): number | null {
   return null;
 }
 
-function GoogleStationsMap({ markers }: { markers: MapMarker[] }) {
+function geolocationMessage(code: number): string {
+  switch (code) {
+    case GeolocationPositionError.PERMISSION_DENIED:
+      return "Location access was denied. Allow location for this site in your browser settings.";
+    case GeolocationPositionError.POSITION_UNAVAILABLE:
+      return "Your position could not be determined.";
+    case GeolocationPositionError.TIMEOUT:
+      return "Location request timed out.";
+    default:
+      return "Could not get your location.";
+  }
+}
+
+function GoogleStationsMap({
+  markers,
+  pendingCenter,
+  onPendingCenterConsumed,
+}: {
+  markers: MapMarker[];
+  pendingCenter: google.maps.LatLngLiteral | null;
+  onPendingCenterConsumed: () => void;
+}) {
   const mapRef = useRef<google.maps.Map | null>(null);
+  const pendingCenterRef = useRef(pendingCenter);
+
+  useLayoutEffect(() => {
+    pendingCenterRef.current = pendingCenter;
+  }, [pendingCenter]);
+
   const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [userPin, setUserPin] = useState<google.maps.LatLngLiteral | null>(null);
   const active = markers.find((m) => m.key === activeKey) ?? null;
 
-  const onMapLoad = useCallback((map: google.maps.Map) => {
-    mapRef.current = map;
-  }, []);
+  const applyPendingCenter = useCallback(
+    (map: google.maps.Map, center: google.maps.LatLngLiteral) => {
+      map.panTo(center);
+      const z = map.getZoom();
+      if (z == null || z < 15) map.setZoom(15);
+      setUserPin(center);
+      onPendingCenterConsumed();
+    },
+    [onPendingCenterConsumed],
+  );
+
+  const onMapLoad = useCallback(
+    (map: google.maps.Map) => {
+      mapRef.current = map;
+      const p = pendingCenterRef.current;
+      if (p) {
+        applyPendingCenter(map, p);
+      }
+    },
+    [applyPendingCenter],
+  );
 
   useEffect(() => {
     const map = mapRef.current;
@@ -85,6 +139,24 @@ function GoogleStationsMap({ markers }: { markers: MapMarker[] }) {
     };
   }, [markers]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !pendingCenter) return;
+    applyPendingCenter(map, pendingCenter);
+  }, [pendingCenter, applyPendingCenter]);
+
+  const userMarkerIcon = useMemo(
+    () => ({
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 9,
+      fillColor: "#2563eb",
+      fillOpacity: 1,
+      strokeColor: "#ffffff",
+      strokeWeight: 2,
+    }),
+    [],
+  );
+
   return (
     <GoogleMap
       mapContainerClassName={styles.map}
@@ -97,6 +169,14 @@ function GoogleStationsMap({ markers }: { markers: MapMarker[] }) {
         fullscreenControl: true,
       }}
     >
+      {userPin ? (
+        <Marker
+          position={userPin}
+          icon={userMarkerIcon}
+          zIndex={1000}
+          title="Your location"
+        />
+      ) : null}
       {markers.map((m) => (
         <Marker
           key={m.key}
@@ -128,7 +208,17 @@ function GoogleStationsMap({ markers }: { markers: MapMarker[] }) {
   );
 }
 
-function GoogleMapShell({ apiKey, markers }: { apiKey: string; markers: MapMarker[] }) {
+function GoogleMapShell({
+  apiKey,
+  markers,
+  pendingCenter,
+  onPendingCenterConsumed,
+}: {
+  apiKey: string;
+  markers: MapMarker[];
+  pendingCenter: google.maps.LatLngLiteral | null;
+  onPendingCenterConsumed: () => void;
+}) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: apiKey,
@@ -147,13 +237,46 @@ function GoogleMapShell({ apiKey, markers }: { apiKey: string; markers: MapMarke
     return <div className={styles.mapFallback}>Loading map…</div>;
   }
 
-  return <GoogleStationsMap markers={markers} />;
+  return (
+    <GoogleStationsMap
+      markers={markers}
+      pendingCenter={pendingCenter}
+      onPendingCenterConsumed={onPendingCenterConsumed}
+    />
+  );
 }
 
 export default function ChargingStationsMap() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ?? "";
   const [rows, setRows] = useState<ChargerRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [locating, setLocating] = useState(false);
+  const [pendingCenter, setPendingCenter] =
+    useState<google.maps.LatLngLiteral | null>(null);
+
+  const clearPendingCenter = useCallback(() => setPendingCenter(null), []);
+
+  const handleMyLocation = useCallback(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      toast.error("Location is not supported in this browser.");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        setPendingCenter({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      (err) => {
+        setLocating(false);
+        toast.error(geolocationMessage(err.code));
+      },
+      { enableHighAccuracy: true, timeout: 12_000, maximumAge: 60_000 },
+    );
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -217,7 +340,42 @@ export default function ChargingStationsMap() {
             JavaScript API for this key).
           </div>
         ) : (
-          <GoogleMapShell apiKey={apiKey} markers={markers} />
+          <div className={styles.mapStack}>
+            <GoogleMapShell
+              apiKey={apiKey}
+              markers={markers}
+              pendingCenter={pendingCenter}
+              onPendingCenterConsumed={clearPendingCenter}
+            />
+            <div className={styles.mapOverlayControls}>
+              <button
+                type="button"
+                className={styles.locateIconBtn}
+                disabled={locating}
+                aria-label="Center map on my current location"
+                aria-busy={locating}
+                title={locating ? "Getting location…" : "My location"}
+                onClick={handleMyLocation}
+              >
+                {locating ? (
+                  <span className={styles.locateSpinner} aria-hidden />
+                ) : (
+                  <svg
+                    className={styles.locateIcon}
+                    viewBox="0 0 24 24"
+                    width={22}
+                    height={22}
+                    aria-hidden
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"
+                    />
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </>
