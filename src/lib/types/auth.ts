@@ -3,8 +3,9 @@ export type ProviderRegistrationPayload = {
   ownerEmail: string;
   ownerPassword: string;
   businessName: string;
+  registration: string;
   phone: string;
-}
+};
 export type AccountSummary = {
   accountId: number;
   accountName: string;

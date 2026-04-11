@@ -14,31 +14,13 @@ export async function signup(formData: FormData) {
     response = await registerProvider(signupPayLoadResult.payload);
  } catch (e: unknown) {
     if (e instanceof ApiError) {
-      const errorMessage = e.message
-      const body = e.body as
-        | { errors?: Record<string, string>; detail?: string; title?: string }
-        | string
-        | undefined;
-
-      if (body && typeof body === "object" && body.errors) {
-        return {
-          ok: false as const,
-          fieldErrors: Object.fromEntries(
-            Object.entries(body.errors).map(([key, value]) => [key, [value]]),
-          ),
-        };
-      }
+    throw e;
 
       return {
         ok: false as const,
-        fieldErrors: {
-          _form: [
-               errorMessage
-          ],
-        },
+          e
       };
     }
-    throw e;
   }
   return {
     ok: true as const,

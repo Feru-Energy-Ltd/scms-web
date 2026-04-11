@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { signup } from "@/app/actions/signup";
+import { ApiError } from "@/lib/api/http";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "./sign-up.module.css";
 
@@ -25,15 +26,18 @@ export default function SignUpPage() {
     try {
       const result = await signup(new FormData(e.currentTarget));
 
-      if (result !== undefined) {
-
-        if (result.ok === false) {
+      if (result.ok === false) {
+        if ("fieldErrors" in result) {
           setFieldErrors(result.fieldErrors ?? {});
           toast.error("Please correct the highlighted fields.");
           return;
         }
-        
+        showApiErrorToast(
+          result,          { fallbackMessage: "Sign up failed. Please try again." },
+        );
+        return;
       }
+
       toast.success("Check your email for verification code to continue");
       router.push("/verify/email");
     } catch (err) {
@@ -56,6 +60,12 @@ export default function SignUpPage() {
         </header>
 
         <form className={styles.form} onSubmit={handleSubmit}>
+          {fieldErrors._form?.[0] ? (
+            <p className={styles.fieldError} role="alert">
+              {fieldErrors._form[0]}
+            </p>
+          ) : null}
+
           <div className={styles.fieldGroup}>
             <label className={styles.label} htmlFor="displayName">
               Full name
@@ -120,6 +130,24 @@ export default function SignUpPage() {
             />
             {fieldErrors.businessName?.[0] ? (
               <p className={styles.fieldError}>{fieldErrors.businessName[0]}</p>
+            ) : null}
+          </div>
+
+          <div className={styles.fieldGroup}>
+            <label className={styles.label} htmlFor="registration">
+              Business registration number
+            </label>
+            <input
+              className={styles.input}
+              id="registration"
+              type="text"
+              name="registration"
+              autoComplete="off"
+              required
+              placeholder="e.g. company or tax registration ID"
+            />
+            {fieldErrors.registration?.[0] ? (
+              <p className={styles.fieldError}>{fieldErrors.registration[0]}</p>
             ) : null}
           </div>
 

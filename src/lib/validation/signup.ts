@@ -7,6 +7,10 @@ export const signupSchema = z.object({
     .string()
     .min(8, "Password must be at least 8 characters long"),
   businessName: z.string().trim().min(2, "Business name is invalid"),
+  registration: z
+    .string()
+    .trim()
+    .min(1, "Business registration number is required"),
   phone: z.string().trim().min(7, "Enter a valid phone number"),
 });
 
@@ -23,6 +27,7 @@ export function getSignupInputCandidate(formData: FormData) {
     ownerEmail: formDataValue(formData, "ownerEmail"),
     ownerPassword: formDataValue(formData, "ownerPassword"),
     businessName: formDataValue(formData, "businessName"),
+    registration: formDataValue(formData, "registration"),
     phone: formDataValue(formData, "phone"),
   };
 }

@@ -22,7 +22,6 @@ export async function selectContext(
 ;
 
 export async function registerProvider(payload: ProviderRegistrationPayload) {
-  console.info(payload)
   return apiRequest("/auth/providers/register", {
     method: "POST",
     body: payload,

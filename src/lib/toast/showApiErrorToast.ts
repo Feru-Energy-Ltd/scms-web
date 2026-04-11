@@ -27,7 +27,13 @@ export function showApiErrorToast(
       (typeof body?.detail === "string" && body.detail) ||
       (typeof body?.title === "string" && body.title);
 
-    toast.error(validation || detail || err.message || fallbackMessage, {
+    const base = validation || detail || err.message || fallbackMessage;
+    const statusSuffix =
+      typeof err.status === "number" ? ` (HTTP ${err.status})` : "";
+    const message = base.includes(`HTTP ${err.status}`) ? base : `${base}${statusSuffix}`;
+    console.info(message, 'xx')
+
+    toast.error(message, {
       id: opts?.toastId,
     });
     return;
@@ -38,6 +44,7 @@ export function showApiErrorToast(
     toast.error(err.message || fallbackMessage, { id: opts?.toastId });
     return;
   }
+  console.info('xx')
 
   toast.error(fallbackMessage, { id: opts?.toastId });
 }
