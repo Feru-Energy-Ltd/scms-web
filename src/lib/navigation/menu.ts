@@ -5,6 +5,7 @@ export type AppMenuItem = {
 
 const baseLinks: AppMenuItem[] = [
   { name: "Dashboard", url: "/account" },
+  { name: "Station map", url: "/account/dashboard" },
   { name: "Profile", url: "/account/profile" },
 ];
 

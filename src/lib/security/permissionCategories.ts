@@ -24,7 +24,7 @@ export function categorizePermissions(list: PermissionDef[]) {
     });
   }
 
-  groups.others = list.filter((p) p.name && !used.has(p.name));
+  groups.others = list.filter((p) => p.name && !used.has(p.name));
 
   return groups;
 }
