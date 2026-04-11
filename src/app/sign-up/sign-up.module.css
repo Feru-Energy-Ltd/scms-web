@@ -7,7 +7,7 @@
 }
 
 .shell {
-  width: min(420px, 100%);
+  width: min(460px, 100%);
   border-radius: 18px;
   border: 1px solid var(--color-border);
   background: color-mix(in oklab, var(--color-surface) 94%, transparent);
@@ -21,33 +21,14 @@
   gap: 6px;
 }
 
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.brandMark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 120px;
-  height: 40px;
-}
-
-.brandLogo {
-  max-width: 100%;
-  max-height: 40px;
-  height: auto;
-  width: auto;
-}
-
-.brandName {
-  font-weight: 700;
+.title {
+  margin: 0;
+  font-size: 22px;
   letter-spacing: -0.02em;
 }
 
 .subtitle {
+  margin: 0;
   color: var(--color-text-muted);
   font-size: 13px;
 }
@@ -85,7 +66,7 @@
 .passwordInput {
   width: 100%;
   display: block;
-  padding-right: 44px; /* room for the eye toggle */
+  padding-right: 44px;
 }
 
 .passwordToggleButton {
@@ -120,71 +101,38 @@
   outline-offset: 1px;
 }
 
-.actionsRow {
-  display: flex;
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.primaryButton,
-.secondaryButton {
-  flex: 1;
-  padding: 9px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--color-border);
-  font-weight: 600;
-  font-size: 14px;
+.fieldError {
+  margin: 0;
+  font-size: 12px;
+  color: #dc2626;
 }
 
 .primaryButton {
+  margin-top: 4px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid
+    color-mix(in oklab, var(--color-primary) 55%, var(--color-border));
+  font-weight: 600;
+  font-size: 14px;
   background: var(--color-primary);
   color: var(--color-on-primary);
-  border-color: color-mix(in oklab, var(--color-primary) 55%, var(--color-border));
 }
 
 .primaryButton:hover {
   filter: brightness(0.98);
 }
 
-.secondaryButton {
-  background: color-mix(in oklab, var(--color-surface) 88%, transparent);
-  color: var(--color-text);
-}
-
-.secondaryButton:hover {
-  background: color-mix(in oklab, var(--color-surface) 95%, transparent);
-}
-
-.signUpCta {
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.signUpText {
-  margin: 0;
-  font-size: 13px;
-  color: var(--color-text-muted);
-}
-
-.signUpCta .secondaryButton {
-  width: 100%;
-}
-
 .footer {
   margin-top: 14px;
   padding-top: 10px;
   border-top: 1px solid var(--color-border);
-  text-align: right;
+  text-align: center;
   font-size: 13px;
-}
-
-.footer a {
   color: var(--color-text-muted);
 }
 
-.footer a:hover {
+.footer a {
   color: var(--color-text);
 }
-

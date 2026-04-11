@@ -17,7 +17,6 @@ export default function Home() {
                 priority
               />
             </span>
-            <span className={styles.brandName}>Safaricharger</span>
           </div>
           <nav className={styles.nav} aria-label="Primary">
             <a className={styles.navLink} href="/login">
