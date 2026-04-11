@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { signup } from "@/app/actions/signup";
-import { ApiError } from "@/lib/api/http";
+import PasswordEyeIcon from "../login/PasswordEyeIcon";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "./sign-up.module.css";
 
@@ -14,6 +14,7 @@ type FieldErrors = Record<string, string[] | undefined>;
 export default function SignUpPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -104,14 +105,25 @@ export default function SignUpPage() {
             <label className={styles.label} htmlFor="ownerPassword">
               Password
             </label>
-            <input
-              className={styles.input}
-              id="ownerPassword"
-              type="password"
-              name="ownerPassword"
-              autoComplete="new-password"
-              required
-            />
+            <div className={styles.passwordWrapper}>
+              <input
+                className={`${styles.input} ${styles.passwordInput}`}
+                id="ownerPassword"
+                type={showPassword ? "text" : "password"}
+                name="ownerPassword"
+                autoComplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                className={styles.passwordToggleButton}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword((s) => !s)}
+              >
+                <PasswordEyeIcon open={showPassword} />
+              </button>
+            </div>
             {fieldErrors.ownerPassword?.[0] ? (
               <p className={styles.fieldError}>{fieldErrors.ownerPassword[0]}</p>
             ) : null}

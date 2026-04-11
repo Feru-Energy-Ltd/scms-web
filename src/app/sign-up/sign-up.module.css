@@ -58,6 +58,44 @@
   color: var(--color-text);
 }
 
+.passwordWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.passwordInput {
+  width: 100%;
+  display: block;
+  padding-right: 44px;
+}
+
+.passwordToggleButton {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.passwordToggleButton:hover {
+  color: var(--color-text);
+}
+
+.passwordToggleButton:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--color-primary) 60%, transparent);
+  outline-offset: 2px;
+}
+
 .input:focus-visible {
   outline: 2px solid color-mix(in oklab, var(--color-primary) 60%, transparent);
   outline-offset: 1px;
