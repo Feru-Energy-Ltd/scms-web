@@ -147,3 +147,8 @@
   color: var(--color-primary);
   font-weight: 600;
 }
+
+.infoMuted {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}

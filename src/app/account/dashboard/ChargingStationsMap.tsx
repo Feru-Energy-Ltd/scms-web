@@ -16,7 +16,7 @@ import {
   Marker,
   useJsApiLoader,
 } from "@react-google-maps/api";
-import { fetchChargingStations } from "@/lib/api/chargingStations";
+import { fetchChargeBoxGeoLocations } from "@/lib/api/chargingStations";
 import { asArray } from "@/lib/api/normalize";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "./dashboard-map.module.css";
@@ -24,7 +24,6 @@ import styles from "./dashboard-map.module.css";
 type ChargerRow = Record<string, unknown>;
 
 const DEFAULT_CENTER = { lat: -1.9441, lng: 30.0619 };
-const FETCH_SIZE = 200;
 
 type MapMarker = {
   key: string;
@@ -32,6 +31,7 @@ type MapMarker = {
   lat: number;
   lng: number;
   address: string;
+  statusLine: string;
 };
 
 function cell(row: ChargerRow, ...keys: string[]) {
@@ -54,6 +54,16 @@ function parseCoord(row: ChargerRow, ...keys: string[]): number | null {
   return null;
 }
 
+function statusParts(row: ChargerRow, ...keys: string[]): string {
+  const parts: string[] = [];
+  for (const k of keys) {
+    const v = row[k];
+    if (v == null || v === "") continue;
+    parts.push(String(v));
+  }
+  return parts.join(" · ");
+}
+
 function geolocationMessage(code: number): string {
   switch (code) {
     case GeolocationPositionError.PERMISSION_DENIED:
@@ -65,6 +75,16 @@ function geolocationMessage(code: number): string {
     default:
       return "Could not get your location.";
   }
+}
+
+/** Green map pin with lightning — data-URL for Google Maps Marker. */
+function chargerStationMapIcon(): google.maps.Icon {
+  const svg = `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 40" width="32" height="40"><path fill="#16a34a" stroke="#14532d" stroke-width="1.2" stroke-linejoin="round" d="M16 2C10.5 2 6 6.4 6 11.8c0 6.8 9.2 20.7 9.7 21.5.3.5.8.7 1.3.7s1-.2 1.3-.7C18.8 32.5 26 18.6 26 11.8 26 6.4 21.5 2 16 2z"/><path fill="#f0fdf4" d="M17.4 9.2h-3.2l-2.1 5.6h2.8l-2.3 7.1 7.4-9.2h-3l1.6-3.5z"/></svg>`;
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new google.maps.Size(36, 45),
+    anchor: new google.maps.Point(18, 45),
+  };
 }
 
 function GoogleStationsMap({
@@ -157,6 +177,8 @@ function GoogleStationsMap({
     [],
   );
 
+  const chargerIcon = useMemo(() => chargerStationMapIcon(), []);
+
   return (
     <GoogleMap
       mapContainerClassName={styles.map}
@@ -181,6 +203,7 @@ function GoogleStationsMap({
         <Marker
           key={m.key}
           position={{ lat: m.lat, lng: m.lng }}
+          icon={chargerIcon}
           onClick={() => setActiveKey(m.key)}
         />
       ))}
@@ -195,6 +218,12 @@ function GoogleStationsMap({
               <>
                 <br />
                 {active.address}
+              </>
+            ) : null}
+            {active.statusLine ? (
+              <>
+                <br />
+                <span className={styles.infoMuted}>{active.statusLine}</span>
               </>
             ) : null}
             <br />
@@ -281,7 +310,7 @@ export default function ChargingStationsMap() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const raw = await fetchChargingStations(0, FETCH_SIZE);
+      const raw = await fetchChargeBoxGeoLocations();
       setRows(asArray<ChargerRow>(raw));
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load stations for the map." });
@@ -299,20 +328,26 @@ export default function ChargingStationsMap() {
     const out: MapMarker[] = [];
 
     rows.forEach((row, i) => {
-      const lat = parseCoord(row, "locationLatitude", "latitude");
-      const lng = parseCoord(row, "locationLongitude", "longitude");
+      const lat = parseCoord(row, "latitude", "locationLatitude");
+      const lng = parseCoord(row, "longitude", "locationLongitude");
       if (lat == null || lng == null) return;
       if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
 
       const id =
         cell(row, "chargeBoxId", "id", "chargerId") || `row-${i}`;
-      const address = cell(row, "address");
+      const address = cell(row, "description", "address");
+      const statusLine = statusParts(
+        row,
+        "chargeStatus",
+        "registrationStatus",
+      );
       out.push({
         key: `${id}-${lat}-${lng}-${i}`,
         id,
         lat,
         lng,
         address,
+        statusLine,
       });
     });
 
@@ -328,7 +363,7 @@ export default function ChargingStationsMap() {
         <span className={styles.hint}>
           {loading
             ? "Loading stations…"
-            : `${markers.length} on map · ${rows.length} loaded (up to ${FETCH_SIZE})`}
+            : `${markers.length} on map · ${rows.length} from geo locations`}
         </span>
       </div>
 

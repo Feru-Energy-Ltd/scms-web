@@ -46,6 +46,9 @@ export default function AccountChargeBoxesPage() {
       <p className={styles.muted}>Charging stations linked to your account.</p>
 
       <div className={styles.toolbar}>
+        <Link href="/account/charge-boxes/create" className={styles.buttonPrimary}>
+          New charger
+        </Link>
         <button type="button" className={styles.button} onClick={() => void load()}>
           Refresh
         </button>

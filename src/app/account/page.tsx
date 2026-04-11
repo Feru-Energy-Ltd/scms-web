@@ -13,6 +13,7 @@ const quickLinks = [
   { href: "/account/users", label: "Org members" },
   { href: "/account/customers", label: "Customers" },
   { href: "/account/charge-boxes", label: "Charge boxes" },
+  { href: "/account/charge-boxes/create", label: "New charger" },
   { href: "/account/organisations", label: "Organisations" },
   { href: "/account/permissions", label: "Roles & permissions" },
   { href: "/account/profile", label: "Profile" },
