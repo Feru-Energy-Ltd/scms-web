@@ -95,9 +95,7 @@ function VerifyProviderEmailContent() {
             </p>
           </header>
           <footer className={styles.footer}>
-            <Link href="/sign-up">Sign up</Link>
-            {" · "}
-            <Link href="/login">Sign in</Link>
+            <Link href="/">Ok</Link>
           </footer>
         </div>
       </main>
@@ -109,10 +107,11 @@ function VerifyProviderEmailContent() {
       <div className={styles.shell}>
         <header className={styles.header}>
           <h1 className={styles.title}>Email verified</h1>
+          <h2>Please wait for admin approval.</h2>
           <p className={styles.subtitle}>{state.message}</p>
         </header>
         <footer className={styles.footer}>
-          <Link href="/login">Sign in</Link>
+          <Link href="/">Ok</Link>
         </footer>
       </div>
     </main>
