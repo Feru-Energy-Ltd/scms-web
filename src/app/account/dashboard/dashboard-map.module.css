@@ -138,17 +138,38 @@
 }
 
 .infoWindow {
+  min-width: 220px;
+  max-width: 280px;
+  padding: 2px 2px 0;
   font-size: 13px;
-  line-height: 1.4;
-  max-width: 220px;
+  line-height: 1.45;
+  color: black;
 }
 
-.infoWindow a {
-  color: var(--color-primary);
+
+
+.infoRow {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.infoLabel {
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
+.infoValue {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.infoActive {
+  color: var(--color-primary)
+}
 .infoMuted {
-  font-size: 12px;
-  color: var(--color-text-muted);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
 }

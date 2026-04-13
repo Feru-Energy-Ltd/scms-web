@@ -30,7 +30,7 @@ type MapMarker = {
   id: string;
   lat: number;
   lng: number;
-  address: string;
+  description: string;
   statusLine: string;
 };
 
@@ -103,9 +103,14 @@ function GoogleStationsMap({
     pendingCenterRef.current = pendingCenter;
   }, [pendingCenter]);
 
-  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [activeMarker, setActiveMarker] = useState<{
+    key: string;
+    openedAt: number;
+  } | null>(null);
   const [userPin, setUserPin] = useState<google.maps.LatLngLiteral | null>(null);
-  const active = markers.find((m) => m.key === activeKey) ?? null;
+  const active = activeMarker
+    ? markers.find((m) => m.key === activeMarker.key) ?? null
+    : null;
 
   const applyPendingCenter = useCallback(
     (map: google.maps.Map, center: google.maps.LatLngLiteral) => {
@@ -204,32 +209,30 @@ function GoogleStationsMap({
           key={m.key}
           position={{ lat: m.lat, lng: m.lng }}
           icon={chargerIcon}
-          onClick={() => setActiveKey(m.key)}
+          onClick={() => setActiveMarker({ key: m.key, openedAt: Date.now() })}
         />
       ))}
       {active ? (
         <InfoWindow
+          key={`${active.key}-${activeMarker?.openedAt ?? 0}`}
           position={{ lat: active.lat, lng: active.lng }}
-          onCloseClick={() => setActiveKey(null)}
+          onCloseClick={() => setActiveMarker(null)}
         >
           <div className={styles.infoWindow}>
-            <strong>{active.id}</strong>
-            {active.address ? (
-              <>
-                <br />
-                {active.address}
-              </>
+            <h2 className={styles.infoTitle}>{active.id}</h2>
+            {active.description ? (
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Description</span>
+                <span className={styles.infoValue}>{active.description}</span>
+              </div>
             ) : null}
-            {active.statusLine ? (
-              <>
-                <br />
-                <span className={styles.infoMuted}>{active.statusLine}</span>
-              </>
+            {active.statusLine ? 
+            (
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Status</span>
+                <span className={ active.statusLine.startsWith("ON") ? styles.infoActive: styles.infoMuted}>{active.statusLine}</span>
+              </div>
             ) : null}
-            <br />
-            <Link href={`/account/charge-boxes/update/${encodeURIComponent(active.id)}`}>
-              Edit charge box
-            </Link>
           </div>
         </InfoWindow>
       ) : null}
@@ -335,7 +338,7 @@ export default function ChargingStationsMap() {
 
       const id =
         cell(row, "chargeBoxId", "id", "chargerId") || `row-${i}`;
-      const address = cell(row, "description", "address");
+      const description = cell(row, "description", "address");
       const statusLine = statusParts(
         row,
         "chargeStatus",
@@ -346,7 +349,7 @@ export default function ChargingStationsMap() {
         id,
         lat,
         lng,
-        address,
+        description,
         statusLine,
       });
     });
@@ -363,7 +366,7 @@ export default function ChargingStationsMap() {
         <span className={styles.hint}>
           {loading
             ? "Loading stations…"
-            : `${markers.length} on map · ${rows.length} from geo locations`}
+            : ` showing ${markers.length} on map `}
         </span>
       </div>
 
