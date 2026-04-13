@@ -116,6 +116,25 @@
   z-index: 0;
 }
 
+/*
+ * InfoWindow close control: Google draws the “X” with a CSS mask on a <span>.
+ * Without a background color the icon is invisible. A global * { margin/padding: 0 }
+ * can also shrink the hit target; keep the control usable.
+ */
+.map :global(button.gm-ui-hover-effect) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 2.25rem !important;
+  min-height: 2.25rem !important;
+  opacity: 1 !important;
+  color: #1f2937 !important;
+}
+
+.map :global(button.gm-ui-hover-effect span) {
+  background-color: currentColor !important;
+}
+
 .mapFallback {
   display: flex;
   align-items: center;
@@ -166,6 +185,19 @@
   font-size: 13px;
   overflow-wrap: anywhere;
 }
+
+.infoAction {
+  display: inline-block;
+  margin-top: 4px;
+  color: black;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.infoAction:hover {
+  text-decoration: underline;
+}
+
 .infoActive {
   color: var(--color-primary)
 }
