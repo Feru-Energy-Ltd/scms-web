@@ -5,16 +5,16 @@ import toast from "react-hot-toast";
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import styles from "./login.module.css";
-import { login, selectContext } from "@/lib/api/auth";
+import { login } from "@/lib/api/auth";
 import {
   hasActiveAccessSession,
-  setIdentityTypeAndRole,
-  setSessionFromPhase1,
-  setSessionFromTokenResponse,
 } from "@/lib/auth/session";
+import {
+  persistPhase1Session,
+  Phase1SessionIncompleteError,
+} from "@/lib/auth/persistPhase1Session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import PasswordEyeIcon from "./PasswordEyeIcon";
-import { decodeJwtPayload } from "@/lib/auth/jwt";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -41,60 +41,14 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       const res = await login(email, password);
-
-      let redirectRole = "user";
-      const identityType = res.identityType;
-
-      if (identityType === "SERVICE_PROVIDER") {
-        redirectRole = res.provider?.role ?? "provider";
-        setSessionFromPhase1(res);
-        setIdentityTypeAndRole(identityType, redirectRole);
-      } else if (identityType === "SYSTEM_ADMIN") {
-        setSessionFromPhase1(res);
-
-        const payload = res.accessToken
-          ? decodeJwtPayload(res.accessToken)
-          : null;
-        const roleClaim =
-          typeof payload?.role === "string"
-            ? payload.role
-            : Array.isArray(payload?.roles) && payload.roles.length > 0
-              ? String(payload.roles[0])
-              : null;
-
-        redirectRole = roleClaim ?? "system-admin";
-        setIdentityTypeAndRole(identityType, redirectRole);
-      } else if (identityType === "CUSTOMER") {
-        // Customer accounts require Phase 2 (context selection) to get access/refresh tokens.
-        const firstAccount = res.accounts?.[0];
-        redirectRole = firstAccount?.role ?? "customer";
-
-        if (res.autoSelect && firstAccount) {
-          if (!res.identityToken) {
-            toast.error(
-              "Login requires account context, but identity token was not returned.",
-            );
-            return;
-          }
-          const tokenRes = await selectContext(
-            res.identityToken,
-            firstAccount.accountId,
-          );
-          setSessionFromTokenResponse(tokenRes);
-          redirectRole = tokenRes.account?.role ?? redirectRole;
-        } else {
-          // At least store identity information for later context selection.
-          setSessionFromPhase1(res);
-        }
-
-        setIdentityTypeAndRole(identityType, redirectRole);
-      } else {
-        setSessionFromPhase1(res);
-      }
-
+      await persistPhase1Session(res);
       toast.success("Signed in successfully");
       router.push("/account");
     } catch (err) {
+      if (err instanceof Phase1SessionIncompleteError) {
+        toast.error(err.message);
+        return;
+      }
       showApiErrorToast(err, {
         fallbackMessage: "Login failed. Please check your credentials.",
       });

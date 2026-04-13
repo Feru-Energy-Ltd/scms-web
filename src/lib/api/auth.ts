@@ -37,3 +37,25 @@ export async function verifyProviderEmail(token: string) {
   );
 }
 
+export async function acceptProviderInvitation(body: {
+  token: string;
+  password?: string;
+  displayName?: string;
+}) {
+  return apiRequest<Phase1Response>("/auth/invitations/provider/accept", {
+    method: "POST",
+    body,
+  });
+}
+
+export async function acceptAccountInvitation(body: {
+  token: string;
+  password?: string;
+  displayName?: string;
+}) {
+  return apiRequest<Phase1Response>("/auth/invitations/accept", {
+    method: "POST",
+    body,
+  });
+}
+
