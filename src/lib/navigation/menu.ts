@@ -1,3 +1,5 @@
+import { getStoredIdentityType } from "../auth/session";
+
 export type AppMenuItem = {
   name: string;
   url: string;
@@ -6,8 +8,12 @@ export type AppMenuItem = {
 const baseLinks: AppMenuItem[] = [
   { name: "Dashboard", url: "/account" },
   { name: "Station map", url: "/account/dashboard" },
-  { name: "Approvals", url: "/account/approvals" },
 ];
+
+const approvalsItem: AppMenuItem = {
+  name: "Approvals",
+  url: "/account/approvals",
+};
 
 const roleLinks: Record<string, AppMenuItem[]> = {
   ROLE_ADMIN: [
@@ -29,7 +35,13 @@ const roleLinks: Record<string, AppMenuItem[]> = {
 };
 
 export function getMenuForRole(role: string | null): AppMenuItem[] {
-  if (!role) return baseLinks;
+  const identityType = getStoredIdentityType();
+  const links: AppMenuItem[] = [...baseLinks];
+  if (identityType === "SYSTEM_ADMIN") {
+    links.push(approvalsItem);
+  }
+
+  if (!role) return links;
   const roleSpecific = roleLinks[role] ?? [];
-  return [...baseLinks, ...roleSpecific];
+  return [...links, ...roleSpecific];
 }

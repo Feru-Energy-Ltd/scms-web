@@ -61,6 +61,12 @@ export function getStoredRole() {
   return localStorage.getItem(KEYS.role);
 }
 
+/** From login Phase 1 (`Phase1Response.identityType`), e.g. `SYSTEM_ADMIN`, `SERVICE_PROVIDER`. */
+export function getStoredIdentityType() {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(KEYS.identityType);
+}
+
 export function clearSession() {
   if (typeof window === "undefined") return;
   Object.values(KEYS).forEach((k) => localStorage.removeItem(k));

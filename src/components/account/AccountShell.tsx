@@ -4,7 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { clearSession, getStoredRole } from "@/lib/auth/session";
+import {
+  clearSession,
+  getStoredIdentityType,
+  getStoredRole,
+} from "@/lib/auth/session";
 import { getMenuForRole } from "@/lib/navigation/menu";
 import styles from "./AccountShell.module.css";
 
@@ -24,7 +28,11 @@ export default function AccountShell({
   const router = useRouter();
   const pathname = usePathname();
   const role = getStoredRole();
-  const menu = useMemo(() => getMenuForRole(role), [role]);
+  const identityType = getStoredIdentityType();
+  const menu = useMemo(
+    () => getMenuForRole(role),
+    [role, identityType],
+  );
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -104,7 +112,6 @@ export default function AccountShell({
           />
           <span className={styles.topNavBrand}>Safaricharge CMS</span>
         </Link>
-        <p className={styles.topNavTitle}>{pageTitle}</p>
         <div className={styles.topNavRight}>
           {role ? (
             <span className={styles.topNavRole} title={role}>
@@ -179,9 +186,9 @@ export default function AccountShell({
         >
           <div className={styles.sidebarTop}>
             <div className={styles.brandRow}>
-              <div className={styles.brand}>Safaricharge CMS</div>
+              <div className={styles.brand}>Admin Panel</div>
               <div className={styles.brandMark} aria-hidden>
-                SC
+                AP
               </div>
               <button
                 type="button"
