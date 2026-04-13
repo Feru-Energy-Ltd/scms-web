@@ -15,6 +15,11 @@ const approvalsItem: AppMenuItem = {
   url: "/account/approvals",
 };
 
+const invitationsItem: AppMenuItem = {
+  name: "Invitations",
+  url: "/account/invitations",
+};
+
 const roleLinks: Record<string, AppMenuItem[]> = {
   ROLE_ADMIN: [
     { name: "Organisations", url: "/account/organisations" },
@@ -39,6 +44,9 @@ export function getMenuForRole(role: string | null): AppMenuItem[] {
   const links: AppMenuItem[] = [...baseLinks];
   if (identityType === "SYSTEM_ADMIN") {
     links.push(approvalsItem);
+  }
+  if (identityType === "SERVICE_PROVIDER") {
+    links.push(invitationsItem);
   }
 
   if (!role) return links;

@@ -106,8 +106,8 @@ function VerifyProviderEmailContent() {
     <main className={styles.main}>
       <div className={styles.shell}>
         <header className={styles.header}>
-          <h1 className={styles.title}>Email verified</h1>
-          <h2>Please wait for admin approval.</h2>
+          <h1 className={styles.title}>Please wait for approval</h1>
+          <br />
           <p className={styles.subtitle}>{state.message}</p>
         </header>
         <footer className={styles.footer}>
