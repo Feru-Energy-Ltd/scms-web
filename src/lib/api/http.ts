@@ -1,4 +1,10 @@
-import { getAccessToken } from "../auth/session";
+import {
+  clearSession,
+  getAccessToken,
+  getRefreshToken,
+  setSessionFromTokenResponse,
+} from "../auth/session";
+import type { TokenResponse } from "../types/auth";
 import { API_BASE_URL } from "../config";
 
 export type ProblemDetail = {
@@ -41,6 +47,13 @@ async function parseJsonSafely(res: Response) {
   }
 }
 
+async function refreshAccessToken(refreshToken: string): Promise<TokenResponse> {
+  return apiRequest<TokenResponse>("/auth/refresh", {
+    method: "POST",
+    body: { refreshToken },
+  });
+}
+
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}) {
   const url = toUrl(path);
 
@@ -80,11 +93,35 @@ export async function apiRequestAuth<T>(
   path: string,
   options: ApiRequestOptions = {},
 ) {
-  const token = typeof window !== "undefined" ? getAccessToken() : null;
-  const nextHeaders: HeadersInit = {
+  const withToken = (token: string | null): HeadersInit => ({
     ...(options.headers ?? {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-  return apiRequest<T>(path, { ...options, headers: nextHeaders });
+  });
+
+  try {
+    const token = typeof window !== "undefined" ? getAccessToken() : null;
+    return await apiRequest<T>(path, { ...options, headers: withToken(token) });
+  } catch (e) {
+    if (!(e instanceof ApiError) || e.status !== 401 || typeof window === "undefined") {
+      throw e;
+    }
+
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) throw e;
+
+    try {
+      const refreshed = await refreshAccessToken(refreshToken);
+      setSessionFromTokenResponse(refreshed);
+    } catch {
+      clearSession();
+      throw e;
+    }
+
+    const nextAccessToken = getAccessToken();
+    return apiRequest<T>(path, {
+      ...options,
+      headers: withToken(nextAccessToken),
+    });
+  }
 }
 

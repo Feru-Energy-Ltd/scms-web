@@ -51,6 +51,11 @@ export function getAccessToken() {
   return localStorage.getItem(KEYS.accessToken);
 }
 
+export function getRefreshToken() {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(KEYS.refreshToken);
+}
+
 export function getStoredRole() {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(KEYS.role);
