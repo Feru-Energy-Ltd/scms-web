@@ -23,3 +23,14 @@ export function decodeJwtPayload(token: string): JwtPayload | null {
   }
 }
 
+/**
+ * True when the token cannot be decoded or its `exp` (seconds since epoch) is in the past.
+ * If there is no `exp` claim, returns false (treat as non-expiring for guard purposes).
+ */
+export function isAccessTokenExpired(token: string): boolean {
+  const p = decodeJwtPayload(token);
+  if (!p) return true;
+  if (typeof p.exp !== "number") return false;
+  return Date.now() / 1000 >= p.exp;
+}
+

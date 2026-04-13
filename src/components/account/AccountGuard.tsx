@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAccessToken } from "@/lib/auth/session";
+import { isAccessTokenExpired } from "@/lib/auth/jwt";
+import { clearSession, getAccessToken } from "@/lib/auth/session";
 
 export default function AccountGuard({
   children,
@@ -10,12 +11,21 @@ export default function AccountGuard({
   children: React.ReactNode;
 }>) {
   const router = useRouter();
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!getAccessToken()) {
+    const token = getAccessToken();
+    if (!token || isAccessTokenExpired(token)) {
+      clearSession();
       router.replace("/login");
+      return;
     }
+    setReady(true);
   }, [router]);
+
+  if (!ready) {
+    return null;
+  }
 
   return children;
 }

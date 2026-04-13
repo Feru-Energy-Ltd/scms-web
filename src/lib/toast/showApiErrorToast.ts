@@ -15,6 +15,13 @@ export function showApiErrorToast(
   const fallbackMessage = opts?.fallbackMessage ?? "Something went wrong";
 
   if (err instanceof ApiError) {
+    if (err.status === 401 || err.status === 403) {
+      toast.error("You don't have the permission to perform this action.", {
+        id: opts?.toastId,
+      });
+      return;
+    }
+
     type ErrorBody = {
       detail?: string;
       title?: string;
@@ -31,7 +38,6 @@ export function showApiErrorToast(
     const statusSuffix =
       typeof err.status === "number" ? ` (HTTP ${err.status})` : "";
     const message = base.includes(`HTTP ${err.status}`) ? base : `${base}${statusSuffix}`;
-    console.info(message, 'xx')
 
     toast.error(message, {
       id: opts?.toastId,
@@ -44,7 +50,6 @@ export function showApiErrorToast(
     toast.error(err.message || fallbackMessage, { id: opts?.toastId });
     return;
   }
-  console.info('xx')
 
   toast.error(fallbackMessage, { id: opts?.toastId });
 }
