@@ -1,4 +1,5 @@
 import type { Phase1Response, TokenResponse } from "../types/auth";
+import { isAccessTokenExpired } from "./jwt";
 
 const KEYS = {
   accessToken: "scms_access_token",
@@ -49,6 +50,13 @@ export function setSessionFromTokenResponse(res: TokenResponse) {
 export function getAccessToken() {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(KEYS.accessToken);
+}
+
+/** Non-expired access token present (same bar as account routes). */
+export function hasActiveAccessSession(): boolean {
+  const token = getAccessToken();
+  if (!token) return false;
+  return !isAccessTokenExpired(token);
 }
 
 export function getRefreshToken() {

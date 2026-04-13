@@ -12,6 +12,15 @@ function pickNumber(...candidates: unknown[]): number | null {
 /**
  * Best-effort organization id from the access token (legacy APIs expect this for org-scoped lists).
  */
+/** Provider id from the access token (`provider_id` claim) for service provider sessions. */
+export function getProviderIdFromAccessToken(): number | null {
+  const token = getAccessToken();
+  if (!token) return null;
+  const p = decodeJwtPayload(token);
+  if (!p) return null;
+  return pickNumber(p.provider_id, p.providerId);
+}
+
 export function getOrganizationIdFromAccessToken(): number | null {
   const token = getAccessToken();
   if (!token) return null;

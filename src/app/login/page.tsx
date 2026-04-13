@@ -2,11 +2,12 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import styles from "./login.module.css";
 import { login, selectContext } from "@/lib/api/auth";
 import {
+  hasActiveAccessSession,
   setIdentityTypeAndRole,
   setSessionFromPhase1,
   setSessionFromTokenResponse,
@@ -19,6 +20,15 @@ export default function LoginPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+
+  useEffect(() => {
+    if (hasActiveAccessSession()) {
+      router.replace("/account");
+      return;
+    }
+    setShowForm(true);
+  }, [router]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -92,6 +102,10 @@ export default function LoginPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (!showForm) {
+    return null;
+  }
 
   return (
     <main className={styles.main}>
