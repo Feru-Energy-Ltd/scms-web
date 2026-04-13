@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { clearSession, getStoredRole } from "@/lib/auth/session";
 import { getMenuForRole } from "@/lib/navigation/menu";
 import styles from "./AccountShell.module.css";
@@ -23,41 +24,108 @@ export default function AccountShell({
   const router = useRouter();
   const pathname = usePathname();
   const role = getStoredRole();
-  const menu = getMenuForRole(role);
+  const menu = useMemo(() => getMenuForRole(role), [role]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const closeUserMenu = useCallback(() => setUserMenuOpen(false), []);
+
+  useEffect(() => {
+    closeUserMenu();
+  }, [pathname, closeUserMenu]);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(e.target as Node)
+      ) {
+        closeUserMenu();
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeUserMenu();
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [userMenuOpen, closeUserMenu]);
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed((c) => !c);
   }, []);
 
+  const signOut = useCallback(() => {
+    clearSession();
+    router.push("/login");
+  }, [router]);
+
+  const { pageTitle, activeMenuUrl } = useMemo(() => {
+    if (
+      pathname === "/account/profile" ||
+      pathname.startsWith("/account/profile/")
+    ) {
+      return { pageTitle: "Profile", activeMenuUrl: null as string | null };
+    }
+    let best: { name: string; url: string } | null = null;
+    for (const item of menu) {
+      if (pathname === item.url || pathname.startsWith(`${item.url}/`)) {
+        if (!best || item.url.length > best.url.length) {
+          best = item;
+        }
+      }
+    }
+    return {
+      pageTitle: best?.name ?? "Account workspace",
+      activeMenuUrl: best?.url ?? null,
+    };
+  }, [menu, pathname]);
+
+  const profileNavActive =
+    pathname === "/account/profile" ||
+    pathname.startsWith("/account/profile/");
+
   return (
-    <div
-      className={`${styles.shell} ${sidebarCollapsed ? styles.shellCollapsed : ""}`}
-    >
-      <aside
-        className={styles.sidebar}
-        data-collapsed={sidebarCollapsed ? "true" : "false"}
-      >
-        <div className={styles.sidebarTop}>
-          <div className={styles.brandRow}>
-            <div className={styles.brand}>Safaricharge CMS</div>
-            <div className={styles.brandMark} aria-hidden>
-              SC
-            </div>
+    <div className={styles.root}>
+      <header className={styles.topNav}>
+        <Link href="/account" className={styles.topNavHome}>
+          <Image
+            src="/assets/logo.png"
+            alt=""
+            width={112}
+            height={40}
+            className={styles.topNavLogo}
+            priority
+          />
+          <span className={styles.topNavBrand}>Safaricharge CMS</span>
+        </Link>
+        <p className={styles.topNavTitle}>{pageTitle}</p>
+        <div className={styles.topNavRight}>
+          {role ? (
+            <span className={styles.topNavRole} title={role}>
+              {role.replace(/^ROLE_/, "").replace(/_/g, " ")}
+            </span>
+          ) : null}
+          <div className={styles.topNavMenuWrap} ref={userMenuRef}>
             <button
               type="button"
-              className={styles.collapseToggle}
-              onClick={toggleSidebar}
-              aria-expanded={!sidebarCollapsed}
-              aria-controls="account-sidebar-nav"
-              title={sidebarCollapsed ? "Expand menu" : "Collapse menu"}
+              id="account-user-menu-button"
+              className={styles.topNavMenuTrigger}
+              aria-label="Account menu"
+              aria-expanded={userMenuOpen}
+              aria-haspopup="menu"
+              aria-controls="account-user-menu"
+              data-active={profileNavActive ? "true" : undefined}
+              onClick={() => setUserMenuOpen((open) => !open)}
             >
-              <span className={styles.srOnly}>
-                {sidebarCollapsed ? "Expand menu" : "Collapse menu"}
-              </span>
               <svg
-                width="18"
-                height="18"
+                width="22"
+                height="22"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -66,57 +134,122 @@ export default function AccountShell({
                 strokeLinejoin="round"
                 aria-hidden
               >
-                {sidebarCollapsed ? (
-                  <path d="M9 18l6-6-6-6" />
-                ) : (
-                  <path d="M15 18l-6-6 6-6" />
-                )}
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
               </svg>
             </button>
-          </div>
-
-          <nav
-            id="account-sidebar-nav"
-            className={styles.nav}
-            aria-label="Account navigation"
-          >
-            {menu.map((item) => (
-              <Link
-                key={item.url + item.name}
-                href={item.url}
-                className={styles.navItem}
-                aria-current={pathname === item.url ? "page" : undefined}
-                title={sidebarCollapsed ? item.name : undefined}
+            {userMenuOpen ? (
+              <div
+                id="account-user-menu"
+                role="menu"
+                aria-labelledby="account-user-menu-button"
+                className={styles.topNavMenuPanel}
               >
-                <span className={styles.navLabelFull}>{item.name}</span>
-                <span className={styles.navAbbrev}>{navAbbrev(item.name)}</span>
-              </Link>
-            ))}
-          </nav>
-        </div>
-
-        <div className={styles.sidebarFooter}>
-          <button
-            className={styles.logoutButton}
-            type="button"
-            onClick={() => {
-              clearSession();
-              router.push("/login");
-            }}
-          >
-            Sign out
-          </button>
-        </div>
-      </aside>
-
-      <div className={styles.main}>
-        <header className={styles.header}>
-          <div>
-            <p className={styles.heading}>Account workspace</p>
+                <Link
+                  href="/account/profile"
+                  role="menuitem"
+                  className={styles.topNavMenuItem}
+                  onClick={closeUserMenu}
+                >
+                  Profile
+                </Link>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={`${styles.topNavMenuItem} ${styles.topNavMenuItemSignOut}`}
+                  onClick={() => {
+                    closeUserMenu();
+                    signOut();
+                  }}
+                >
+                  Sign out
+                </button>
+              </div>
+            ) : null}
           </div>
-        </header>
+        </div>
+      </header>
 
-        <section className={styles.content}>{children}</section>
+      <div
+        className={`${styles.shell} ${sidebarCollapsed ? styles.shellCollapsed : ""}`}
+      >
+        <aside
+          className={styles.sidebar}
+          data-collapsed={sidebarCollapsed ? "true" : "false"}
+        >
+          <div className={styles.sidebarTop}>
+            <div className={styles.brandRow}>
+              <div className={styles.brand}>Safaricharge CMS</div>
+              <div className={styles.brandMark} aria-hidden>
+                SC
+              </div>
+              <button
+                type="button"
+                className={styles.collapseToggle}
+                onClick={toggleSidebar}
+                aria-expanded={!sidebarCollapsed}
+                aria-controls="account-sidebar-nav"
+                title={sidebarCollapsed ? "Expand menu" : "Collapse menu"}
+              >
+                <span className={styles.srOnly}>
+                  {sidebarCollapsed ? "Expand menu" : "Collapse menu"}
+                </span>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  {sidebarCollapsed ? (
+                    <path d="M9 18l6-6-6-6" />
+                  ) : (
+                    <path d="M15 18l-6-6 6-6" />
+                  )}
+                </svg>
+              </button>
+            </div>
+
+            <nav
+              id="account-sidebar-nav"
+              className={styles.nav}
+              aria-label="Account navigation"
+            >
+              {menu.map((item) => (
+                <Link
+                  key={item.url + item.name}
+                  href={item.url}
+                  className={styles.navItem}
+                  aria-current={
+                    activeMenuUrl === item.url ? "page" : undefined
+                  }
+                  title={sidebarCollapsed ? item.name : undefined}
+                >
+                  <span className={styles.navLabelFull}>{item.name}</span>
+                  <span className={styles.navAbbrev}>{navAbbrev(item.name)}</span>
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          <div className={styles.sidebarFooter}>
+            <button
+              className={styles.logoutButton}
+              type="button"
+              onClick={signOut}
+            >
+              Sign out
+            </button>
+          </div>
+        </aside>
+
+        <div className={styles.main}>
+          <section className={styles.content}>{children}</section>
+        </div>
       </div>
     </div>
   );

@@ -6,8 +6,7 @@ export type AppMenuItem = {
 const baseLinks: AppMenuItem[] = [
   { name: "Dashboard", url: "/account" },
   { name: "Station map", url: "/account/dashboard" },
-  {name: " Approvals", url: "/account/approvals"},
-  { name: "Profile", url: "/account/profile" }
+  { name: "Approvals", url: "/account/approvals" },
 ];
 
 const roleLinks: Record<string, AppMenuItem[]> = {
