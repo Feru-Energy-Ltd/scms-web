@@ -20,6 +20,10 @@ const invitationsItem: AppMenuItem = {
   url: "/account/invitations",
 };
 
+const providerUsersItem: AppMenuItem = {
+  name: "Users",
+  url: "/account/users"
+}
 const roleLinks: Record<string, AppMenuItem[]> = {
   ROLE_ADMIN: [
     { name: "Organisations", url: "/account/organisations" },
@@ -47,6 +51,7 @@ export function getMenuForRole(role: string | null): AppMenuItem[] {
   }
   if (identityType === "SERVICE_PROVIDER") {
     links.push(invitationsItem);
+    links.push(providerUsersItem)
   }
 
   if (!role) return links;

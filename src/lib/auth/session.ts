@@ -9,6 +9,7 @@ const KEYS = {
   expiresIn: "scms_expires_in",
   identityType: "scms_identity_type",
   role: "scms_role",
+  providerName: "scms_provider_name",
 };
 
 export function setIdentityTypeAndRole(
@@ -33,6 +34,12 @@ export function setSessionFromPhase1(res: Phase1Response) {
   if (res.tokenType) localStorage.setItem(KEYS.tokenType, res.tokenType);
   if (typeof res.expiresIn === "number")
     localStorage.setItem(KEYS.expiresIn, String(res.expiresIn));
+
+  if (res.provider?.providerName) {
+    localStorage.setItem(KEYS.providerName, res.provider.providerName);
+  } else {
+    localStorage.removeItem(KEYS.providerName);
+  }
 }
 
 export function setSessionFromTokenResponse(res: TokenResponse) {
@@ -45,6 +52,12 @@ export function setSessionFromTokenResponse(res: TokenResponse) {
 
   const role = res.account?.role ?? res.provider?.role;
   if (role) localStorage.setItem(KEYS.role, role);
+
+  if (res.provider?.providerName) {
+    localStorage.setItem(KEYS.providerName, res.provider.providerName);
+  } else {
+    localStorage.removeItem(KEYS.providerName);
+  }
 }
 
 export function getAccessToken() {
@@ -73,6 +86,12 @@ export function getStoredRole() {
 export function getStoredIdentityType() {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(KEYS.identityType);
+}
+
+/** Provider/business label for service-provider sessions. */
+export function getStoredProviderName() {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(KEYS.providerName);
 }
 
 export function clearSession() {

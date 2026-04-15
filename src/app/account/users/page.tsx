@@ -2,8 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { fetchOrganizationUsers } from "@/lib/api/organizations";
+import { fetchProviderUsers } from "@/lib/api/providerUsers";
 import { asArray } from "@/lib/api/normalize";
-import { getOrganizationIdFromAccessToken } from "@/lib/auth/jwtContext";
+import {
+  getOrganizationIdFromAccessToken,
+  getProviderIdFromAccessToken,
+} from "@/lib/auth/jwtContext";
+import { getStoredIdentityType } from "@/lib/auth/session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 
@@ -24,10 +29,21 @@ export default function AccountUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const identityType = getStoredIdentityType();
   const orgId = getOrganizationIdFromAccessToken();
+  const providerId = getProviderIdFromAccessToken();
 
   const load = useCallback(async () => {
-    if (orgId == null) {
+    if (identityType === "SERVICE_PROVIDER" && providerId == null) {
+      setRows([]);
+      setLoading(false);
+      setError(
+        "No provider id found on the access token. Users list requires a provider-scoped session.",
+      );
+      return;
+    }
+
+    if (identityType !== "SERVICE_PROVIDER" && orgId == null) {
       setRows([]);
       setLoading(false);
       setError(
@@ -38,8 +54,23 @@ export default function AccountUsersPage() {
     setLoading(true);
     setError(null);
     try {
-      const raw = await fetchOrganizationUsers(orgId, applied || undefined);
-      setRows(asArray<OrgUserRow>(raw));
+      if (identityType === "SERVICE_PROVIDER" && providerId != null) {
+        const raw = await fetchProviderUsers(providerId);
+        const staffRows = asArray<OrgUserRow>(raw);
+        const q = applied.trim().toLowerCase();
+        const filtered = q
+          ? staffRows.filter((row) =>
+              [cell(row, "displayName"), cell(row, "email"), cell(row, "role")]
+                .join(" ")
+                .toLowerCase()
+                .includes(q),
+            )
+          : staffRows;
+        setRows(filtered);
+      } else {
+        const raw = await fetchOrganizationUsers(orgId!, applied || undefined);
+        setRows(asArray<OrgUserRow>(raw));
+      }
     } catch (e) {
       setError("Could not load users.");
       showApiErrorToast(e, { fallbackMessage: "Could not load users." });
@@ -47,7 +78,7 @@ export default function AccountUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [orgId, applied]);
+  }, [identityType, providerId, orgId, applied]);
 
   useEffect(() => {
     void load();
@@ -57,7 +88,9 @@ export default function AccountUsersPage() {
     <div>
       <h1 className={styles.h1}>Back office users</h1>
       <p className={styles.muted}>
-        Organization members for org id: {orgId ?? "—"}
+        {identityType === "SERVICE_PROVIDER"
+          ? `Provider staff for provider id: ${providerId ?? "—"}`
+          : `Organization members for org id: ${orgId ?? "—"}`}
       </p>
 
       <div className={styles.toolbar}>
@@ -105,19 +138,23 @@ export default function AccountUsersPage() {
                 const id = cell(row, "id", "userId");
                 const active = row.active;
                 const activeBool =
-                  typeof active === "boolean"
-                    ? active
-                    : active === "true" || active === 1;
+                  identityType === "SERVICE_PROVIDER"
+                    ? cell(row, "status") === "ACTIVE"
+                    : typeof active === "boolean"
+                      ? active
+                      : active === "true" || active === 1;
                 return (
                   <tr key={`${id}-${i}`}>
                     <td className={styles.td}>
                       {cell(row, "firstName", "lastName")
                         ? `${cell(row, "firstName")} ${cell(row, "lastName")}`.trim()
-                        : cell(row, "name", "username")}
+                        : cell(row, "displayName", "name", "username")}
                     </td>
                     <td className={styles.td}>{cell(row, "email")}</td>
                     <td className={styles.td}>
-                      {cell(row, "phoneNumber", "phone")}
+                      {identityType === "SERVICE_PROVIDER"
+                        ? "—"
+                        : cell(row, "phoneNumber", "phone")}
                     </td>
                     <td className={styles.td}>
                       {cell(row, "roles", "role", "roleName")}

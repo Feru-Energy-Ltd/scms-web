@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   clearSession,
   getStoredIdentityType,
+  getStoredProviderName,
   getStoredRole,
 } from "@/lib/auth/session";
 import { getMenuForRole } from "@/lib/navigation/menu";
@@ -29,6 +30,8 @@ export default function AccountShell({
   const pathname = usePathname();
   const role = getStoredRole();
   const identityType = getStoredIdentityType();
+  const providerName = getStoredProviderName();
+  const teamLabel = providerName || "Feru Energy Ltd";
   const menu = useMemo(
     () => getMenuForRole(role),
     [role, identityType],
@@ -118,6 +121,9 @@ export default function AccountShell({
               {role.replace(/^ROLE_/, "").replace(/_/g, " ")}
             </span>
           ) : null}
+          <span className={styles.topNavTeam} title={teamLabel}>
+            {teamLabel}
+          </span>
           <div className={styles.topNavMenuWrap} ref={userMenuRef}>
             <button
               type="button"
