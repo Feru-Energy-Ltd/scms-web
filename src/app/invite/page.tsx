@@ -15,10 +15,6 @@ import {
   acceptProviderInvitation,
 } from "@/lib/api/auth";
 import { hasActiveAccessSession } from "@/lib/auth/session";
-import {
-  persistPhase1Session,
-  Phase1SessionIncompleteError,
-} from "@/lib/auth/persistPhase1Session";
 import { decodeInvitationTokenMeta } from "@/lib/invitation/decodeInvitationTokenMeta";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import PasswordEyeIcon from "../login/PasswordEyeIcon";
@@ -94,25 +90,20 @@ function InviteAcceptContent() {
         password: password.trim() || undefined,
         displayName: displayName.trim() || undefined,
       };
-      const res =
-        meta.scope === "PROVIDER_STAFF"
-          ? await acceptProviderInvitation(body)
-          : await acceptAccountInvitation(body);
-
-      await persistPhase1Session(res);
+      if (meta.scope === "PROVIDER_STAFF") {
+        await acceptProviderInvitation(body);
+      } else {
+        await acceptAccountInvitation(body);
+      }
       toast.success("Invitation accepted. You're signed in.");
       router.push("/account");
     } catch (err) {
-      if (err instanceof Phase1SessionIncompleteError) {
-        toast.error(err.message);
-      } else {
-        showApiErrorToast(err, {
-          fallbackMessage: "Could not accept this invitation.",
-        });
-        setAcceptError(
-          "Something went wrong. Check your password if this is a new account, or try signing in if you already have one.",
-        );
-      }
+      showApiErrorToast(err, {
+        fallbackMessage: "Could not accept this invitation.",
+      });
+      setAcceptError(
+        "Check your password if this is a new account, or try signing in if you already have one.",
+      );
     } finally {
       setSubmitting(false);
     }

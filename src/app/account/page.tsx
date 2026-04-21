@@ -4,9 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   getAccessTokenContext,
-  getOrganizationIdFromAccessToken,
 } from "@/lib/auth/jwtContext";
-import { getStoredRole } from "@/lib/auth/session";
 import styles from "@/components/account/ResourceList.module.css";
 
 const quickLinks = [
@@ -26,13 +24,12 @@ export default function AccountDashboardPage() {
     setCtx(getAccessTokenContext());
   }, []);
 
-  const orgId = getOrganizationIdFromAccessToken();
 
   return (
     <div>
       <h1 className={styles.h1}>Dashboard</h1>
       <p className={styles.muted}>
-        {ctx.organizationName
+        {ctx.identityType
           ? `Organization: ${ctx.organizationName}`
           : "Workspace"}
         {ctx.email ? ` · ${ctx.email}` : ""}
@@ -40,7 +37,6 @@ export default function AccountDashboardPage() {
       <p className={styles.muted}>
         Role:{" "}
         <strong>{getStoredRole() ?? ctx.role ?? "—"}</strong>
-        {orgId != null ? ` · Org id: ${orgId}` : ""}
       </p>
 
       <div

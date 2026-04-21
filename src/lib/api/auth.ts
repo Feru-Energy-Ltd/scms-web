@@ -1,12 +1,12 @@
 import { apiRequest } from "./http";
-import type { ProviderRegistrationPayload, Phase1Response, TokenResponse } from "../types/auth";
+import type { ProviderRegistrationPayload, TokenResponse } from "../types/auth";
 
 export type MessageResponse = { message: string };
 
 export async function login(email: string, password: string) {
   // Backend runs under /auth context path, and the API gateway routes /auth/**
   // to the auth-service.
-  return apiRequest<Phase1Response>("/auth/login", {
+  return apiRequest<TokenResponse>("/auth/login", {
     method: "POST",
     body: { email, password },
   });
@@ -42,7 +42,7 @@ export async function acceptProviderInvitation(body: {
   password?: string;
   displayName?: string;
 }) {
-  return apiRequest<Phase1Response>("/auth/invitations/provider/accept", {
+  return apiRequest<TokenResponse>("/auth/invitations/provider/accept", {
     method: "POST",
     body,
   });
@@ -53,7 +53,7 @@ export async function acceptAccountInvitation(body: {
   password?: string;
   displayName?: string;
 }) {
-  return apiRequest<Phase1Response>("/auth/invitations/accept", {
+  return apiRequest<TokenResponse>("/auth/invitations/accept", {
     method: "POST",
     body,
   });

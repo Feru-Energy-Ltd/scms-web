@@ -8,11 +8,8 @@ import styles from "./login.module.css";
 import { login } from "@/lib/api/auth";
 import {
   hasActiveAccessSession,
+  setSessionTokensFromResponse
 } from "@/lib/auth/session";
-import {
-  persistPhase1Session,
-  Phase1SessionIncompleteError,
-} from "@/lib/auth/persistPhase1Session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import PasswordEyeIcon from "./PasswordEyeIcon";
 
@@ -41,14 +38,10 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       const res = await login(email, password);
-      await persistPhase1Session(res);
+      setSessionTokensFromResponse(res);
       toast.success("Signed in successfully");
       router.push("/account");
     } catch (err) {
-      if (err instanceof Phase1SessionIncompleteError) {
-        toast.error(err.message);
-        return;
-      }
       showApiErrorToast(err, {
         fallbackMessage: "Login failed. Please check your credentials.",
       });

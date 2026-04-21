@@ -86,13 +86,6 @@ export default function AccountUsersPage() {
 
   return (
     <div>
-      <h1 className={styles.h1}>Back office users</h1>
-      <p className={styles.muted}>
-        {identityType === "SERVICE_PROVIDER"
-          ? `Provider staff for provider id: ${providerId ?? "—"}`
-          : `Organization members for org id: ${orgId ?? "—"}`}
-      </p>
-
       <div className={styles.toolbar}>
         <input
           className={styles.searchInput}

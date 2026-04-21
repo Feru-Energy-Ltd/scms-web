@@ -8,9 +8,8 @@ import {
   clearSession,
   getStoredIdentityType,
   getStoredProviderName,
-  getStoredRole,
 } from "@/lib/auth/session";
-import { getMenuForRole } from "@/lib/navigation/menu";
+import { getMenuForIdentityType } from "@/lib/navigation/menu";
 import styles from "./AccountShell.module.css";
 
 function navAbbrev(name: string): string {
@@ -28,19 +27,39 @@ export default function AccountShell({
 }>) {
   const router = useRouter();
   const pathname = usePathname();
-  const role = getStoredRole();
   const identityType = getStoredIdentityType();
   const providerName = getStoredProviderName();
   const teamLabel = providerName || "Feru Energy Ltd";
   const menu = useMemo(
-    () => getMenuForRole(role),
-    [role, identityType],
+    () => getMenuForIdentityType(identityType ?? ""),
+    [identityType],
   );
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const closeUserMenu = useCallback(() => setUserMenuOpen(false), []);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem("scms-theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const nextTheme: "light" | "dark" =
+      stored === "dark" || stored === "light"
+        ? stored
+        : prefersDark
+          ? "dark"
+          : "light";
+    setTheme(nextTheme);
+    document.documentElement.dataset.theme = nextTheme;
+    document.documentElement.style.colorScheme = nextTheme;
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    window.localStorage.setItem("scms-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     closeUserMenu();
@@ -116,14 +135,74 @@ export default function AccountShell({
           <span className={styles.topNavBrand}>Safaricharge CMS</span>
         </Link>
         <div className={styles.topNavRight}>
-          {role ? (
-            <span className={styles.topNavRole} title={role}>
-              {role.replace(/^ROLE_/, "").replace(/_/g, " ")}
-            </span>
-          ) : null}
-          <span className={styles.topNavTeam} title={teamLabel}>
-            {teamLabel}
-          </span>
+          <button
+            type="button"
+            className={styles.topNavMenuTrigger}
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+            onClick={() =>
+              setTheme((current) => (current === "dark" ? "light" : "dark"))
+            }
+          >
+            {theme === "dark" ? (
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <circle cx="12" cy="12" r="5" />
+                <path d="M12 1v2" />
+                <path d="M12 21v2" />
+                <path d="m4.22 4.22 1.42 1.42" />
+                <path d="m18.36 18.36 1.42 1.42" />
+                <path d="M1 12h2" />
+                <path d="M21 12h2" />
+                <path d="m4.22 19.78 1.42-1.42" />
+                <path d="m18.36 5.64 1.42-1.42" />
+              </svg>
+            ) : (
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M21 12.79A9 9 0 1 1 11.21 3c0 0 0 0 0 0A7 7 0 0 0 21 12.79z" />
+              </svg>
+            )}
+          </button>
+          <button
+            type="button"
+            className={styles.topNavMenuTrigger}
+            aria-label="Notifications"
+            title="Notifications"
+          >
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+          </button>
           <div className={styles.topNavMenuWrap} ref={userMenuRef}>
             <button
               type="button"
@@ -158,6 +237,9 @@ export default function AccountShell({
                 aria-labelledby="account-user-menu-button"
                 className={styles.topNavMenuPanel}
               >
+                <div className={styles.topNavMenuMeta}>
+                  <p className={styles.topNavMenuMetaTitle}>{identityType}</p>
+                </div>
                 <Link
                   href="/account/profile"
                   role="menuitem"
@@ -166,6 +248,30 @@ export default function AccountShell({
                 >
                   Profile
                 </Link>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={styles.topNavMenuItem}
+                  onClick={closeUserMenu}
+                >
+                  Notifications
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={styles.topNavMenuItem}
+                  onClick={closeUserMenu}
+                >
+                  Help
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={styles.topNavMenuItem}
+                  onClick={closeUserMenu}
+                >
+                  Settings
+                </button>
                 <button
                   type="button"
                   role="menuitem"

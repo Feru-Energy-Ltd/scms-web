@@ -1,4 +1,4 @@
-import type { Phase1Response, TokenResponse } from "../types/auth";
+import type { TokenResponse } from "../types/auth";
 import { isAccessTokenExpired } from "./jwt";
 
 const KEYS = {
@@ -8,56 +8,25 @@ const KEYS = {
   tokenType: "scms_token_type",
   expiresIn: "scms_expires_in",
   identityType: "scms_identity_type",
-  role: "scms_role",
   providerName: "scms_provider_name",
 };
 
-export function setIdentityTypeAndRole(
+export function setIdentityType(
   identityType: string,
-  role: string | undefined,
 ) {
   if (typeof window === "undefined") return;
-
   localStorage.setItem(KEYS.identityType, identityType);
-  if (role) localStorage.setItem(KEYS.role, role);
 }
 
-export function setSessionFromPhase1(res: Phase1Response) {
+export function setSessionTokensFromResponse(res: TokenResponse) {
   if (typeof window === "undefined") return;
 
+  console.info('setSessionTokens', res)
   localStorage.setItem(KEYS.identityType, res.identityType);
-
-  // Phase 1 responses for some identity types (e.g. CUSTOMER) do not include access/refresh tokens.
-  if (res.identityToken) localStorage.setItem(KEYS.identityToken, res.identityToken);
-  if (res.accessToken) localStorage.setItem(KEYS.accessToken, res.accessToken);
-  if (res.refreshToken) localStorage.setItem(KEYS.refreshToken, res.refreshToken);
-  if (res.tokenType) localStorage.setItem(KEYS.tokenType, res.tokenType);
-  if (typeof res.expiresIn === "number")
-    localStorage.setItem(KEYS.expiresIn, String(res.expiresIn));
-
-  if (res.provider?.providerName) {
-    localStorage.setItem(KEYS.providerName, res.provider.providerName);
-  } else {
-    localStorage.removeItem(KEYS.providerName);
-  }
-}
-
-export function setSessionFromTokenResponse(res: TokenResponse) {
-  if (typeof window === "undefined") return;
-
+  localStorage.setItem(KEYS.identityToken, res.identityToken);
   localStorage.setItem(KEYS.accessToken, res.accessToken);
   localStorage.setItem(KEYS.refreshToken, res.refreshToken);
-  localStorage.setItem(KEYS.tokenType, res.tokenType);
   localStorage.setItem(KEYS.expiresIn, String(res.expiresIn));
-
-  const role = res.account?.role ?? res.provider?.role;
-  if (role) localStorage.setItem(KEYS.role, role);
-
-  if (res.provider?.providerName) {
-    localStorage.setItem(KEYS.providerName, res.provider.providerName);
-  } else {
-    localStorage.removeItem(KEYS.providerName);
-  }
 }
 
 export function getAccessToken() {
@@ -74,15 +43,11 @@ export function hasActiveAccessSession(): boolean {
 
 export function getRefreshToken() {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(KEYS.refreshToken);
+  console.info('Keys', KEYS)
+  const refreshToken = localStorage.getItem(KEYS.refreshToken);
+  console.info('refreshToken', refreshToken)
+  return refreshToken;
 }
-
-export function getStoredRole() {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(KEYS.role);
-}
-
-/** From login Phase 1 (`Phase1Response.identityType`), e.g. `SYSTEM_ADMIN`, `SERVICE_PROVIDER`. */
 export function getStoredIdentityType() {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(KEYS.identityType);

@@ -24,7 +24,7 @@ const providerUsersItem: AppMenuItem = {
   name: "Users",
   url: "/account/users"
 }
-const roleLinks: Record<string, AppMenuItem[]> = {
+const identityTypeLinks: Record<string, AppMenuItem[]> = {
   ROLE_ADMIN: [
     { name: "Organisations", url: "/account/organisations" },
     { name: "Roles and Permissions", url: "/account/permissions" },
@@ -43,18 +43,9 @@ const roleLinks: Record<string, AppMenuItem[]> = {
   ROLE_OPERATOR_ENGINEER: [{ name: "Charge Boxes", url: "/account/charge-boxes" }],
 };
 
-export function getMenuForRole(role: string | null): AppMenuItem[] {
-  const identityType = getStoredIdentityType();
+export function getMenuForIdentityType(identityType: string): AppMenuItem[] {
   const links: AppMenuItem[] = [...baseLinks];
-  if (identityType === "SYSTEM_ADMIN") {
-    links.push(approvalsItem);
-  }
-  if (identityType === "SERVICE_PROVIDER") {
-    links.push(invitationsItem);
-    links.push(providerUsersItem)
-  }
-
-  if (!role) return links;
-  const roleSpecific = roleLinks[role] ?? [];
-  return [...links, ...roleSpecific];
+  if (!identityType) return links;
+  const identityTypeSpecific = identityTypeLinks[identityType] ?? [];
+  return [...links, ...identityTypeSpecific];
 }
