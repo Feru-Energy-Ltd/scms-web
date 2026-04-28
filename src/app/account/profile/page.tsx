@@ -2,14 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { decodeJwtPayload } from "@/lib/auth/jwt";
-import {
-  getAccessTokenContext,
-  getOrganizationIdFromAccessToken,
-} from "@/lib/auth/jwtContext";
-import { getAccessToken, getStoredRole } from "@/lib/auth/session";
+import { getAccessTokenContext } from "@/lib/auth/jwtContext";
+import { getAccessToken } from "@/lib/auth/session";
 import styles from "@/components/account/ResourceList.module.css";
 
-export default function AccountProfilePage() {
+export default function ProfilePage() {
   const [ctx, setCtx] = useState(() => getAccessTokenContext());
   const [rawClaims, setRawClaims] = useState<Record<string, unknown> | null>(
     null,
@@ -30,24 +27,8 @@ export default function AccountProfilePage() {
       </p>
 
       <div className={styles.field}>
-        <span className={styles.label}>Stored role</span>
-        <p>{getStoredRole() ?? "—"}</p>
-      </div>
-      <div className={styles.field}>
-        <span className={styles.label}>Organization</span>
-        <p>{ctx.organizationName ?? "—"}</p>
-      </div>
-      <div className={styles.field}>
         <span className={styles.label}>Email</span>
         <p>{ctx.email ?? "—"}</p>
-      </div>
-      <div className={styles.field}>
-        <span className={styles.label}>Token role claim</span>
-        <p>{ctx.role ?? "—"}</p>
-      </div>
-      <div className={styles.field}>
-        <span className={styles.label}>Organization id (JWT)</span>
-        <p>{getOrganizationIdFromAccessToken() ?? "—"}</p>
       </div>
 
       {rawClaims ? (

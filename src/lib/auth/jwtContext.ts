@@ -16,11 +16,12 @@ export function getAccessTokenContext(): {
   if (!token) return {};
   const p = decodeJwtPayload(token);
   if (!p) return {};
+  console.info(p, ' whn')
 
   return {
     identityType:
-      typeof p.identityType === "string" ? p.identityType : undefined,
+      typeof p.identityType === "string" ? p.identityType : "unknown identity type",
     email:
-      typeof p.email === "string" ? p.email : undefined,
+      typeof p.email === "string" ? p.email : "unknown email",
   };
 }

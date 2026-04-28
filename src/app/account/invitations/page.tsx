@@ -17,7 +17,7 @@ import {
   type ProviderStaffRole,
 } from "@/lib/api/providerInvitations";
 import { asArray } from "@/lib/api/normalize";
-import { getProviderIdFromAccessToken } from "@/lib/auth/jwtContext";
+import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 
@@ -50,24 +50,23 @@ function formatWhen(iso: string) {
 }
 
 export default function AccountInvitationsPage() {
-  const providerId = getProviderIdFromAccessToken();
+  const { identityType, email } = getAccessTokenContext();
   const [rows, setRows] = useState<InvitationRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<ProviderStaffRole>("PROVIDER_STAFF");
+  const [inviteeEmail, setInviteeEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [actingId, setActingId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
-    if (providerId == null) {
+    if (identityType !== "SERVICE_PROVIDER") {
       setRows([]);
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      const raw = await fetchProviderInvitations(providerId);
-      setRows(asArray<InvitationRow>(raw));
+      const raw = await fetchProviderInvitations(Number(inviteeEmail));
+      setRows(asArray(raw));
     } catch (e) {
       showApiErrorToast(e, {
         fallbackMessage: "Could not load invitations.",
@@ -76,7 +75,7 @@ export default function AccountInvitationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [providerId]);
+  }, [inviteeEmail]);
 
   useEffect(() => {
     void load();
@@ -84,13 +83,13 @@ export default function AccountInvitationsPage() {
 
   const onInvite = async (e: FormEvent) => {
     e.preventDefault();
-    if (providerId == null || submitting) return;
-    const trimmed = email.trim();
-    if (!trimmed) return;
+    if (inviteeEmail == null || submitting) return;
+    const trimmedEmail = inviteeEmail.trim();
+    if (!trimmedEmail) return;
     setSubmitting(true);
     try {
-      await sendProviderInvitation(providerId, { email: trimmed, role });
-      setEmail("");
+      await sendProviderInvitation(Number(inviteeEmail), { email: trimmedEmail, role: "PROVIDER_STAFF" }); // TODO: add role selection
+      setInviteeEmail("");
       await load();
     } catch (err) {
       showApiErrorToast(err, { fallbackMessage: "Could not send invitation." });
@@ -101,11 +100,11 @@ export default function AccountInvitationsPage() {
 
   const onRevoke = useCallback(
     async (id: number) => {
-      if (providerId == null) return;
+      if (inviteeEmail == null) return;
       if (!window.confirm("Revoke this invitation?")) return;
       setActingId(id);
       try {
-        await revokeProviderInvitation(providerId, id);
+        await revokeProviderInvitation(Number(inviteeEmail), id);
         await load();
       } catch (err) {
         showApiErrorToast(err, {
@@ -115,7 +114,7 @@ export default function AccountInvitationsPage() {
         setActingId(null);
       }
     },
-    [providerId, load],
+    [inviteeEmail, load],
   );
 
   const columns = useMemo<DataTableColumn<InvitationRow>[]>(
@@ -175,7 +174,7 @@ export default function AccountInvitationsPage() {
     [actingId, onRevoke],
   );
 
-  if (providerId == null) {
+  if (identityType !== "SERVICE_PROVIDER") {
     return (
       <div>
         <h1 className={styles.h1}>Invitations</h1>
@@ -202,15 +201,15 @@ export default function AccountInvitationsPage() {
           required
           autoComplete="email"
           placeholder="Invitee email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={inviteeEmail}
+          onChange={(e) => setInviteeEmail(e.target.value)}
         />
         <select
           className={styles.searchInput}
           aria-label="Staff role"
-          value={role}
+          value="PROVIDER_STAFF" // TODO: add role selection
           onChange={(e) =>
-            setRole(e.target.value as ProviderStaffRole)
+            setInviteeEmail(e.target.value)
           }
         >
           {ROLE_OPTIONS.map((o) => (

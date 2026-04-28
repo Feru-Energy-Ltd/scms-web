@@ -1,20 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { fetchOrganizationUsers } from "@/lib/api/organizations";
+import { useCallback, useState } from "react"; 
 import { fetchProviderUsers } from "@/lib/api/providerUsers";
 import { asArray } from "@/lib/api/normalize";
-import {
-  getOrganizationIdFromAccessToken,
-  getProviderIdFromAccessToken,
-} from "@/lib/auth/jwtContext";
-import { getStoredIdentityType } from "@/lib/auth/session";
+import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 
-type OrgUserRow = Record<string, unknown>;
+type ProviderUserRow = Record<string, unknown>;
 
-function cell(row: OrgUserRow, ...keys: string[]) {
+function cell(row: ProviderUserRow, ...keys: string[]) {
   for (const k of keys) {
     const v = row[k];
     if (v != null && v !== "") return String(v);
@@ -25,16 +20,13 @@ function cell(row: OrgUserRow, ...keys: string[]) {
 export default function AccountUsersPage() {
   const [search, setSearch] = useState("");
   const [applied, setApplied] = useState("");
-  const [rows, setRows] = useState<OrgUserRow[]>([]);
+  const [rows, setRows] = useState<ProviderUserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const identityType = getStoredIdentityType();
-  const orgId = getOrganizationIdFromAccessToken();
-  const providerId = getProviderIdFromAccessToken();
+  const { identityType, email } = getAccessTokenContext();
 
   const load = useCallback(async () => {
-    if (identityType === "SERVICE_PROVIDER" && providerId == null) {
+    if (identityType !== "SERVICE_PROVIDER") {
       setRows([]);
       setLoading(false);
       setError(
@@ -43,46 +35,15 @@ export default function AccountUsersPage() {
       return;
     }
 
-    if (identityType !== "SERVICE_PROVIDER" && orgId == null) {
-      setRows([]);
-      setLoading(false);
-      setError(
-        "No organization id found on the access token. Users list requires an org-scoped session.",
-      );
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
-      if (identityType === "SERVICE_PROVIDER" && providerId != null) {
-        const raw = await fetchProviderUsers(providerId);
-        const staffRows = asArray<OrgUserRow>(raw);
-        const q = applied.trim().toLowerCase();
-        const filtered = q
-          ? staffRows.filter((row) =>
-              [cell(row, "displayName"), cell(row, "email"), cell(row, "role")]
-                .join(" ")
-                .toLowerCase()
-                .includes(q),
-            )
-          : staffRows;
-        setRows(filtered);
-      } else {
-        const raw = await fetchOrganizationUsers(orgId!, applied || undefined);
-        setRows(asArray<OrgUserRow>(raw));
-      }
+      const raw = await fetchProviderUsers(Number(email));
+      setRows(asArray(raw));
     } catch (e) {
-      setError("Could not load users.");
       showApiErrorToast(e, { fallbackMessage: "Could not load users." });
-      setRows([]);
-    } finally {
-      setLoading(false);
     }
-  }, [identityType, providerId, orgId, applied]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  }, []);
 
   return (
     <div>

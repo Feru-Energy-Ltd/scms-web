@@ -2,7 +2,7 @@ import { apiRequestAuth } from "./http";
 
 const BASE = "/auth/management/service-providers";
 
-export async function fetchPendingServiceProviders(page = 0, size = 20) {
+export async function fetchPendingServiceProviders(page = 0, size = 20, search?: string) {
   const q = new URLSearchParams({
     status: "PENDING",
     page: String(page),

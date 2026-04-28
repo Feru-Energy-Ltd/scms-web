@@ -8,11 +8,11 @@ import {
 import styles from "@/components/account/ResourceList.module.css";
 
 const quickLinks = [
-  { href: "/account/users", label: "Org members" },
+  { href: "/account/users", label: "Service provider members" },
   { href: "/account/customers", label: "Customers" },
   { href: "/account/charge-boxes", label: "Charge boxes" },
   { href: "/account/charge-boxes/create", label: "New charger" },
-  { href: "/account/organisations", label: "Organisations" },
+  { href: "/account/service-providers", label: "Service providers" },
   { href: "/account/permissions", label: "Roles & permissions" },
   { href: "/account/profile", label: "Profile" },
 ];
@@ -30,15 +30,10 @@ export default function AccountDashboardPage() {
       <h1 className={styles.h1}>Dashboard</h1>
       <p className={styles.muted}>
         {ctx.identityType
-          ? `Organization: ${ctx.organizationName}`
-          : "Workspace"}
+          ? "Service provider: —" // TODO: add service provider name
+          : "Service provider: —"}
         {ctx.email ? ` · ${ctx.email}` : ""}
       </p>
-      <p className={styles.muted}>
-        Role:{" "}
-        <strong>{getStoredRole() ?? ctx.role ?? "—"}</strong>
-      </p>
-
       <div
         style={{
           marginTop: 20,
