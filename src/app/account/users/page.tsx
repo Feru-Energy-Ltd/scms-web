@@ -1,15 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { fetchOrganizationUsers } from "@/lib/api/organizations";
+import { useCallback, useState } from "react"; 
+import { fetchProviderUsers } from "@/lib/api/providerUsers";
 import { asArray } from "@/lib/api/normalize";
-import { getOrganizationIdFromAccessToken } from "@/lib/auth/jwtContext";
+import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 
-type OrgUserRow = Record<string, unknown>;
+type ProviderUserRow = Record<string, unknown>;
 
-function cell(row: OrgUserRow, ...keys: string[]) {
+function cell(row: ProviderUserRow, ...keys: string[]) {
   for (const k of keys) {
     const v = row[k];
     if (v != null && v !== "") return String(v);
@@ -20,46 +20,33 @@ function cell(row: OrgUserRow, ...keys: string[]) {
 export default function AccountUsersPage() {
   const [search, setSearch] = useState("");
   const [applied, setApplied] = useState("");
-  const [rows, setRows] = useState<OrgUserRow[]>([]);
+  const [rows, setRows] = useState<ProviderUserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const orgId = getOrganizationIdFromAccessToken();
+  const { identityType, email } = getAccessTokenContext();
 
   const load = useCallback(async () => {
-    if (orgId == null) {
+    if (identityType !== "SERVICE_PROVIDER") {
       setRows([]);
       setLoading(false);
       setError(
-        "No organization id found on the access token. Users list requires an org-scoped session.",
+        "No provider id found on the access token. Users list requires a provider-scoped session.",
       );
       return;
     }
+
     setLoading(true);
     setError(null);
     try {
-      const raw = await fetchOrganizationUsers(orgId, applied || undefined);
-      setRows(asArray<OrgUserRow>(raw));
+      const raw = await fetchProviderUsers(Number(email));
+      setRows(asArray(raw));
     } catch (e) {
-      setError("Could not load users.");
       showApiErrorToast(e, { fallbackMessage: "Could not load users." });
-      setRows([]);
-    } finally {
-      setLoading(false);
     }
-  }, [orgId, applied]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  }, []);
 
   return (
     <div>
-      <h1 className={styles.h1}>Back office users</h1>
-      <p className={styles.muted}>
-        Organization members for org id: {orgId ?? "—"}
-      </p>
-
       <div className={styles.toolbar}>
         <input
           className={styles.searchInput}
@@ -105,19 +92,23 @@ export default function AccountUsersPage() {
                 const id = cell(row, "id", "userId");
                 const active = row.active;
                 const activeBool =
-                  typeof active === "boolean"
-                    ? active
-                    : active === "true" || active === 1;
+                  identityType === "SERVICE_PROVIDER"
+                    ? cell(row, "status") === "ACTIVE"
+                    : typeof active === "boolean"
+                      ? active
+                      : active === "true" || active === 1;
                 return (
                   <tr key={`${id}-${i}`}>
                     <td className={styles.td}>
                       {cell(row, "firstName", "lastName")
                         ? `${cell(row, "firstName")} ${cell(row, "lastName")}`.trim()
-                        : cell(row, "name", "username")}
+                        : cell(row, "displayName", "name", "username")}
                     </td>
                     <td className={styles.td}>{cell(row, "email")}</td>
                     <td className={styles.td}>
-                      {cell(row, "phoneNumber", "phone")}
+                      {identityType === "SERVICE_PROVIDER"
+                        ? "—"
+                        : cell(row, "phoneNumber", "phone")}
                     </td>
                     <td className={styles.td}>
                       {cell(row, "roles", "role", "roleName")}

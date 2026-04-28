@@ -2,7 +2,7 @@ import {
   clearSession,
   getAccessToken,
   getRefreshToken,
-  setSessionFromTokenResponse,
+  setSessionTokensFromResponse,
 } from "../auth/session";
 import type { TokenResponse } from "../types/auth";
 import { API_BASE_URL } from "../config";
@@ -71,6 +71,7 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 
   if (!res.ok) {
     const body = await parseJsonSafely(res);
+    console.info('body', body)
     const problem = body as ProblemDetail | undefined;
     const message =
       problem?.detail ||
@@ -102,26 +103,22 @@ export async function apiRequestAuth<T>(
     const token = typeof window !== "undefined" ? getAccessToken() : null;
     return await apiRequest<T>(path, { ...options, headers: withToken(token) });
   } catch (e) {
-    if (!(e instanceof ApiError) || e.status !== 401 || typeof window === "undefined") {
+    if (!(e instanceof ApiError) || typeof window === "undefined") {
       throw e;
     }
 
     const refreshToken = getRefreshToken();
+    console.info('refreshToken2', refreshToken)
     if (!refreshToken) throw e;
 
     try {
       const refreshed = await refreshAccessToken(refreshToken);
-      setSessionFromTokenResponse(refreshed);
+      setSessionTokensFromResponse(refreshed);
     } catch {
       clearSession();
       throw e;
     }
 
-    const nextAccessToken = getAccessToken();
-    return apiRequest<T>(path, {
-      ...options,
-      headers: withToken(nextAccessToken),
-    });
   }
 }
 

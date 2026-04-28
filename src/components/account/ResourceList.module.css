@@ -1,3 +1,78 @@
+.topMenu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.menuLeft {
+  position: relative;
+}
+
+.menuButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.menuDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 10;
+  min-width: 260px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  box-shadow: 0 8px 24px color-mix(in oklab, black 18%, transparent);
+  padding: 10px 12px;
+}
+
+.menuDropdownLabel {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.menuDropdownLabel + .menuDropdownLabel {
+  margin-top: 6px;
+  color: var(--color-text-muted);
+}
+
+.menuRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.iconButton {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.profileButton {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
 .toolbar {
   display: flex;
   gap: 12px;

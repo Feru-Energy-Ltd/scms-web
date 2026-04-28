@@ -1,3 +1,5 @@
+import { getStoredIdentityType } from "../auth/session";
+
 export type AppMenuItem = {
   name: string;
   url: string;
@@ -6,11 +8,23 @@ export type AppMenuItem = {
 const baseLinks: AppMenuItem[] = [
   { name: "Dashboard", url: "/account" },
   { name: "Station map", url: "/account/dashboard" },
-  {name: " Approvals", url: "/account/approvals"},
-  { name: "Profile", url: "/account/profile" }
 ];
 
-const roleLinks: Record<string, AppMenuItem[]> = {
+const approvalsItem: AppMenuItem = {
+  name: "Approvals",
+  url: "/account/approvals",
+};
+
+const invitationsItem: AppMenuItem = {
+  name: "Invitations",
+  url: "/account/invitations",
+};
+
+const providerUsersItem: AppMenuItem = {
+  name: "Users",
+  url: "/account/users"
+}
+const identityTypeLinks: Record<string, AppMenuItem[]> = {
   ROLE_ADMIN: [
     { name: "Organisations", url: "/account/organisations" },
     { name: "Roles and Permissions", url: "/account/permissions" },
@@ -29,8 +43,9 @@ const roleLinks: Record<string, AppMenuItem[]> = {
   ROLE_OPERATOR_ENGINEER: [{ name: "Charge Boxes", url: "/account/charge-boxes" }],
 };
 
-export function getMenuForRole(role: string | null): AppMenuItem[] {
-  if (!role) return baseLinks;
-  const roleSpecific = roleLinks[role] ?? [];
-  return [...baseLinks, ...roleSpecific];
+export function getMenuForIdentityType(identityType: string): AppMenuItem[] {
+  const links: AppMenuItem[] = [...baseLinks];
+  if (!identityType) return links;
+  const identityTypeSpecific = identityTypeLinks[identityType] ?? [];
+  return [...links, ...identityTypeSpecific];
 }

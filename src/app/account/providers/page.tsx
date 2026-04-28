@@ -1,14 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fetchOrganizations } from "@/lib/api/organizations";
+import { fetchPendingServiceProviders } from "@/lib/api/serviceProviders";
 import { asArray } from "@/lib/api/normalize";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 
-type OrgRow = Record<string, unknown>;
+type ProviderRow = Record<string, unknown>;
 
-function cell(row: OrgRow, ...keys: string[]) {
+function cell(row: ProviderRow, ...keys: string[]) {
   for (const k of keys) {
     const v = row[k];
     if (v != null && v !== "") return String(v);
@@ -16,26 +16,29 @@ function cell(row: OrgRow, ...keys: string[]) {
   return "—";
 }
 
-export default function AccountOrganisationsPage() {
+export default function ServiceProvidersPage() {
   const [search, setSearch] = useState("");
   const [applied, setApplied] = useState("");
   const [page, setPage] = useState(0);
   const [size] = useState(20);
-  const [rows, setRows] = useState<OrgRow[]>([]);
+  const [rows, setRows] = useState<ProviderRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastPage, setLastPage] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const raw = await fetchOrganizations({
-        search: applied || undefined,
-        page,
-        size,
-      });
-      setRows(asArray<OrgRow>(raw));
+      const raw = await fetchPendingServiceProviders(page, size, applied ? applied : undefined);
+      setRows(asArray(raw));
+      if (raw && typeof raw === "object" && "last" in raw) {
+        setLastPage((raw as { last?: boolean }).last === true);
+      } else {
+        setLastPage(true);
+      }
     } catch (e) {
-      showApiErrorToast(e, { fallbackMessage: "Could not load organisations." });
+      showApiErrorToast(e, { fallbackMessage: "Could not load service providers." });
       setRows([]);
+      setLastPage(true);
     } finally {
       setLoading(false);
     }
@@ -47,8 +50,8 @@ export default function AccountOrganisationsPage() {
 
   return (
     <div>
-      <h1 className={styles.h1}>Organisations</h1>
-      <p className={styles.muted}>Service providers and organisation directory.</p>
+      <h1 className={styles.h1}>Service Providers</h1>
+      <p className={styles.muted}>Service providers waiting for approval.</p>
 
       <div className={styles.toolbar}>
         <input
@@ -91,7 +94,7 @@ export default function AccountOrganisationsPage() {
       {loading ? (
         <p className={styles.muted}>Loading…</p>
       ) : rows.length === 0 ? (
-        <p className={styles.muted}>No organisations.</p>
+        <p className={styles.muted}>No providers.</p>
       ) : (
         <div className={styles.tableWrap}>
           <table className={styles.table}>
