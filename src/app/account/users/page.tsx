@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react"; 
 import { fetchProviderUsers } from "@/lib/api/providerUsers";
 import { asArray } from "@/lib/api/normalize";
+import { formatRoleValue } from "@/lib/auth/roles";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
@@ -111,7 +112,7 @@ export default function AccountUsersPage() {
                         : cell(row, "phoneNumber", "phone")}
                     </td>
                     <td className={styles.td}>
-                      {cell(row, "roles", "role", "roleName")}
+                      {formatRoleValue(row.roles ?? row.role ?? row.roleName)}
                     </td>
                     <td className={styles.td}>
                       <span

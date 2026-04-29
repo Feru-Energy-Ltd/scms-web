@@ -1,5 +1,3 @@
-import { getStoredIdentityType } from "../auth/session";
-
 export type AppMenuItem = {
   name: string;
   url: string;
@@ -22,30 +20,52 @@ const invitationsItem: AppMenuItem = {
 
 const providerUsersItem: AppMenuItem = {
   name: "Users",
-  url: "/account/users"
-}
-const identityTypeLinks: Record<string, AppMenuItem[]> = {
-  ROLE_ADMIN: [
-    { name: "Organisations", url: "/account/organisations" },
+  url: "/account/users",
+};
+
+const roleCodeLinks: Record<string, AppMenuItem[]> = {
+  SYSTEM_ADMIN: [
+    { name: "Service providers", url: "/account/service-providers" },
     { name: "Roles and Permissions", url: "/account/permissions" },
     { name: "Back Office users", url: "/account/users" },
     { name: "Customers", url: "/account/customers" },
     { name: "Charge Boxes", url: "/account/charge-boxes" },
   ],
-  ROLE_OPERATOR: [
+  SUPER_ADMIN: [
+    { name: "Service providers", url: "/account/service-providers" },
+    { name: "Roles and Permissions", url: "/account/permissions" },
+    { name: "Back Office users", url: "/account/users" },
+    { name: "Customers", url: "/account/customers" },
     { name: "Charge Boxes", url: "/account/charge-boxes" },
-    { name: "Org Members", url: "/account/users" },
   ],
-  ROLE_OPERATOR_STAFF: [{ name: "Charge Boxes", url: "/account/charge-boxes" }],
-  ROLE_COMPLIANCE_AUDITOR: [{ name: "Compliance Reports", url: "/account/charge-boxes" }],
-  ROLE_ENERGY_AUDITOR: [{ name: "Energy Reports", url: "/account/charge-boxes" }],
-  ROLE_ACCOUNTANT: [{ name: "Financial Reports", url: "/account/charge-boxes" }],
-  ROLE_OPERATOR_ENGINEER: [{ name: "Charge Boxes", url: "/account/charge-boxes" }],
+  PROVIDER_OWNER: [
+    { name: "Charge Boxes", url: "/account/charge-boxes" },
+    providerUsersItem,
+    invitationsItem,
+  ],
+  PROVIDER_MANAGER: [
+    { name: "Charge Boxes", url: "/account/charge-boxes" },
+    providerUsersItem,
+    invitationsItem,
+  ],
+  PROVIDER_STAFF: [{ name: "Charge Boxes", url: "/account/charge-boxes" }],
+  SUPPORT_ADMIN: [
+    approvalsItem,
+    { name: "Customers", url: "/account/customers" },
+    providerUsersItem,
+  ],
+  CUSTOMER: [
+    { name: "My account", url: "/account" },
+    { name: "Charge Boxes", url: "/account/charge-boxes" },
+  ],
+  TBD: [{ name: "Compliance Reports", url: "/account/charge-boxes" }],
 };
 
-export function getMenuForIdentityType(identityType: string): AppMenuItem[] {
+export function getMenuForRoleCode(roleCode: string): AppMenuItem[] {
   const links: AppMenuItem[] = [...baseLinks];
-  if (!identityType) return links;
-  const identityTypeSpecific = identityTypeLinks[identityType] ?? [];
-  return [...links, ...identityTypeSpecific];
+  if (!roleCode) return links;
+  const roleSpecificLinks = roleCodeLinks[roleCode] ?? [];
+  return [...links, ...roleSpecificLinks];
 }
+
+export const getMenuForIdentityType = getMenuForRoleCode;

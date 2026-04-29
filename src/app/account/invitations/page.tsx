@@ -17,16 +17,17 @@ import {
   type ProviderStaffRole,
 } from "@/lib/api/providerInvitations";
 import { asArray } from "@/lib/api/normalize";
+import { formatRoleValue, getRoleLabel } from "@/lib/auth/roles";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 
 type InvitationRow = Record<string, unknown>;
 
-const ROLE_OPTIONS: { value: ProviderStaffRole; label: string }[] = [
-  { value: "PROVIDER_MANAGER", label: "Manager" },
-  { value: "PROVIDER_STAFF", label: "Staff" },
-  { value: "PROVIDER_OWNER", label: "Owner" },
+const ROLE_OPTIONS: ProviderStaffRole[] = [
+  "PROVIDER_MANAGER",
+  "PROVIDER_STAFF",
+  "PROVIDER_OWNER",
 ];
 
 function cell(row: InvitationRow, ...keys: string[]) {
@@ -54,6 +55,8 @@ export default function AccountInvitationsPage() {
   const [rows, setRows] = useState<InvitationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteeEmail, setInviteeEmail] = useState("");
+  const [selectedRole, setSelectedRole] =
+    useState<ProviderStaffRole>("PROVIDER_STAFF");
   const [submitting, setSubmitting] = useState(false);
   const [actingId, setActingId] = useState<number | null>(null);
 
@@ -88,7 +91,10 @@ export default function AccountInvitationsPage() {
     if (!trimmedEmail) return;
     setSubmitting(true);
     try {
-      await sendProviderInvitation(Number(inviteeEmail), { email: trimmedEmail, role: "PROVIDER_STAFF" }); // TODO: add role selection
+      await sendProviderInvitation(Number(inviteeEmail), {
+        email: trimmedEmail,
+        role: selectedRole,
+      });
       setInviteeEmail("");
       await load();
     } catch (err) {
@@ -127,7 +133,7 @@ export default function AccountInvitationsPage() {
       {
         id: "role",
         header: "Role",
-        cell: (row) => cell(row, "role"),
+        cell: (row) => formatRoleValue(row.role ?? row.roleName),
       },
       {
         id: "status",
@@ -207,14 +213,12 @@ export default function AccountInvitationsPage() {
         <select
           className={styles.searchInput}
           aria-label="Staff role"
-          value="PROVIDER_STAFF" // TODO: add role selection
-          onChange={(e) =>
-            setInviteeEmail(e.target.value)
-          }
+          value={selectedRole}
+          onChange={(e) => setSelectedRole(e.target.value as ProviderStaffRole)}
         >
-          {ROLE_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
+          {ROLE_OPTIONS.map((roleCode) => (
+            <option key={roleCode} value={roleCode}>
+              {getRoleLabel(roleCode)}
             </option>
           ))}
         </select>

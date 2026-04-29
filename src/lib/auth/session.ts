@@ -8,7 +8,6 @@ const KEYS = {
   tokenType: "scms_token_type",
   expiresIn: "scms_expires_in",
   identityType: "scms_identity_type",
-  providerName: "scms_provider_name",
 };
 
 export function setIdentityType(
@@ -22,7 +21,6 @@ export function setSessionTokensFromResponse(res: TokenResponse) {
   if (typeof window === "undefined") return;
 
   console.info('setSessionTokens', res)
-  localStorage.setItem(KEYS.identityType, res.identityType);
   localStorage.setItem(KEYS.identityToken, res.identityToken);
   localStorage.setItem(KEYS.accessToken, res.accessToken);
   localStorage.setItem(KEYS.refreshToken, res.refreshToken);
@@ -51,12 +49,6 @@ export function getRefreshToken() {
 export function getStoredIdentityType() {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(KEYS.identityType);
-}
-
-/** Provider/business label for service-provider sessions. */
-export function getStoredProviderName() {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(KEYS.providerName);
 }
 
 export function clearSession() {
