@@ -2,16 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   clearSession,
   getStoredIdentityType,
-  getStoredProviderName,
+  getStoredRoleCode
 } from "@/lib/auth/session";
-import { getMenuForIdentityType } from "@/lib/navigation/menu";
+import { getMenuForRoleCode } from "@/lib/navigation/menu";
+import ThemeToggleButton from "../theme/ThemeToggleButton";
 import styles from "./AccountShell.module.css";
-
 function navAbbrev(name: string): string {
   const words = name.split(/\s+/).filter(Boolean);
   if (words.length >= 2) {
@@ -27,98 +27,63 @@ export default function AccountShell({
 }>) {
   const router = useRouter();
   const pathname = usePathname();
-  const identityType = getStoredIdentityType();
-  const providerName = getStoredProviderName();
-  const teamLabel = providerName || "Feru Energy Ltd";
-  const menu = useMemo(
-    () => getMenuForIdentityType(identityType ?? ""),
-    [identityType],
-  );
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const userMenuRef = useRef<HTMLDivElement>(null);
-
-  const closeUserMenu = useCallback(() => setUserMenuOpen(false), []);
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem("scms-theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const nextTheme: "light" | "dark" =
-      stored === "dark" || stored === "light"
-        ? stored
-        : prefersDark
-          ? "dark"
-          : "light";
-    setTheme(nextTheme);
-    document.documentElement.dataset.theme = nextTheme;
-    document.documentElement.style.colorScheme = nextTheme;
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.style.colorScheme = theme;
-    window.localStorage.setItem("scms-theme", theme);
-  }, [theme]);
-
-  useEffect(() => {
-    closeUserMenu();
-  }, [pathname, closeUserMenu]);
-
-  useEffect(() => {
-    if (!userMenuOpen) return;
-    const onPointerDown = (e: PointerEvent) => {
-      if (
-        userMenuRef.current &&
-        !userMenuRef.current.contains(e.target as Node)
-      ) {
-        closeUserMenu();
-      }
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeUserMenu();
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [userMenuOpen, closeUserMenu]);
-
-  const toggleSidebar = useCallback(() => {
-    setSidebarCollapsed((c) => !c);
-  }, []);
-
-  const signOut = useCallback(() => {
-    clearSession();
-    router.push("/login");
-  }, [router]);
-
-  const { pageTitle, activeMenuUrl } = useMemo(() => {
-    if (
-      pathname === "/account/profile" ||
-      pathname.startsWith("/account/profile/")
-    ) {
-      return { pageTitle: "Profile", activeMenuUrl: null as string | null };
-    }
-    let best: { name: string; url: string } | null = null;
-    for (const item of menu) {
-      if (pathname === item.url || pathname.startsWith(`${item.url}/`)) {
-        if (!best || item.url.length > best.url.length) {
-          best = item;
-        }
-      }
-    }
-    return {
-      pageTitle: best?.name ?? "Account workspace",
-      activeMenuUrl: best?.url ?? null,
-    };
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [identityType, setIdentityType] = useState("Account");
+  const roleCode = getStoredRoleCode();
+// TODO: get role code from JWT
+  const menu = useMemo(() => getMenuForRoleCode(roleCode ?? ""), [roleCode]);
+  const activeMenuUrl = useMemo(() => {
+    if (!pathname) return "";
+    const matched = menu
+      .filter((item) => pathname === item.url || pathname.startsWith(`${item.url}/`))
+      .sort((a, b) => b.url.length - a.url.length)[0];
+    return matched?.url ?? "";
   }, [menu, pathname]);
+  const profileNavActive = pathname === "/account/profile";
 
-  const profileNavActive =
-    pathname === "/account/profile" ||
-    pathname.startsWith("/account/profile/");
+  useEffect(() => {
+    const storedIdentityType = getStoredIdentityType();
+    if (storedIdentityType) {
+      setIdentityType(storedIdentityType);
+    }
+  }, []);
+
+  useEffect(() => {
+    function onPointerDown(event: MouseEvent) {
+      const target = event.target as Node;
+      if (userMenuRef.current && !userMenuRef.current.contains(target)) {
+        setUserMenuOpen(false);
+      }
+    }
+
+    function onEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setUserMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onEscape);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onEscape);
+    };
+  }, []);
+
+  function closeUserMenu() {
+    setUserMenuOpen(false);
+  }
+
+  function toggleSidebar() {
+    setSidebarCollapsed((current) => !current);
+  }
+
+  function signOut() {
+    clearSession();
+    router.push("/");
+  }
 
   return (
     <div className={styles.root}>
@@ -135,53 +100,7 @@ export default function AccountShell({
           <span className={styles.topNavBrand}>Safaricharge CMS</span>
         </Link>
         <div className={styles.topNavRight}>
-          <button
-            type="button"
-            className={styles.topNavMenuTrigger}
-            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-            title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-            onClick={() =>
-              setTheme((current) => (current === "dark" ? "light" : "dark"))
-            }
-          >
-            {theme === "dark" ? (
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <circle cx="12" cy="12" r="5" />
-                <path d="M12 1v2" />
-                <path d="M12 21v2" />
-                <path d="m4.22 4.22 1.42 1.42" />
-                <path d="m18.36 18.36 1.42 1.42" />
-                <path d="M1 12h2" />
-                <path d="M21 12h2" />
-                <path d="m4.22 19.78 1.42-1.42" />
-                <path d="m18.36 5.64 1.42-1.42" />
-              </svg>
-            ) : (
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M21 12.79A9 9 0 1 1 11.21 3c0 0 0 0 0 0A7 7 0 0 0 21 12.79z" />
-              </svg>
-            )}
-          </button>
+          <ThemeToggleButton className={styles.topNavMenuTrigger} />
           <button
             type="button"
             className={styles.topNavMenuTrigger}
