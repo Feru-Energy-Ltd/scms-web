@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Manrope } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import { AppThemeProvider } from "@/components/theme/ThemeProvider";
 import "./globals.css";
 
-const fontSans = Plus_Jakarta_Sans({
+const fontSans = Manrope({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
@@ -32,8 +32,7 @@ export default function RootLayout({
                 background: "var(--color-surface)",
                 color: "var(--color-text)",
                 border: "1px solid var(--color-border)",
-                boxShadow:
-                  "0 10px 30px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.05)",
+                boxShadow: "var(--shadow-elevated)",
               },
               success: {
                 iconTheme: {
