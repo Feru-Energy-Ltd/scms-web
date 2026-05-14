@@ -1,5 +1,6 @@
 import type { TokenResponse } from "../types/auth";
 import { isAccessTokenExpired } from "./jwt";
+import { decodeJwtPayload } from "./jwt";
 
 const KEYS = {
   accessToken: "scms_access_token",
@@ -55,10 +56,27 @@ export function getStoredIdentityType() {
 export function getStoredRoleCode() {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(KEYS.roleCode);
-} 
+}
+
+/**
+ * Extract permissions array from the stored access token JWT.
+ * Returns empty array if no token or no permissions claim.
+ */
+export function getStoredPermissions(): string[] {
+  if (typeof window === "undefined") return [];
+  const token = localStorage.getItem(KEYS.accessToken);
+  if (!token) return [];
+  try {
+    const payload = decodeJwtPayload(token);
+    if (!payload) return [];
+    const perms = payload.permissions;
+    return Array.isArray(perms) ? perms.map(String) : [];
+  } catch {
+    return [];
+  }
+}
 
 export function clearSession() {
   if (typeof window === "undefined") return;
   Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
 }
-

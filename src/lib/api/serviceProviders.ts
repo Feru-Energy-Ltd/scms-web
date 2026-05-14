@@ -8,6 +8,9 @@ export async function fetchPendingServiceProviders(page = 0, size = 20, search?:
     page: String(page),
     size: String(size),
   });
+  if (search) {
+    q.set("search", search);
+  }
   return apiRequestAuth<unknown>(`${BASE}?${q}`);
 }
 
