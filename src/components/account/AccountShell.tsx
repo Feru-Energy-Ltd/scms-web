@@ -32,7 +32,7 @@ export default function AccountShell({
   const permissions = getStoredPermissions();
   const menu = useMemo(() => getMenuForPermissions(permissions), [permissions]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [identityType, setIdentityType] = useState("Account");
+  const [identityType] = useState(() => getStoredIdentityType() || "Account");
   const activeMenuUrl = useMemo(() => {
     if (!pathname) return "";
     const matched = menu
@@ -41,13 +41,6 @@ export default function AccountShell({
     return matched?.url ?? "";
   }, [menu, pathname]);
   const profileNavActive = pathname === "/account/profile";
-
-  useEffect(() => {
-    const storedIdentityType = getStoredIdentityType();
-    if (storedIdentityType) {
-      setIdentityType(storedIdentityType);
-    }
-  }, []);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {

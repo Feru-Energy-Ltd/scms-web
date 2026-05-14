@@ -20,7 +20,6 @@ function cell(row: ProviderUserRow, ...keys: string[]) {
 
 export default function AccountUsersPage() {
   const [search, setSearch] = useState("");
-  const [applied, setApplied] = useState("");
   const [rows, setRows] = useState<ProviderUserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +43,7 @@ export default function AccountUsersPage() {
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load users." });
     }
-  }, []);
+  }, [email, identityType]);
 
   return (
     <div>
@@ -55,13 +54,13 @@ export default function AccountUsersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") setApplied(search.trim());
+            if (e.key === "Enter") void load();
           }}
         />
         <button
           type="button"
           className={styles.button}
-          onClick={() => setApplied(search.trim())}
+          onClick={() => void load()}
         >
           Search
         </button>

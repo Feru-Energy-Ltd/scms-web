@@ -17,16 +17,14 @@ type VerifyState =
 function VerifyProviderEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token")?.trim() ?? "";
-  const [state, setState] = useState<VerifyState>({ kind: "loading" });
+  const [state, setState] = useState<VerifyState>(() =>
+    token ? { kind: "loading" } : { kind: "missing" },
+  );
 
   useEffect(() => {
-    if (!token) {
-      setState({ kind: "missing" });
-      return;
-    }
+    if (!token) return;
 
     let cancelled = false;
-    setState({ kind: "loading" });
 
     verifyProviderEmail(token)
       .then((res) => {
