@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import VerifyEmailLikeLayout from "@/components/verify/VerifyEmailLikeLayout";
 import { verifyProviderEmail } from "@/lib/api/auth";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "../verify/email/page.module.css";
@@ -37,7 +38,8 @@ function VerifyProviderEmailContent() {
         if (!cancelled) {
           setState({ kind: "error" });
           showApiErrorToast(err, {
-            fallbackMessage: "Email verification failed. The link may be invalid or expired.",
+            fallbackMessage:
+              "Email verification failed. The link may be invalid or expired.",
           });
         }
       });
@@ -49,72 +51,49 @@ function VerifyProviderEmailContent() {
 
   if (state.kind === "loading") {
     return (
-      <main className={styles.main}>
-        <div className={styles.shell}>
-          <header className={styles.header}>
-            <h1 className={styles.title}>Verifying your email</h1>
-            <p className={styles.subtitle} role="status">
-              Please wait while we confirm your address…
-            </p>
-          </header>
-        </div>
-      </main>
+      <VerifyEmailLikeLayout
+        title="Verifying your email"
+        subtitle={
+          <p className={styles.subtitle} role="status">
+            Please wait while we confirm your address…
+          </p>
+        }
+      />
     );
   }
 
   if (state.kind === "missing") {
     return (
-      <main className={styles.main}>
-        <div className={styles.shell}>
-          <header className={styles.header}>
-            <h1 className={styles.title}>Invalid verification link</h1>
-            <p className={styles.subtitle}>
-              This page needs a valid token from the email we sent you. Open the link from
-              your inbox, or sign up again to receive a new message.
-            </p>
-          </header>
-          <footer className={styles.footer}>
+      <VerifyEmailLikeLayout
+        title="Invalid verification link"
+        subtitle="This page needs a valid token from the email we sent you. Open the link from your inbox, or sign up again to receive a new message."
+        footer={
+          <>
             <Link href="/sign-up">Sign up</Link>
             {" · "}
             <Link href="/login">Sign in</Link>
-          </footer>
-        </div>
-      </main>
+          </>
+        }
+      />
     );
   }
 
   if (state.kind === "error") {
     return (
-      <main className={styles.main}>
-        <div className={styles.shell}>
-          <header className={styles.header}>
-            <h1 className={styles.title}>Verification failed</h1>
-            <p className={styles.subtitle}>
-              We could not verify your email with this link. It may have expired or already
-              been used. Try requesting a new email from support or complete sign up again.
-            </p>
-          </header>
-          <footer className={styles.footer}>
-            <Link href="/">Ok</Link>
-          </footer>
-        </div>
-      </main>
+      <VerifyEmailLikeLayout
+        title="Verification failed"
+        subtitle="We could not verify your email with this link. It may have expired or already been used. Try requesting a new email from support or complete sign up again."
+        footer={<Link href="/">Ok</Link>}
+      />
     );
   }
 
   return (
-    <main className={styles.main}>
-      <div className={styles.shell}>
-        <header className={styles.header}>
-          <h1 className={styles.title}>Email verified</h1>
-          <h2>Please wait for admin approval.</h2>
-          <p className={styles.subtitle}>{state.message}</p>
-        </header>
-        <footer className={styles.footer}>
-          <Link href="/">Ok</Link>
-        </footer>
-      </div>
-    </main>
+    <VerifyEmailLikeLayout
+      title="Please wait for approval"
+      subtitle={<p className={styles.subtitle}>{state.message}</p>}
+      footer={<Link href="/">Ok</Link>}
+    />
   );
 }
 
@@ -122,14 +101,10 @@ export default function VerifyProviderEmailPage() {
   return (
     <Suspense
       fallback={
-        <main className={styles.main}>
-          <div className={styles.shell}>
-            <header className={styles.header}>
-              <h1 className={styles.title}>Verifying your email</h1>
-              <p className={styles.subtitle}>Loading…</p>
-            </header>
-          </div>
-        </main>
+        <VerifyEmailLikeLayout
+          title="Verifying your email"
+          subtitle={<p className={styles.subtitle}>Loading…</p>}
+        />
       }
     >
       <VerifyProviderEmailContent />

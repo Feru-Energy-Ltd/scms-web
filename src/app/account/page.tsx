@@ -4,17 +4,15 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   getAccessTokenContext,
-  getOrganizationIdFromAccessToken,
 } from "@/lib/auth/jwtContext";
-import { getStoredRole } from "@/lib/auth/session";
 import styles from "@/components/account/ResourceList.module.css";
 
 const quickLinks = [
-  { href: "/account/users", label: "Org members" },
+  { href: "/account/users", label: "Service provider members" },
   { href: "/account/customers", label: "Customers" },
   { href: "/account/charge-boxes", label: "Charge boxes" },
   { href: "/account/charge-boxes/create", label: "New charger" },
-  { href: "/account/organisations", label: "Organisations" },
+  { href: "/account/service-providers", label: "Service providers" },
   { href: "/account/permissions", label: "Roles & permissions" },
   { href: "/account/profile", label: "Profile" },
 ];
@@ -26,23 +24,16 @@ export default function AccountDashboardPage() {
     setCtx(getAccessTokenContext());
   }, []);
 
-  const orgId = getOrganizationIdFromAccessToken();
 
   return (
     <div>
       <h1 className={styles.h1}>Dashboard</h1>
       <p className={styles.muted}>
-        {ctx.organizationName
-          ? `Organization: ${ctx.organizationName}`
-          : "Workspace"}
+        {ctx.identityType
+          ? "Service provider: —" // TODO: add service provider name
+          : "Service provider: —"}
         {ctx.email ? ` · ${ctx.email}` : ""}
       </p>
-      <p className={styles.muted}>
-        Role:{" "}
-        <strong>{getStoredRole() ?? ctx.role ?? "—"}</strong>
-        {orgId != null ? ` · Org id: ${orgId}` : ""}
-      </p>
-
       <div
         style={{
           marginTop: 20,

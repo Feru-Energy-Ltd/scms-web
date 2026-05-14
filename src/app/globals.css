@@ -16,6 +16,27 @@
   --background: var(--color-bg);
 }
 
+:root[data-theme="light"] {
+  --color-bg: #ededed;
+  --color-surface: #ffffff;
+  --color-surface-2: #f7f7f7;
+  --color-text: #0f172a;
+  --color-text-muted: #475569;
+  --color-border: rgba(15, 23, 42, 0.12);
+}
+
+:root[data-theme="dark"] {
+  /* Boreal night — deep green-charcoal, moonlit text, mint glass borders */
+  --color-primary: #2ce49a;
+  --color-on-primary: #03140e;
+  --color-bg: #050807;
+  --color-surface: #0d1310;
+  --color-surface-2: #141d18;
+  --color-text: #e8f4ef;
+  --color-text-muted: #7f9f90;
+  --color-border: rgba(120, 220, 175, 0.14);
+}
+
 
 
 html,
@@ -24,9 +45,10 @@ body {
   overflow-x: hidden;
   background-color: var(--color-bg);
   color: var(--color-text);
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial,
-    "Apple Color Emoji", "Segoe UI Emoji";
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 
@@ -42,14 +64,15 @@ a {
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    /* Dark theme */
-    --color-bg: #0b1220;
-    --color-surface: #0f172a;
-    --color-surface-2: #111c33;
-    --color-text: #e5e7eb;
-    --color-text-muted: #a1a1aa;
-    --color-border: rgba(229, 231, 235, 0.14);
+  :root:not([data-theme]) {
+    --color-primary: #2ce49a;
+    --color-on-primary: #03140e;
+    --color-bg: #050807;
+    --color-surface: #0d1310;
+    --color-surface-2: #141d18;
+    --color-text: #e8f4ef;
+    --color-text-muted: #7f9f90;
+    --color-border: rgba(120, 220, 175, 0.14);
   }
   html {
     color-scheme: dark;

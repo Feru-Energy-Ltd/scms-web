@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { isAccessTokenExpired } from "@/lib/auth/jwt";
-import { clearSession, getAccessToken } from "@/lib/auth/session";
+import { clearSession, hasActiveAccessSession } from "@/lib/auth/session";
 
 export default function AccountGuard({
   children,
@@ -14,8 +13,7 @@ export default function AccountGuard({
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token || isAccessTokenExpired(token)) {
+    if (!hasActiveAccessSession()) {
       clearSession();
       router.replace("/login");
       return;

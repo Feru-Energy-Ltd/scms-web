@@ -39,7 +39,8 @@ export function showApiErrorToast(
       typeof err.status === "number" ? ` (HTTP ${err.status})` : "";
     const message = base.includes(`HTTP ${err.status}`) ? base : `${base}${statusSuffix}`;
 
-    toast.error(message, {
+    console.error(message)
+    toast.error("something went wrong", {
       id: opts?.toastId,
     });
     return;

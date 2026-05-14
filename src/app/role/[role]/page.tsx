@@ -1,16 +1,28 @@
 import Link from "next/link";
+import { getRoleLabel, getRoleNote } from "@/lib/auth/roles";
 
 export default function RolePage({
   params,
 }: {
   params: { role: string };
 }) {
+  const roleCode = decodeURIComponent(params.role);
+  const roleLabel = getRoleLabel(roleCode);
+  const roleNote = getRoleNote(roleCode);
+
   return (
     <main style={{ padding: 24, maxWidth: 720, margin: "0 auto" }}>
-      <h1 style={{ marginBottom: 8 }}>Role: {decodeURIComponent(params.role)}</h1>
+      <h1 style={{ marginBottom: 8 }}>
+        Role: {roleLabel} ({roleCode})
+      </h1>
       <p style={{ marginBottom: 16, color: "var(--color-text-muted)" }}>
         This is a placeholder view for role-based routing.
       </p>
+      {roleNote ? (
+        <p style={{ marginBottom: 16, color: "var(--color-text-muted)" }}>
+          {roleNote}
+        </p>
+      ) : null}
       <Link href="/" style={{ color: "var(--color-primary)" }}>
         Back to homepage
       </Link>
