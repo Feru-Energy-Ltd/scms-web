@@ -7,9 +7,9 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   clearSession,
   getStoredIdentityType,
-  getStoredRoleCode
+  getStoredPermissions,
 } from "@/lib/auth/session";
-import { getMenuForRoleCode } from "@/lib/navigation/menu";
+import { getMenuForPermissions } from "@/lib/navigation/menu";
 import ThemeToggleButton from "../theme/ThemeToggleButton";
 import styles from "./AccountShell.module.css";
 function navAbbrev(name: string): string {
@@ -29,11 +29,10 @@ export default function AccountShell({
   const pathname = usePathname();
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const permissions = getStoredPermissions();
+  const menu = useMemo(() => getMenuForPermissions(permissions), [permissions]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [identityType, setIdentityType] = useState("Account");
-  const roleCode = getStoredRoleCode();
-// TODO: get role code from JWT
-  const menu = useMemo(() => getMenuForRoleCode(roleCode ?? ""), [roleCode]);
   const activeMenuUrl = useMemo(() => {
     if (!pathname) return "";
     const matched = menu
