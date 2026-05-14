@@ -8,6 +8,7 @@ const KEYS = {
   tokenType: "scms_token_type",
   expiresIn: "scms_expires_in",
   identityType: "scms_identity_type",
+  roleCode: "scms_role_code",
 };
 
 export function setIdentityType(
@@ -50,6 +51,11 @@ export function getStoredIdentityType() {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(KEYS.identityType);
 }
+
+export function getStoredRoleCode() {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(KEYS.roleCode);
+} 
 
 export function clearSession() {
   if (typeof window === "undefined") return;
