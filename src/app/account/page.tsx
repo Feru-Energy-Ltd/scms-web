@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   getAccessTokenContext,
 } from "@/lib/auth/jwtContext";
@@ -18,11 +18,7 @@ const quickLinks = [
 ];
 
 export default function AccountDashboardPage() {
-  const [ctx, setCtx] = useState(() => getAccessTokenContext());
-
-  useEffect(() => {
-    setCtx(getAccessTokenContext());
-  }, []);
+  const [ctx] = useState(() => getAccessTokenContext());
 
 
   return (

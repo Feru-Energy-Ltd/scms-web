@@ -18,7 +18,7 @@ export default function AccountGuard({
       router.replace("/login");
       return;
     }
-    setReady(true);
+    setReady(true); // eslint-disable-line react-hooks/set-state-in-effect -- auth guard must defer render until client-side session check
   }, [router]);
 
   if (!ready) {

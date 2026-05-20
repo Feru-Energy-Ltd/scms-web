@@ -23,22 +23,15 @@ export default function ServiceProvidersPage() {
   const [size] = useState(20);
   const [rows, setRows] = useState<ProviderRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [lastPage, setLastPage] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const raw = await fetchPendingServiceProviders(page, size, applied ? applied : undefined);
       setRows(asArray(raw));
-      if (raw && typeof raw === "object" && "last" in raw) {
-        setLastPage((raw as { last?: boolean }).last === true);
-      } else {
-        setLastPage(true);
-      }
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load service providers." });
       setRows([]);
-      setLastPage(true);
     } finally {
       setLoading(false);
     }

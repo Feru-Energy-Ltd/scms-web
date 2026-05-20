@@ -8,64 +8,75 @@ const baseLinks: AppMenuItem[] = [
   { name: "Station map", url: "/account/dashboard" },
 ];
 
-const approvalsItem: AppMenuItem = {
-  name: "Approvals",
-  url: "/account/approvals",
-};
+/**
+ * Each menu item is shown when the user holds ANY of the listed permissions.
+ * This replaces the old role-based mapping which broke when role names changed.
+ */
+const permissionMenuItems: { item: AppMenuItem; permissions: string[] }[] = [
+  {
+    item: { name: "Service providers", url: "/account/service-providers" },
+    permissions: ["admin:providers:read", "admin:providers:create"],
+  },
+  {
+    item: { name: "Roles and Permissions", url: "/account/permissions" },
+    permissions: ["admin:roles:read"],
+  },
+  {
+    item: { name: "Back Office users", url: "/account/users" },
+    permissions: ["admin:users:read", "admin:roles:read"],
+  },
+  {
+    item: { name: "Customers", url: "/account/customers" },
+    permissions: ["admin:users:read"],
+  },
+  {
+    item: { name: "Approvals", url: "/account/approvals" },
+    permissions: ["admin:users:update", "admin:providers:update"],
+  },
+  {
+    item: { name: "Charge Boxes", url: "/account/charge-boxes" },
+    permissions: [
+      "admin:chargers:read",
+      "provider:chargers:read",
+    ],
+  },
+  {
+    item: { name: "Reports", url: "/account/reports" },
+    permissions: [
+      "admin:reports:read",
+      "provider:reports:read",
+    ],
+  },
+  {
+    item: { name: "Users", url: "/account/users" },
+    permissions: ["provider:users:read"],
+  },
+  {
+    item: { name: "Invitations", url: "/account/invitations" },
+    permissions: ["provider:org:read", "provider:org:update"],
+  },
+];
 
-const invitationsItem: AppMenuItem = {
-  name: "Invitations",
-  url: "/account/invitations",
-};
+/**
+ * Build menu based on the user's actual permissions from the JWT.
+ * A menu item appears if the user has at least one of its required permissions.
+ */
+export function getMenuForPermissions(permissions: string[]): AppMenuItem[] {
+  const permSet = new Set(permissions);
+  const dynamic = permissionMenuItems
+    .filter((entry) => entry.permissions.some((p) => permSet.has(p)))
+    .map((entry) => entry.item);
+  return [...baseLinks, ...dynamic];
+}
 
-const providerUsersItem: AppMenuItem = {
-  name: "Users",
-  url: "/account/users",
-};
-
-const roleCodeLinks: Record<string, AppMenuItem[]> = {
-  SYSTEM_ADMIN: [
-    { name: "Service providers", url: "/account/service-providers" },
-    { name: "Roles and Permissions", url: "/account/permissions" },
-    { name: "Back Office users", url: "/account/users" },
-    { name: "Customers", url: "/account/customers" },
-    { name: "Charge Boxes", url: "/account/charge-boxes" },
-  ],
-  SUPER_ADMIN: [
-    { name: "Service providers", url: "/account/service-providers" },
-    { name: "Roles and Permissions", url: "/account/permissions" },
-    { name: "Back Office users", url: "/account/users" },
-    { name: "Customers", url: "/account/customers" },
-    { name: "Charge Boxes", url: "/account/charge-boxes" },
-  ],
-  PROVIDER_OWNER: [
-    { name: "Charge Boxes", url: "/account/charge-boxes" },
-    providerUsersItem,
-    invitationsItem,
-  ],
-  PROVIDER_MANAGER: [
-    { name: "Charge Boxes", url: "/account/charge-boxes" },
-    providerUsersItem,
-    invitationsItem,
-  ],
-  PROVIDER_STAFF: [{ name: "Charge Boxes", url: "/account/charge-boxes" }],
-  SUPPORT_ADMIN: [
-    approvalsItem,
-    { name: "Customers", url: "/account/customers" },
-    providerUsersItem,
-  ],
-  CUSTOMER: [
-    { name: "My account", url: "/account" },
-    { name: "Charge Boxes", url: "/account/charge-boxes" },
-  ],
-  TBD: [{ name: "Compliance Reports", url: "/account/charge-boxes" }],
-};
-
+/**
+ * @deprecated Use getMenuForPermissions() instead.
+ * Kept for backward compat — falls back to base menu if role unknown.
+ */
 export function getMenuForRoleCode(roleCode: string): AppMenuItem[] {
   const links: AppMenuItem[] = [...baseLinks];
   if (!roleCode) return links;
-  const roleSpecificLinks = roleCodeLinks[roleCode] ?? [];
-  return [...links, ...roleSpecificLinks];
+  return links;
 }
 
 export const getMenuForIdentityType = getMenuForRoleCode;

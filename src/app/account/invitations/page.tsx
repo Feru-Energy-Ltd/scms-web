@@ -51,7 +51,7 @@ function formatWhen(iso: string) {
 }
 
 export default function AccountInvitationsPage() {
-  const { identityType, email } = getAccessTokenContext();
+  const { identityType } = getAccessTokenContext();
   const [rows, setRows] = useState<InvitationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteeEmail, setInviteeEmail] = useState("");
@@ -78,7 +78,7 @@ export default function AccountInvitationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [inviteeEmail]);
+  }, [identityType, inviteeEmail]);
 
   useEffect(() => {
     void load();
