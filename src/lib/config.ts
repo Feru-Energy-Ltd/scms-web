@@ -19,3 +19,21 @@ export function csmsApiPath(relativePath: string): string {
   return `${pre}${rel}`;
 }
 
+/**
+ * Path segment in front of Payment REST routes when using the API gateway (e.g. `/payment`
+ * for `GET /payment/operators/...`). Set to empty string if your base URL already
+ * targets the Payment service root.
+ */
+export const PAYMENT_PATH_PREFIX =
+  process.env.NEXT_PUBLIC_PAYMENT_PATH_PREFIX !== undefined
+    ? process.env.NEXT_PUBLIC_PAYMENT_PATH_PREFIX
+    : "/payment";
+
+/** Build a path such as `/payment/operators/1/dashboard` or `/operators/...` when prefix is empty. */
+export function paymentApiPath(relativePath: string): string {
+  const rel = relativePath.startsWith("/") ? relativePath : `/${relativePath}`;
+  const pre = PAYMENT_PATH_PREFIX.replace(/\/$/, "");
+  if (!pre) return rel;
+  return `${pre}${rel}`;
+}
+
