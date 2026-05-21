@@ -14,7 +14,7 @@ const baseLinks: AppMenuItem[] = [
  */
 const permissionMenuItems: { item: AppMenuItem; permissions: string[] }[] = [
   {
-    item: { name: "Service providers", url: "/account/service-providers" },
+    item: { name: "Service providers", url: "/account/approvals" },
     permissions: ["admin:providers:read", "admin:providers:create"],
   },
   {
@@ -22,16 +22,8 @@ const permissionMenuItems: { item: AppMenuItem; permissions: string[] }[] = [
     permissions: ["admin:roles:read"],
   },
   {
-    item: { name: "Back Office users", url: "/account/users" },
-    permissions: ["admin:users:read", "admin:roles:read"],
-  },
-  {
     item: { name: "Customers", url: "/account/customers" },
     permissions: ["admin:users:read"],
-  },
-  {
-    item: { name: "Approvals", url: "/account/approvals" },
-    permissions: ["admin:users:update", "admin:providers:update"],
   },
   {
     item: { name: "Charge Boxes", url: "/account/charge-boxes" },
@@ -41,14 +33,7 @@ const permissionMenuItems: { item: AppMenuItem; permissions: string[] }[] = [
     ],
   },
   {
-    item: { name: "Reports", url: "/account/reports" },
-    permissions: [
-      "admin:reports:read",
-      "provider:reports:read",
-    ],
-  },
-  {
-    item: { name: "Users", url: "/account/users" },
+    item: { name: "Staff", url: "/account/users" },
     permissions: ["provider:users:read"],
   },
   {
