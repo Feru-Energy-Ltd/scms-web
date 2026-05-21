@@ -64,9 +64,9 @@ export async function fetchChargingStations(page = 0, size = 20) {
     page: String(page),
     size: String(size),
   });
-  return apiRequestAuth<unknown>(`/charging-stations?${q.toString()}`);
+  return apiRequestAuth<unknown>(csmsApiPath(`/chargeboxes?${q.toString()}`));
 }
 
 export async function fetchChargingStationById(chargerId: string) {
-  return apiRequestAuth<unknown>(`/charging-stations/view/${chargerId}`);
+  return apiRequestAuth<unknown>(csmsApiPath(`/chargeboxes/${chargerId}`));
 }
