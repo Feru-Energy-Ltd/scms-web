@@ -51,7 +51,7 @@ function formatWhen(iso: string) {
 }
 
 export default function AccountInvitationsPage() {
-  const { identityType } = getAccessTokenContext();
+  const { identityType, providerId } = getAccessTokenContext();
   const [rows, setRows] = useState<InvitationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteeEmail, setInviteeEmail] = useState("");
@@ -61,14 +61,14 @@ export default function AccountInvitationsPage() {
   const [actingId, setActingId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
-    if (identityType !== "SERVICE_PROVIDER") {
+    if (identityType !== "SERVICE_PROVIDER" || providerId == null) {
       setRows([]);
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      const raw = await fetchProviderInvitations(Number(inviteeEmail));
+      const raw = await fetchProviderInvitations(providerId);
       setRows(asArray(raw));
     } catch (e) {
       showApiErrorToast(e, {
@@ -78,7 +78,7 @@ export default function AccountInvitationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [identityType, inviteeEmail]);
+  }, [identityType, providerId]);
 
   useEffect(() => {
     void load();
@@ -91,7 +91,7 @@ export default function AccountInvitationsPage() {
     if (!trimmedEmail) return;
     setSubmitting(true);
     try {
-      await sendProviderInvitation(Number(inviteeEmail), {
+      await sendProviderInvitation(providerId!, {
         email: trimmedEmail,
         role: selectedRole,
       });
@@ -106,11 +106,11 @@ export default function AccountInvitationsPage() {
 
   const onRevoke = useCallback(
     async (id: number) => {
-      if (inviteeEmail == null) return;
+      if (providerId == null) return;
       if (!window.confirm("Revoke this invitation?")) return;
       setActingId(id);
       try {
-        await revokeProviderInvitation(Number(inviteeEmail), id);
+        await revokeProviderInvitation(providerId, id);
         await load();
       } catch (err) {
         showApiErrorToast(err, {
@@ -120,7 +120,7 @@ export default function AccountInvitationsPage() {
         setActingId(null);
       }
     },
-    [inviteeEmail, load],
+    [providerId, load],
   );
 
   const columns = useMemo<DataTableColumn<InvitationRow>[]>(
