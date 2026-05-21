@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react"; 
-import { fetchProviderUsers } from "@/lib/api/providerUsers";
+import { fetchProviderStaff } from "@/lib/api/providerUsers";
 import { asArray } from "@/lib/api/normalize";
 import { formatRoleValue } from "@/lib/auth/roles";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
@@ -23,10 +23,10 @@ export default function AccountUsersPage() {
   const [rows, setRows] = useState<ProviderUserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { identityType, email } = getAccessTokenContext();
+  const { identityType, providerId } = getAccessTokenContext();
 
   const load = useCallback(async () => {
-    if (identityType !== "SERVICE_PROVIDER") {
+    if (identityType !== "SERVICE_PROVIDER" || providerId == null) {
       setRows([]);
       setLoading(false);
       setError(
@@ -38,12 +38,12 @@ export default function AccountUsersPage() {
     setLoading(true);
     setError(null);
     try {
-      const raw = await fetchProviderUsers(Number(email));
+      const raw = await fetchProviderStaff(providerId);
       setRows(asArray(raw));
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load users." });
     }
-  }, [email, identityType]);
+  }, [identityType, providerId]);
 
   return (
     <div>
