@@ -17,7 +17,6 @@ export function getAccessTokenContext(): {
   if (!token) return {};
   const p = decodeJwtPayload(token);
   if (!p) return {};
-  console.info(p, ' whn')
 
   return {
     identityType:

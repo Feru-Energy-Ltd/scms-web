@@ -22,7 +22,6 @@ export function setIdentityType(
 export function setSessionTokensFromResponse(res: TokenResponse) {
   if (typeof window === "undefined") return;
 
-  console.info('setSessionTokens', res)
   localStorage.setItem(KEYS.identityToken, res.identityToken);
   localStorage.setItem(KEYS.accessToken, res.accessToken);
   localStorage.setItem(KEYS.refreshToken, res.refreshToken);
@@ -43,9 +42,7 @@ export function hasActiveAccessSession(): boolean {
 
 export function getRefreshToken() {
   if (typeof window === "undefined") return null;
-  console.info('Keys', KEYS)
   const refreshToken = localStorage.getItem(KEYS.refreshToken);
-  console.info('refreshToken', refreshToken)
   return refreshToken;
 }
 export function getStoredIdentityType() {

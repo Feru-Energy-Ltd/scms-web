@@ -71,7 +71,7 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 
   if (!res.ok) {
     const body = await parseJsonSafely(res);
-    console.info('body', body)
+
     const problem = body as ProblemDetail | undefined;
     const message =
       problem?.detail ||
@@ -93,32 +93,48 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 export async function apiRequestAuth<T>(
   path: string,
   options: ApiRequestOptions = {},
-) {
+): Promise<T> {
   const withToken = (token: string | null): HeadersInit => ({
     ...(options.headers ?? {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   });
 
+  const token = typeof window !== "undefined" ? getAccessToken() : null;
+
   try {
-    const token = typeof window !== "undefined" ? getAccessToken() : null;
     return await apiRequest<T>(path, { ...options, headers: withToken(token) });
   } catch (e) {
-    if (!(e instanceof ApiError) || typeof window === "undefined") {
+    // Only attempt token refresh on 401 (expired/invalid token)
+    if (
+      !(e instanceof ApiError) ||
+      e.status !== 401 ||
+      typeof window === "undefined"
+    ) {
       throw e;
     }
 
     const refreshToken = getRefreshToken();
-    console.info('refreshToken2', refreshToken)
-    if (!refreshToken) throw e;
+    if (!refreshToken) {
+      clearSession();
+      throw e;
+    }
 
+    // Refresh the access token
+    let refreshed: TokenResponse;
     try {
-      const refreshed = await refreshAccessToken(refreshToken);
-      setSessionTokensFromResponse(refreshed);
+      refreshed = await refreshAccessToken(refreshToken);
     } catch {
       clearSession();
       throw e;
     }
 
+    setSessionTokensFromResponse(refreshed);
+
+    // Retry the original request with the new token
+    return await apiRequest<T>(path, {
+      ...options,
+      headers: withToken(refreshed.accessToken),
+    });
   }
 }
 
