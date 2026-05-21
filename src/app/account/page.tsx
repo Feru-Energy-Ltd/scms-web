@@ -1,60 +1,118 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import {
-  getAccessTokenContext,
-} from "@/lib/auth/jwtContext";
-import styles from "@/components/account/ResourceList.module.css";
+  fetchOperatorDashboardStats,
+  fetchProviderDashboardStats,
+  type OperatorDashboardStats,
+  type ProviderDashboardStats,
+} from "@/lib/api/dashboard";
+import KpiCard from "@/components/account/KpiCard";
+import DashboardMapClient from "@/app/account/dashboard/DashboardMapClient";
+import listStyles from "@/components/account/ResourceList.module.css";
+import styles from "./page.module.css";
 
-const quickLinks = [
-  { href: "/account/users", label: "Service provider members" },
-  { href: "/account/customers", label: "Customers" },
-  { href: "/account/charge-boxes", label: "Charge boxes" },
-  { href: "/account/charge-boxes/create", label: "New charger" },
-  { href: "/account/service-providers", label: "Service providers" },
-  { href: "/account/permissions", label: "Roles & permissions" },
-  { href: "/account/profile", label: "Profile" },
-];
+const POLL_INTERVAL_MS = 15_000;
 
 export default function AccountDashboardPage() {
   const [ctx] = useState(() => getAccessTokenContext());
 
+  const [providerStats, setProviderStats] = useState<ProviderDashboardStats | null>(null);
+  const [operatorStats, setOperatorStats] = useState<OperatorDashboardStats | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function loadStats() {
+    try {
+      const promises: [Promise<ProviderDashboardStats>, Promise<OperatorDashboardStats> | null] = [
+        fetchProviderDashboardStats(),
+        ctx.providerId != null ? fetchOperatorDashboardStats(ctx.providerId) : null,
+      ];
+
+      const [csmsStats, paymentStats] = await Promise.all(
+        promises.map((p) => (p != null ? p.catch(() => null) : Promise.resolve(null)))
+      );
+
+      if (csmsStats) setProviderStats(csmsStats as ProviderDashboardStats);
+      if (paymentStats) setOperatorStats(paymentStats as OperatorDashboardStats);
+    } catch {
+      setError("Failed to load dashboard stats.");
+    }
+  }
+
+  useEffect(() => {
+    loadStats();
+    const timer = setInterval(loadStats, POLL_INTERVAL_MS);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fmt = (n: number | undefined) =>
+    n != null ? n.toLocaleString() : "—";
+
+  const fmtKwh = (n: number | undefined) =>
+    n != null ? `${n.toFixed(2)} kWh` : "—";
+
+  const fmtMoney = (n: number | undefined) =>
+    n != null ? `KES ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—";
 
   return (
     <div>
-      <h1 className={styles.h1}>Dashboard</h1>
-      <p className={styles.muted}>
-        {ctx.identityType
-          ? "Service provider: —" // TODO: add service provider name
-          : "Service provider: —"}
-        {ctx.email ? ` · ${ctx.email}` : ""}
+      <h1 className={listStyles.h1}>Dashboard</h1>
+      <p className={listStyles.muted} style={{ marginBottom: "1.5rem" }}>
+        {ctx.email ? ctx.email : ""}
+        {ctx.identityType ? ` · ${ctx.identityType}` : ""}
       </p>
-      <div
-        style={{
-          marginTop: 20,
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-          gap: 12,
-        }}
-      >
-        {quickLinks.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            style={{
-              display: "block",
-              padding: 16,
-              borderRadius: 12,
-              border: "1px solid var(--color-border)",
-              background: "var(--color-surface-2)",
-              color: "var(--color-text)",
-              fontWeight: 600,
-            }}
-          >
-            {l.label}
-          </Link>
-        ))}
+
+      {error && <p className={listStyles.error}>{error}</p>}
+
+      {/* Row 1 */}
+      <div className={styles.kpiGrid}>
+        <KpiCard
+          label="Total Chargers"
+          value={fmt(providerStats?.totalChargers)}
+        />
+        <KpiCard
+          label="Online / Offline"
+          value={
+            providerStats != null
+              ? `${providerStats.onlineChargers} / ${providerStats.offlineChargers}`
+              : "—"
+          }
+        />
+        <KpiCard
+          label="Active Sessions"
+          value={fmt(providerStats?.activeSessions)}
+        />
+        <KpiCard
+          label="Earned Balance"
+          value={fmtMoney(operatorStats?.earnedBalance)}
+        />
+      </div>
+
+      {/* Row 2 */}
+      <div className={styles.kpiGrid}>
+        <KpiCard
+          label="Pending Settlement"
+          value={fmtMoney(operatorStats?.pendingSettlement)}
+        />
+        <KpiCard
+          label="Sessions Today"
+          value={fmt(providerStats?.totalSessionsToday)}
+        />
+        <KpiCard
+          label="Energy Delivered"
+          value={fmtKwh(providerStats?.energyDeliveredTodayKwh)}
+          subtitle="Today"
+        />
+        <KpiCard
+          label="Active Reservations"
+          value={fmt(providerStats?.activeReservations)}
+        />
+      </div>
+
+      <div className={styles.mapSection}>
+        <DashboardMapClient />
       </div>
     </div>
   );
