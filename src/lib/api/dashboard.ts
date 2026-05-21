@@ -20,10 +20,10 @@ export interface OperatorDashboardStats {
   totalSettled: number;
 }
 
-export async function fetchProviderDashboardStats(): Promise<ProviderDashboardStats> {
+export async function fetchProviderDashboardStats(): Promise<ProviderDashboardStats | undefined> {
   return apiRequestAuth<ProviderDashboardStats>(csmsApiPath("/dashboard/provider/stats"));
 }
 
-export async function fetchOperatorDashboardStats(operatorId: number): Promise<OperatorDashboardStats> {
+export async function fetchOperatorDashboardStats(operatorId: number): Promise<OperatorDashboardStats | undefined> {
   return apiRequestAuth<OperatorDashboardStats>(paymentApiPath(`/operators/${operatorId}/dashboard`));
 }

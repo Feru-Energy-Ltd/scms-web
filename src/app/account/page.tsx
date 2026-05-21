@@ -24,17 +24,15 @@ export default function AccountDashboardPage() {
 
   async function loadStats() {
     try {
-      const promises: [Promise<ProviderDashboardStats>, Promise<OperatorDashboardStats> | null] = [
-        fetchProviderDashboardStats(),
-        ctx.providerId != null ? fetchOperatorDashboardStats(ctx.providerId) : null,
-      ];
+      const [csmsStats, paymentStats] = await Promise.all([
+        fetchProviderDashboardStats().catch(() => null),
+        ctx.providerId != null
+          ? fetchOperatorDashboardStats(ctx.providerId).catch(() => null)
+          : Promise.resolve(null),
+      ]);
 
-      const [csmsStats, paymentStats] = await Promise.all(
-        promises.map((p) => (p != null ? p.catch(() => null) : Promise.resolve(null)))
-      );
-
-      if (csmsStats) setProviderStats(csmsStats as ProviderDashboardStats);
-      if (paymentStats) setOperatorStats(paymentStats as OperatorDashboardStats);
+      if (csmsStats) setProviderStats(csmsStats);
+      if (paymentStats) setOperatorStats(paymentStats);
     } catch {
       setError("Failed to load dashboard stats.");
     }
