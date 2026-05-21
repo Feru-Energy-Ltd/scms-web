@@ -17,18 +17,18 @@ import {
   type ProviderStaffRole,
 } from "@/lib/api/providerInvitations";
 import { asArray } from "@/lib/api/normalize";
-import { formatRoleValue, getRoleLabel } from "@/lib/auth/roles";
+import { formatRoleValue } from "@/lib/auth/roles";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 
 type InvitationRow = Record<string, unknown>;
 
-const ROLE_OPTIONS: ProviderStaffRole[] = [
-  "PROVIDER_MANAGER",
-  "PROVIDER_STAFF",
-  "PROVIDER_OWNER",
-];
+const PROVIDER_ROLES = [
+  { value: "SERVICE_PROVIDER_OWNER" as ProviderStaffRole, label: "Owner" },
+  { value: "SERVICE_PROVIDER_MANAGER" as ProviderStaffRole, label: "Manager" },
+  { value: "SERVICE_PROVIDER_STAFF" as ProviderStaffRole, label: "Staff" },
+] as const;
 
 function cell(row: InvitationRow, ...keys: string[]) {
   for (const k of keys) {
@@ -56,7 +56,7 @@ export default function AccountInvitationsPage() {
   const [loading, setLoading] = useState(true);
   const [inviteeEmail, setInviteeEmail] = useState("");
   const [selectedRole, setSelectedRole] =
-    useState<ProviderStaffRole>("PROVIDER_STAFF");
+    useState<ProviderStaffRole>("SERVICE_PROVIDER_STAFF");
   const [submitting, setSubmitting] = useState(false);
   const [actingId, setActingId] = useState<number | null>(null);
 
@@ -216,9 +216,9 @@ export default function AccountInvitationsPage() {
           value={selectedRole}
           onChange={(e) => setSelectedRole(e.target.value as ProviderStaffRole)}
         >
-          {ROLE_OPTIONS.map((roleCode) => (
-            <option key={roleCode} value={roleCode}>
-              {getRoleLabel(roleCode)}
+          {PROVIDER_ROLES.map(({ value, label }) => (
+            <option key={value} value={value}>
+              {label}
             </option>
           ))}
         </select>
