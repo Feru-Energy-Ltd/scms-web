@@ -20,9 +20,10 @@ export function getAccessTokenContext(): {
 
   return {
     identityType:
-      typeof p.identityType === "string" ? p.identityType : "unknown identity type",
+      typeof p.identity_type === "string" ? p.identity_type : undefined,
     email:
-      typeof p.email === "string" ? p.email : "unknown email",
-    providerId: p.provider_id as number | undefined,
+      typeof p.email === "string" ? p.email : undefined,
+    providerId:
+      typeof p.provider_id === "number" ? p.provider_id : undefined,
   };
 }
