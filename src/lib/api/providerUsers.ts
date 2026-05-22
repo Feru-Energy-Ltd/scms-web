@@ -1,5 +1,7 @@
 import { apiRequestAuth } from "./http";
 
-export async function fetchProviderUsers(providerId: number) {
-  return apiRequestAuth<unknown>(`/auth/providers/${providerId}/staff`);
+export async function fetchProviderStaff(providerId: number) {
+  return apiRequestAuth<unknown>(
+    `/auth/management/service-providers/${providerId}/staff`,
+  );
 }

@@ -5,9 +5,9 @@ function base(providerId: number) {
 }
 
 export type ProviderStaffRole =
-  | "PROVIDER_OWNER"
-  | "PROVIDER_MANAGER"
-  | "PROVIDER_STAFF";
+  | "SERVICE_PROVIDER_OWNER"
+  | "SERVICE_PROVIDER_MANAGER"
+  | "SERVICE_PROVIDER_STAFF";
 
 export async function fetchProviderInvitations(providerId: number) {
   return apiRequestAuth<unknown>(base(providerId));

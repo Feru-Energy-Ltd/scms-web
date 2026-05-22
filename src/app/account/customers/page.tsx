@@ -25,7 +25,7 @@ export default function AccountCustomersPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const raw = await fetchCustomers(applied || undefined);
+      const raw = await fetchCustomers(0, 50, applied || undefined);
       setRows(asArray<CustomerRow>(raw));
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load customers." });

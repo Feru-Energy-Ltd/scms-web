@@ -17,18 +17,18 @@ import {
   type ProviderStaffRole,
 } from "@/lib/api/providerInvitations";
 import { asArray } from "@/lib/api/normalize";
-import { formatRoleValue, getRoleLabel } from "@/lib/auth/roles";
+import { formatRoleValue } from "@/lib/auth/roles";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 
 type InvitationRow = Record<string, unknown>;
 
-const ROLE_OPTIONS: ProviderStaffRole[] = [
-  "PROVIDER_MANAGER",
-  "PROVIDER_STAFF",
-  "PROVIDER_OWNER",
-];
+const PROVIDER_ROLES = [
+  { value: "SERVICE_PROVIDER_OWNER" as ProviderStaffRole, label: "Owner" },
+  { value: "SERVICE_PROVIDER_MANAGER" as ProviderStaffRole, label: "Manager" },
+  { value: "SERVICE_PROVIDER_STAFF" as ProviderStaffRole, label: "Staff" },
+] as const;
 
 function cell(row: InvitationRow, ...keys: string[]) {
   for (const k of keys) {
@@ -51,24 +51,24 @@ function formatWhen(iso: string) {
 }
 
 export default function AccountInvitationsPage() {
-  const { identityType } = getAccessTokenContext();
+  const { identityType, providerId } = getAccessTokenContext();
   const [rows, setRows] = useState<InvitationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteeEmail, setInviteeEmail] = useState("");
   const [selectedRole, setSelectedRole] =
-    useState<ProviderStaffRole>("PROVIDER_STAFF");
+    useState<ProviderStaffRole>("SERVICE_PROVIDER_STAFF");
   const [submitting, setSubmitting] = useState(false);
   const [actingId, setActingId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
-    if (identityType !== "SERVICE_PROVIDER") {
+    if (identityType !== "SERVICE_PROVIDER" || providerId == null) {
       setRows([]);
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      const raw = await fetchProviderInvitations(Number(inviteeEmail));
+      const raw = await fetchProviderInvitations(providerId);
       setRows(asArray(raw));
     } catch (e) {
       showApiErrorToast(e, {
@@ -78,7 +78,7 @@ export default function AccountInvitationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [identityType, inviteeEmail]);
+  }, [identityType, providerId]);
 
   useEffect(() => {
     void load();
@@ -91,7 +91,7 @@ export default function AccountInvitationsPage() {
     if (!trimmedEmail) return;
     setSubmitting(true);
     try {
-      await sendProviderInvitation(Number(inviteeEmail), {
+      await sendProviderInvitation(providerId!, {
         email: trimmedEmail,
         role: selectedRole,
       });
@@ -106,11 +106,11 @@ export default function AccountInvitationsPage() {
 
   const onRevoke = useCallback(
     async (id: number) => {
-      if (inviteeEmail == null) return;
+      if (providerId == null) return;
       if (!window.confirm("Revoke this invitation?")) return;
       setActingId(id);
       try {
-        await revokeProviderInvitation(Number(inviteeEmail), id);
+        await revokeProviderInvitation(providerId, id);
         await load();
       } catch (err) {
         showApiErrorToast(err, {
@@ -120,7 +120,7 @@ export default function AccountInvitationsPage() {
         setActingId(null);
       }
     },
-    [inviteeEmail, load],
+    [providerId, load],
   );
 
   const columns = useMemo<DataTableColumn<InvitationRow>[]>(
@@ -216,9 +216,9 @@ export default function AccountInvitationsPage() {
           value={selectedRole}
           onChange={(e) => setSelectedRole(e.target.value as ProviderStaffRole)}
         >
-          {ROLE_OPTIONS.map((roleCode) => (
-            <option key={roleCode} value={roleCode}>
-              {getRoleLabel(roleCode)}
+          {PROVIDER_ROLES.map(({ value, label }) => (
+            <option key={value} value={value}>
+              {label}
             </option>
           ))}
         </select>
