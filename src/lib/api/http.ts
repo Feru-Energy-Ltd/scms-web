@@ -47,11 +47,19 @@ async function parseJsonSafely(res: Response) {
   }
 }
 
-async function refreshAccessToken(refreshToken: string): Promise<TokenResponse> {
-  return apiRequest<TokenResponse>("/auth/refresh", {
+// Shared refresh promise — ensures only one refresh call runs at a time.
+// Parallel 401s await the same promise instead of racing.
+let activeRefreshPromise: Promise<TokenResponse> | null = null;
+
+function refreshAccessTokenOnce(refreshToken: string): Promise<TokenResponse> {
+  if (activeRefreshPromise) return activeRefreshPromise;
+  activeRefreshPromise = apiRequest<TokenResponse>("/auth/refresh", {
     method: "POST",
     body: { refreshToken },
+  }).finally(() => {
+    activeRefreshPromise = null;
   });
+  return activeRefreshPromise;
 }
 
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}) {
@@ -122,7 +130,7 @@ export async function apiRequestAuth<T>(
     // Refresh the access token
     let refreshed: TokenResponse;
     try {
-      refreshed = await refreshAccessToken(refreshToken);
+      refreshed = await refreshAccessTokenOnce(refreshToken);
     } catch {
       clearSession();
       throw e;
