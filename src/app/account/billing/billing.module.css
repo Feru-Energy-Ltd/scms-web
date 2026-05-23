@@ -1,0 +1,204 @@
+/* ── Balance Cards ── */
+
+.balanceGrid {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.balanceCard {
+  flex: 1;
+  min-width: 180px;
+  padding: 1.25rem 1.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.balanceLabel {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.balanceValue {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.balanceValueWarn {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+/* ── Transaction ID ── */
+
+.txId {
+  font-family: ui-monospace, monospace;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+/* ── Charger Badge ── */
+
+.chargerBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.chargerDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  flex-shrink: 0;
+}
+
+/* ── Status Pill ── */
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Idle Fee Highlight ── */
+
+.idleHighlight {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: color-mix(in oklab, #f59e0b 15%, transparent);
+  color: #b45309;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+/* ── Expandable Row ── */
+
+.clickableRow {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.clickableRow:hover {
+  background: color-mix(in oklab, var(--color-primary) 5%, transparent);
+}
+
+.chevron {
+  display: inline-block;
+  font-size: 0.75rem;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--color-text-muted);
+  line-height: 1;
+  transform: rotate(0deg);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.expandedRow {
+  background: var(--color-surface-2);
+}
+
+/* ── Detail Grid (Expanded) ── */
+
+.detailGrid {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 8px 4px;
+}
+
+.detailSection {
+  flex: 1;
+}
+
+.detailTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+}
+
+.breakdownGrid {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.breakdownLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
+.breakdownValue {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.detailMeta {
+  text-align: right;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+/* ── Idle Fee Banner ── */
+
+.idleBanner {
+  margin-top: 12px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: color-mix(in oklab, #f59e0b 12%, transparent);
+  color: #92400e;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-left: 3px solid #f59e0b;
+}
+
+/* ── MoMo Reference ── */
+
+.monoRef {
+  font-family: ui-monospace, monospace;
+  font-size: 0.82rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+}

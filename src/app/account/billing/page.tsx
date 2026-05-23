@@ -12,6 +12,7 @@ import {
 } from "@/lib/api/billing";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
+import billingStyles from "./billing.module.css";
 
 type Tab = "transactions" | "settlements";
 
@@ -21,6 +22,7 @@ const SETTLEMENT_STATUS_OPTIONS = ["", "PENDING", "PROCESSING", "COMPLETED", "FA
 export default function BillingPage() {
   const [ctx] = useState(() => getAccessTokenContext());
   const [tab, setTab] = useState<Tab>("transactions");
+  const [expandedTx, setExpandedTx] = useState<number | null>(null);
 
   /* ── Balance summary ── */
   const [balance, setBalance] = useState<OperatorDashboardStats | null>(null);
@@ -87,13 +89,44 @@ export default function BillingPage() {
   const fmtMoney = (n: number | undefined) =>
     n != null ? n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " RWF" : "—";
 
-  const fmtKwh = (wh: number) => (wh / 1000).toFixed(2) + " kWh";
+  const fmtKwh = (wh: number) => (wh / 1000).toFixed(3) + " kWh";
 
   const fmtDate = (iso: string | null) =>
-    iso ? new Date(iso).toLocaleDateString() : "—";
+    iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
 
-  const fmtDateTime = (iso: string | null) =>
-    iso ? new Date(iso).toLocaleString() : "—";
+  const fmtTime = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }) : "";
+
+  const truncateCharger = (id: string) => {
+    if (id.length <= 12) return id;
+    return id.slice(0, 6) + "..." + id.slice(-4);
+  };
+
+  const statusDot = (status: string) => {
+    const color = ["SETTLED", "COMPLETED", "SUCCESSFUL"].includes(status)
+      ? "#10b981"
+      : ["FAILED"].includes(status)
+        ? "#ef4444"
+        : ["ACTIVE"].includes(status)
+          ? "#3b82f6"
+          : "#f59e0b";
+    return color;
+  };
+
+  const statusPill = (status: string) => {
+    const color = statusDot(status);
+    const label = status === "ENERGY_SETTLED" ? "Energy Settled" : status.charAt(0) + status.slice(1).toLowerCase();
+    return (
+      <span className={billingStyles.statusPill}>
+        <span className={billingStyles.statusDot} style={{ background: color }} />
+        {label}
+      </span>
+    );
+  };
+
+  const toggleExpand = (txId: number) => {
+    setExpandedTx(expandedTx === txId ? null : txId);
+  };
 
   return (
     <div>
@@ -102,18 +135,18 @@ export default function BillingPage() {
 
       {/* Balance summary */}
       {balance && (
-        <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
-          <div className={styles.card} style={{ flex: 1, minWidth: "180px", padding: "1rem" }}>
-            <div className={styles.muted}>Earned Balance</div>
-            <div style={{ fontSize: "1.25rem", fontWeight: 600 }}>{fmtMoney(balance.earnedBalance)}</div>
+        <div className={billingStyles.balanceGrid}>
+          <div className={billingStyles.balanceCard}>
+            <div className={billingStyles.balanceLabel}>Earned Balance</div>
+            <div className={billingStyles.balanceValue}>{fmtMoney(balance.earnedBalance)}</div>
           </div>
-          <div className={styles.card} style={{ flex: 1, minWidth: "180px", padding: "1rem" }}>
-            <div className={styles.muted}>Pending Settlement</div>
-            <div style={{ fontSize: "1.25rem", fontWeight: 600 }}>{fmtMoney(balance.pendingSettlement)}</div>
+          <div className={billingStyles.balanceCard}>
+            <div className={billingStyles.balanceLabel}>Pending Settlement</div>
+            <div className={billingStyles.balanceValueWarn}>{fmtMoney(balance.pendingSettlement)}</div>
           </div>
-          <div className={styles.card} style={{ flex: 1, minWidth: "180px", padding: "1rem" }}>
-            <div className={styles.muted}>Total Settled</div>
-            <div style={{ fontSize: "1.25rem", fontWeight: 600 }}>{fmtMoney(balance.totalSettled)}</div>
+          <div className={billingStyles.balanceCard}>
+            <div className={billingStyles.balanceLabel}>Total Settled</div>
+            <div className={billingStyles.balanceValue}>{fmtMoney(balance.totalSettled)}</div>
           </div>
         </div>
       )}
@@ -153,10 +186,10 @@ export default function BillingPage() {
             <input
               type="text"
               placeholder="Charger ID"
-              className={styles.button}
+              className={styles.searchInput}
               value={txCharger}
               onChange={(e) => { setTxCharger(e.target.value); setTxPage(0); }}
-              style={{ minWidth: "120px" }}
+              style={{ minWidth: "140px" }}
             />
             <button type="button" className={styles.button} onClick={() => void loadTransactions()}>
               Refresh
@@ -189,30 +222,112 @@ export default function BillingPage() {
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th>Charger</th>
-                    <th>Energy</th>
-                    <th>Energy Cost</th>
-                    <th>Idle Cost</th>
-                    <th>VAT</th>
-                    <th>Total</th>
-                    <th>Duration</th>
-                    <th>Status</th>
-                    <th>Date</th>
+                    <th className={styles.th}>#</th>
+                    <th className={styles.th}>Charger</th>
+                    <th className={styles.th}>Date</th>
+                    <th className={styles.th}>Energy</th>
+                    <th className={styles.th} style={{ textAlign: "right" }}>Energy Cost</th>
+                    <th className={styles.th} style={{ textAlign: "right" }}>Idle Fee</th>
+                    <th className={styles.th} style={{ textAlign: "right" }}>VAT (incl.)</th>
+                    <th className={styles.th} style={{ textAlign: "right" }}>Total</th>
+                    <th className={styles.th}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {txData.content.map((tx) => (
-                    <tr key={tx.transactionId}>
-                      <td>{tx.chargerId}/{tx.connectorId}</td>
-                      <td>{fmtKwh(tx.energyConsumedWh)}</td>
-                      <td>{fmtMoney(tx.energyCost)}</td>
-                      <td>{fmtMoney(tx.idleCost)}</td>
-                      <td>{fmtMoney(tx.vatAmount)}</td>
-                      <td style={{ fontWeight: 600 }}>{fmtMoney(tx.totalDriverCost)}</td>
-                      <td>{tx.durationMinutes} min</td>
-                      <td>{tx.status}</td>
-                      <td>{fmtDateTime(tx.createdAt)}</td>
-                    </tr>
+                    <>
+                      <tr
+                        key={tx.transactionId}
+                        className={billingStyles.clickableRow}
+                        onClick={() => toggleExpand(tx.transactionId)}
+                      >
+                        <td className={styles.td}>
+                          <span className={billingStyles.txId}>#TX-{tx.transactionId}</span>
+                        </td>
+                        <td className={styles.td}>
+                          <span className={billingStyles.chargerBadge}>
+                            <span className={billingStyles.chargerDot} />
+                            {truncateCharger(tx.chargerId)} - {tx.connectorId}
+                          </span>
+                        </td>
+                        <td className={styles.td}>
+                          <div>{fmtDate(tx.createdAt)}</div>
+                          <div className={styles.muted} style={{ fontSize: "0.8rem" }}>{fmtTime(tx.createdAt)}</div>
+                        </td>
+                        <td className={styles.td}>
+                          <div>{fmtKwh(tx.energyConsumedWh)}</div>
+                          <div className={styles.muted} style={{ fontSize: "0.8rem" }}>{tx.durationMinutes} min</div>
+                        </td>
+                        <td className={styles.td} style={{ textAlign: "right" }}>
+                          {fmtMoney(tx.energyCost)}
+                        </td>
+                        <td className={styles.td} style={{ textAlign: "right" }}>
+                          {tx.idleCost > 0 ? (
+                            <span className={billingStyles.idleHighlight}>{fmtMoney(tx.idleCost)}</span>
+                          ) : (
+                            <span className={styles.muted}>—</span>
+                          )}
+                        </td>
+                        <td className={styles.td} style={{ textAlign: "right" }}>
+                          {fmtMoney(tx.vatAmount)}
+                        </td>
+                        <td className={styles.td} style={{ textAlign: "right", fontWeight: 700, fontSize: "1rem" }}>
+                          {fmtMoney(tx.totalDriverCost)}
+                        </td>
+                        <td className={styles.td}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            {statusPill(tx.status)}
+                            <span className={`${billingStyles.chevron} ${expandedTx === tx.transactionId ? billingStyles.chevronOpen : ""}`}>&#9662;</span>
+                          </div>
+                        </td>
+                      </tr>
+                      {expandedTx === tx.transactionId && (
+                        <tr key={`${tx.transactionId}-detail`} className={billingStyles.expandedRow}>
+                          <td className={styles.td} colSpan={9}>
+                            <div className={billingStyles.detailGrid}>
+                              <div className={billingStyles.detailSection}>
+                                <div className={billingStyles.detailTitle}>Cost Breakdown — #TX-{tx.transactionId}</div>
+                                <div className={billingStyles.breakdownGrid}>
+                                  <div>
+                                    <div className={billingStyles.breakdownLabel}>Energy Cost</div>
+                                    <div className={billingStyles.breakdownValue}>{fmtMoney(tx.energyCost)}</div>
+                                  </div>
+                                  <div>
+                                    <div className={billingStyles.breakdownLabel}>Idle Fee</div>
+                                    <div className={billingStyles.breakdownValue}>{fmtMoney(tx.idleCost)}</div>
+                                  </div>
+                                  <div>
+                                    <div className={billingStyles.breakdownLabel}>Platform Fee</div>
+                                    <div className={billingStyles.breakdownValue}>{fmtMoney(tx.platformMarginTotal)}</div>
+                                  </div>
+                                  <div>
+                                    <div className={billingStyles.breakdownLabel}>VAT (incl.)</div>
+                                    <div className={billingStyles.breakdownValue}>{fmtMoney(tx.vatAmount)}</div>
+                                  </div>
+                                  <div>
+                                    <div className={billingStyles.breakdownLabel} style={{ color: "#10b981" }}>Driver Total</div>
+                                    <div className={billingStyles.breakdownValue} style={{ color: "#10b981", fontWeight: 700, fontSize: "1.1rem" }}>
+                                      {fmtMoney(tx.totalDriverCost)}
+                                    </div>
+                                  </div>
+                                </div>
+                                {tx.idleCost > 0 && (
+                                  <div className={billingStyles.idleBanner}>
+                                    Idle fee charged — vehicle was not moved after charge complete
+                                  </div>
+                                )}
+                              </div>
+                              <div className={billingStyles.detailMeta}>
+                                <div>Transaction #TX-{tx.transactionId}</div>
+                                <div>Connector {tx.connectorId}</div>
+                                <div>{fmtKwh(tx.energyConsumedWh)} &middot; {tx.durationMinutes} min</div>
+                                <div>{fmtDate(tx.createdAt)} at {fmtTime(tx.createdAt)}</div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
                   ))}
                 </tbody>
               </table>
@@ -266,23 +381,39 @@ export default function BillingPage() {
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Amount</th>
-                    <th>MoMo Reference</th>
-                    <th>Status</th>
-                    <th>Completed</th>
-                    <th>Failure Reason</th>
+                    <th className={styles.th}>Date</th>
+                    <th className={styles.th} style={{ textAlign: "right" }}>Amount</th>
+                    <th className={styles.th}>MoMo Reference</th>
+                    <th className={styles.th}>Status</th>
+                    <th className={styles.th}>Completed</th>
+                    <th className={styles.th}>Failure Reason</th>
                   </tr>
                 </thead>
                 <tbody>
                   {stData.content.map((s) => (
                     <tr key={s.id}>
-                      <td>{fmtDate(s.initiatedAt)}</td>
-                      <td style={{ fontWeight: 600 }}>{fmtMoney(s.amount)}</td>
-                      <td>{s.momoReferenceId ?? "—"}</td>
-                      <td>{s.status}</td>
-                      <td>{fmtDateTime(s.completedAt)}</td>
-                      <td>{s.failureReason ?? "—"}</td>
+                      <td className={styles.td}>
+                        <div>{fmtDate(s.initiatedAt)}</div>
+                        <div className={styles.muted} style={{ fontSize: "0.8rem" }}>{fmtTime(s.initiatedAt)}</div>
+                      </td>
+                      <td className={styles.td} style={{ textAlign: "right", fontWeight: 700, fontSize: "1rem" }}>
+                        {fmtMoney(s.amount)}
+                      </td>
+                      <td className={styles.td}>
+                        <code className={billingStyles.monoRef}>{s.momoReferenceId ?? "—"}</code>
+                      </td>
+                      <td className={styles.td}>{statusPill(s.status)}</td>
+                      <td className={styles.td}>
+                        {s.completedAt ? (
+                          <>
+                            <div>{fmtDate(s.completedAt)}</div>
+                            <div className={styles.muted} style={{ fontSize: "0.8rem" }}>{fmtTime(s.completedAt)}</div>
+                          </>
+                        ) : (
+                          <span className={styles.muted}>—</span>
+                        )}
+                      </td>
+                      <td className={`${styles.td} ${styles.muted}`}>{s.failureReason ?? "—"}</td>
                     </tr>
                   ))}
                 </tbody>
