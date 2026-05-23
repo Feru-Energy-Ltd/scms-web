@@ -40,6 +40,10 @@ const permissionMenuItems: { item: AppMenuItem; permissions: string[] }[] = [
     item: { name: "Invitations", url: "/account/invitations" },
     permissions: ["provider:org:read", "provider:org:update"],
   },
+  {
+    item: { name: "Billing", url: "/account/billing" },
+    permissions: ["provider:reports:read"],
+  },
 ];
 
 /**
