@@ -37,3 +37,21 @@ export function paymentApiPath(relativePath: string): string {
   return `${pre}${rel}`;
 }
 
+/**
+ * Path segment in front of Auth REST routes when using the API gateway (e.g. `/auth`
+ * for `GET /auth/profile`). Set to empty string if your base URL already
+ * targets the Auth service root.
+ */
+export const AUTH_PATH_PREFIX =
+  process.env.NEXT_PUBLIC_AUTH_PATH_PREFIX !== undefined
+    ? process.env.NEXT_PUBLIC_AUTH_PATH_PREFIX
+    : "/auth";
+
+/** Build a path such as `/auth/profile` or `/profile` when prefix is empty. */
+export function authApiPath(relativePath: string): string {
+  const rel = relativePath.startsWith("/") ? relativePath : `/${relativePath}`;
+  const pre = AUTH_PATH_PREFIX.replace(/\/$/, "");
+  if (!pre) return rel;
+  return `${pre}${rel}`;
+}
+
