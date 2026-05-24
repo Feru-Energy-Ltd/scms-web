@@ -4,17 +4,23 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import PricingPlansTab from "./PricingPlansTab";
+import AssignmentsTab from "./AssignmentsTab";
 import PlatformSettingsTab from "./PlatformSettingsTab";
 import styles from "./pricing.module.css";
 import rlStyles from "@/components/account/ResourceList.module.css";
 
-type Tab = "plans" | "settings";
+type Tab = "plans" | "assignments" | "settings";
 
 export default function PricingPage() {
   const [ctx] = useState(() => getAccessTokenContext());
   const searchParams = useSearchParams();
-  const newPlanOperatorId = searchParams.get("newPlan");
-  const [tab, setTab] = useState<Tab>("plans");
+  const tabParam = searchParams.get("tab");
+  const assignOperatorId = searchParams.get("assign");
+  const [tab, setTab] = useState<Tab>(
+    tabParam === "assignments" ? "assignments"
+      : tabParam === "settings" ? "settings"
+        : "plans",
+  );
 
   if (ctx.identityType !== "SYSTEM_ADMIN") {
     return (
@@ -31,7 +37,7 @@ export default function PricingPage() {
     <div>
       <h1 className={rlStyles.h1}>Pricing Configuration</h1>
       <p className={rlStyles.muted}>
-        Manage pricing plans and platform-wide settings.
+        Manage pricing plans, operator assignments, and platform-wide settings.
       </p>
 
       <div className={styles.tabs}>
@@ -42,6 +48,12 @@ export default function PricingPage() {
           Pricing Plans
         </button>
         <button
+          className={tab === "assignments" ? styles.tabActive : styles.tab}
+          onClick={() => setTab("assignments")}
+        >
+          Assignments
+        </button>
+        <button
           className={tab === "settings" ? styles.tabActive : styles.tab}
           onClick={() => setTab("settings")}
         >
@@ -49,10 +61,11 @@ export default function PricingPage() {
         </button>
       </div>
 
-      {tab === "plans" && (
-        <PricingPlansTab
+      {tab === "plans" && <PricingPlansTab />}
+      {tab === "assignments" && (
+        <AssignmentsTab
           preselectedOperatorId={
-            newPlanOperatorId ? Number(newPlanOperatorId) : null
+            assignOperatorId ? Number(assignOperatorId) : null
           }
         />
       )}

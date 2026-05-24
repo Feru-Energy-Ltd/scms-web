@@ -17,10 +17,6 @@ import CreatePlanModal from "./CreatePlanModal";
 import styles from "./pricing.module.css";
 import rlStyles from "@/components/account/ResourceList.module.css";
 
-interface Props {
-  preselectedOperatorId?: number | null;
-}
-
 const STATUS_FILTERS: { label: string; value: string }[] = [
   { label: "All", value: "" },
   { label: "Active", value: "ACTIVE" },
@@ -28,12 +24,11 @@ const STATUS_FILTERS: { label: string; value: string }[] = [
   { label: "Archived", value: "ARCHIVED" },
 ];
 
-export default function PricingPlansTab({ preselectedOperatorId }: Props) {
+export default function PricingPlansTab() {
   const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [operators, setOperators] = useState<ProviderListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
-  const [operatorFilter, setOperatorFilter] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editPlan, setEditPlan] = useState<PricingPlan | null>(null);
   const [saving, setSaving] = useState(false);
@@ -43,7 +38,7 @@ export default function PricingPlansTab({ preselectedOperatorId }: Props) {
     setLoading(true);
     try {
       const data = await fetchPricingPlans(
-        operatorFilter ? Number(operatorFilter) : undefined,
+        undefined,
         statusFilter || undefined,
       );
       data.sort((a, b) => a.name.localeCompare(b.name));
@@ -53,7 +48,7 @@ export default function PricingPlansTab({ preselectedOperatorId }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, operatorFilter]);
+  }, [statusFilter]);
 
   const loadOperators = useCallback(async () => {
     try {
@@ -71,11 +66,7 @@ export default function PricingPlansTab({ preselectedOperatorId }: Props) {
     void loadOperators();
   }, [loadOperators]);
 
-  useEffect(() => {
-    if (preselectedOperatorId != null && operators.length > 0) {
-      setShowModal(true);
-    }
-  }, [preselectedOperatorId, operators]);
+
 
   const handleSave = async (data: CreatePricingPlanRequest) => {
     setSaving(true);
@@ -114,11 +105,6 @@ export default function PricingPlansTab({ preselectedOperatorId }: Props) {
     }
   };
 
-  const operatorName = (id: number | null) => {
-    if (id == null) return "\u2014";
-    return operators.find((o) => o.id === id)?.businessName ?? `Operator #${id}`;
-  };
-
   const statusBadge = (status: PricingPlanStatus) => {
     const cls =
       status === "ACTIVE" ? styles.badgeActive
@@ -141,20 +127,6 @@ export default function PricingPlansTab({ preselectedOperatorId }: Props) {
             </button>
           ))}
         </div>
-
-        <select
-          className={rlStyles.searchInput}
-          style={{ minWidth: 160 }}
-          value={operatorFilter}
-          onChange={(e) => setOperatorFilter(e.target.value)}
-        >
-          <option value="">All Operators</option>
-          {operators.map((op) => (
-            <option key={op.id} value={op.id}>
-              {op.businessName}
-            </option>
-          ))}
-        </select>
 
         <button
           className={rlStyles.buttonPrimary}
@@ -182,7 +154,6 @@ export default function PricingPlansTab({ preselectedOperatorId }: Props) {
             <thead>
               <tr>
                 <th className={rlStyles.th}>Name</th>
-                <th className={rlStyles.th}>Operator</th>
                 <th className={rlStyles.th}>Energy Rate</th>
                 <th className={rlStyles.th}>Idle Fee</th>
                 <th className={rlStyles.th}>Grace</th>
@@ -195,7 +166,6 @@ export default function PricingPlansTab({ preselectedOperatorId }: Props) {
               {plans.map((plan) => (
                 <tr key={plan.id}>
                   <td className={rlStyles.td}>{plan.name}</td>
-                  <td className={rlStyles.td}>{operatorName(plan.operatorId)}</td>
                   <td className={rlStyles.td}>RWF {plan.energyRatePerKwh.toFixed(2)}/kWh</td>
                   <td className={rlStyles.td}>RWF {plan.idleFeePerMin.toFixed(2)}/min</td>
                   <td className={rlStyles.td}>{plan.idleGraceMinutes} min</td>
@@ -240,7 +210,6 @@ export default function PricingPlansTab({ preselectedOperatorId }: Props) {
         <CreatePlanModal
           operators={operators}
           editPlan={editPlan}
-          preselectedOperatorId={preselectedOperatorId}
           loading={saving}
           onSave={handleSave}
           onCancel={() => { setShowModal(false); setEditPlan(null); }}

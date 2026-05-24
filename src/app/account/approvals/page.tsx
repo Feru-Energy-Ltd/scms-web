@@ -76,13 +76,13 @@ export default function AccountApprovalsPage() {
       toast.success(
         (t) => (
           <span>
-            Provider approved. Platform Default pricing applied.{" "}
+            Provider approved. Using default pricing plan.{" "}
             <a
-              href={`/account/pricing?newPlan=${id}`}
+              href={`/account/pricing?tab=assignments&assign=${id}`}
               style={{ color: "#3b82f6", fontWeight: 600 }}
               onClick={() => toast.dismiss(t.id)}
             >
-              Create custom plan →
+              Assign custom plan →
             </a>
           </span>
         ),
