@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { signup } from "@/app/actions/signup";
 import PasswordEyeIcon from "../login/PasswordEyeIcon";
-import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "./sign-up.module.css";
 
 type FieldErrors = Record<string, string[] | undefined>;
@@ -33,18 +32,15 @@ export default function SignUpPage() {
           toast.error("Please correct the highlighted fields.");
           return;
         }
-        showApiErrorToast(
-          result,          { fallbackMessage: "Sign up failed. Please try again." },
-        );
+        const msg = "error" in result ? result.error : "Sign up failed. Please try again.";
+        toast.error(msg);
         return;
       }
 
       toast.success("Check your email for verification code to continue");
       router.push("/verify/email");
-    } catch (err) {
-      showApiErrorToast(err, {
-        fallbackMessage: "Sign up failed. Please try again.",
-      });
+    } catch {
+      toast.error("Sign up failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
