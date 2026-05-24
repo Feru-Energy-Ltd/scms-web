@@ -2,30 +2,20 @@
 
 import { registerProvider } from "@/lib/api/auth";
 import { getSignupInputCandidate, parseSignupFormData, signupSchema } from "@/lib/validation/signup";
-import { ApiError } from '@/lib/api/http'
 
 export async function signup(formData: FormData) {
   const signupPayLoadResult = sanitizeForm(formData);
 
-  if (!signupPayLoadResult.ok) return signupPayLoadResult
+  if (!signupPayLoadResult.ok) return signupPayLoadResult;
 
-  let response
   try {
-    response = await registerProvider(signupPayLoadResult.payload);
- } catch (e: unknown) {
-    if (e instanceof ApiError) {
-    throw e;
-
-      return {
-        ok: false as const,
-          e
-      };
-    }
+    const response = await registerProvider(signupPayLoadResult.payload);
+    return { ok: true as const, response };
+  } catch (e: unknown) {
+    const message =
+      e instanceof Error ? e.message : "Sign up failed. Please try again.";
+    return { ok: false as const, error: message };
   }
-  return {
-    ok: true as const,
-    response,
-  };
 }
 
 const sanitizeForm = (formData: FormData) => {

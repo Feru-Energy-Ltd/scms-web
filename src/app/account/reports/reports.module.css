@@ -1,0 +1,257 @@
+.toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.dateInput {
+  padding: 7px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 0.875rem;
+}
+
+.presetBtn {
+  padding: 6px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background 0.15s;
+}
+
+.presetBtn:hover {
+  background: var(--color-bg-hover);
+}
+
+.presetBtnActive {
+  composes: presetBtn;
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.applyBtn {
+  padding: 7px 18px;
+  border: none;
+  border-radius: 6px;
+  background: var(--color-primary);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.applyBtn:hover {
+  opacity: 0.9;
+}
+
+.providerSelect {
+  padding: 7px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  min-width: 200px;
+}
+
+/* KPI Grid */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 1024px) {
+  .kpiGrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .kpiGrid { grid-template-columns: 1fr; }
+}
+
+/* Revenue detail card */
+.revenueCard {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 14px 18px;
+  background: var(--color-bg);
+}
+
+.revenueLabel {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.revenueValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 4px 0 8px;
+}
+
+.revenueBreakdown {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+}
+
+/* Chart Section */
+.chartSection {
+  margin-bottom: 28px;
+}
+
+.chartWrap {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--color-bg);
+}
+
+.chartTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+/* Table Section */
+.tableSection {
+  margin-bottom: 28px;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.th {
+  text-align: left;
+  padding: 10px 14px;
+  background: var(--color-bg-hover);
+  font-weight: 600;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.clickableRow {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.clickableRow:hover {
+  background: var(--color-bg-hover);
+}
+
+.chevron {
+  display: inline-block;
+  transition: transform 0.2s;
+  margin-right: 6px;
+  font-size: 0.7rem;
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+.expandedRow td {
+  padding: 0;
+  background: var(--color-bg-hover);
+}
+
+.dailyTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin: 4px 0;
+}
+
+.dailyTable th {
+  padding: 6px 14px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.dailyTable td {
+  padding: 6px 14px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px;
+  font-size: 0.875rem;
+}
+
+.pageBtn {
+  padding: 5px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Loading */
+.spinner {
+  text-align: center;
+  padding: 40px;
+  color: var(--color-text-muted);
+}
+
+.empty {
+  text-align: center;
+  padding: 40px;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* Platform Summary */
+.platformGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 768px) {
+  .platformGrid { grid-template-columns: 1fr; }
+}

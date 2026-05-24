@@ -14,6 +14,19 @@ export async function fetchPendingServiceProviders(page = 0, size = 20, search?:
   return apiRequestAuth<unknown>(`${BASE}?${q}`);
 }
 
+export interface ProviderListItem {
+  id: number;
+  businessName: string;
+  displayName: string;
+  status: string;
+}
+
+export async function fetchActiveProviders(): Promise<ProviderListItem[]> {
+  const q = new URLSearchParams({ status: "ACTIVE", size: "200" });
+  const res = await apiRequestAuth<{ content: ProviderListItem[] }>(`${BASE}?${q}`);
+  return res.content ?? [];
+}
+
 export async function setServiceProviderStatus(
   id: number,
   status: "ACTIVE" | "SUSPENDED",
