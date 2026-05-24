@@ -51,7 +51,11 @@ function formatWhen(iso: string) {
 }
 
 export default function AccountInvitationsPage() {
-  const { identityType, providerId } = getAccessTokenContext();
+  const { identityType, providerId, role } = getAccessTokenContext();
+  const callerIsOwner = role === "SERVICE_PROVIDER_OWNER";
+  const availableRoles = callerIsOwner
+    ? PROVIDER_ROLES
+    : PROVIDER_ROLES.filter((r) => r.value !== "SERVICE_PROVIDER_OWNER");
   const [rows, setRows] = useState<InvitationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteeEmail, setInviteeEmail] = useState("");
@@ -216,7 +220,7 @@ export default function AccountInvitationsPage() {
           value={selectedRole}
           onChange={(e) => setSelectedRole(e.target.value as ProviderStaffRole)}
         >
-          {PROVIDER_ROLES.map(({ value, label }) => (
+          {availableRoles.map(({ value, label }) => (
             <option key={value} value={value}>
               {label}
             </option>
