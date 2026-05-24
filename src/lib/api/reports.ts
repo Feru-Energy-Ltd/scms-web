@@ -53,7 +53,8 @@ export interface PlatformReportSummary {
 function buildDateParams(from: string, to: string, providerId?: number): string {
   const params = new URLSearchParams();
   params.set("from", new Date(from).toISOString());
-  params.set("to", new Date(to).toISOString());
+  // "to" as end-of-day so the selected date is fully included
+  params.set("to", new Date(to + "T23:59:59.999Z").toISOString());
   if (providerId != null) params.set("providerId", String(providerId));
   return params.toString();
 }

@@ -148,12 +148,12 @@ export default function ReportsPage() {
   }
 
   function handleProviderChange(value: string) {
-    if (value === "platform") {
+    if (value === "platform" || value === "") {
       setShowPlatform(true);
       setProviderId(undefined);
     } else {
       setShowPlatform(false);
-      setProviderId(value ? Number(value) : undefined);
+      setProviderId(Number(value));
     }
     setPage(0);
   }
@@ -210,7 +210,7 @@ export default function ReportsPage() {
       {showPlatform && (
         loadingPlatform ? (
           <div className={styles.spinner}>Loading platform summary…</div>
-        ) : platform && (
+        ) : platform ? (
           <div className={styles.platformGrid}>
             <KpiCard label="Platform Revenue" value={fmtMoney(platform.totalPlatformRevenue)} />
             <KpiCard label="Operator Revenue" value={fmtMoney(platform.totalOperatorRevenue)} />
@@ -219,6 +219,8 @@ export default function ReportsPage() {
             <KpiCard label="Energy Delivered" value={fmtEnergy(platform.totalEnergyWh)} />
             <KpiCard label="Active Providers" value={String(platform.activeProviderCount)} />
           </div>
+        ) : (
+          <div className={styles.empty}>No platform data available</div>
         )
       )}
 
@@ -228,7 +230,7 @@ export default function ReportsPage() {
           {/* KPI Cards */}
           {loadingSummary ? (
             <div className={styles.spinner}>Loading summary…</div>
-          ) : summary && (
+          ) : summary ? (
             <div className={styles.kpiGrid}>
               {/* Revenue card with breakdown */}
               <div className={styles.revenueCard}>
@@ -249,6 +251,8 @@ export default function ReportsPage() {
                 subtitle={`Avg duration: ${summary.avgSessionDurationMin} min`}
               />
             </div>
+          ) : (
+            <div className={styles.empty}>No summary data available</div>
           )}
 
           {/* Revenue Trend Chart */}
