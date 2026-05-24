@@ -53,32 +53,34 @@ export default function ReportsPage() {
   const [to, setTo] = useState(today());
   const [activePreset, setActivePreset] = useState<number | null>(30);
   const [providerId, setProviderId] = useState<number | undefined>();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [showPlatform, setShowPlatform] = useState(false);
+
+  // Resolve admin status synchronously to avoid race with initial data load
+  const initCtx = getAccessTokenContext();
+  const isAdminUser = initCtx?.identityType === "SYSTEM_ADMIN";
+  const [isAdmin] = useState(isAdminUser);
+  const [showPlatform, setShowPlatform] = useState(isAdminUser);
 
   const [summary, setSummary] = useState<ProviderReportSummary | null>(null);
   const [trend, setTrend] = useState<RevenueTrendPoint[]>([]);
   const [chargers, setChargers] = useState<ChargerReportRow[]>([]);
   const [platform, setPlatform] = useState<PlatformReportSummary | null>(null);
 
-  const [loadingSummary, setLoadingSummary] = useState(true);
-  const [loadingTrend, setLoadingTrend] = useState(true);
-  const [loadingChargers, setLoadingChargers] = useState(true);
-  const [loadingPlatform, setLoadingPlatform] = useState(false);
+  const [loadingSummary, setLoadingSummary] = useState(!isAdminUser);
+  const [loadingTrend, setLoadingTrend] = useState(!isAdminUser);
+  const [loadingChargers, setLoadingChargers] = useState(!isAdminUser);
+  const [loadingPlatform, setLoadingPlatform] = useState(isAdminUser);
   const [expandedCharger, setExpandedCharger] = useState<string | null>(null);
   const [page, setPage] = useState(0);
 
   const [providers, setProviders] = useState<ProviderListItem[]>([]);
 
   useEffect(() => {
-    const ctx = getAccessTokenContext();
-    if (ctx?.identityType === "SYSTEM_ADMIN") {
-      setIsAdmin(true);
+    if (isAdmin) {
       fetchActiveProviders()
         .then(setProviders)
         .catch(() => {});
     }
-  }, []);
+  }, [isAdmin]);
 
   const loadSummary = useCallback(async () => {
     setLoadingSummary(true);
