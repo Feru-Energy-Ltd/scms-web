@@ -12,6 +12,7 @@ export function getAccessTokenContext(): {
   identityType?: string;
   email?: string;
   providerId?: number;
+  userId?: number;
 } {
   const token = getAccessToken();
   if (!token) return {};
@@ -25,5 +26,7 @@ export function getAccessTokenContext(): {
       typeof p.email === "string" ? p.email : undefined,
     providerId:
       typeof p.provider_id === "number" ? p.provider_id : undefined,
+    userId:
+      typeof p.sub === "string" ? Number(p.sub) : undefined,
   };
 }
