@@ -42,6 +42,7 @@ export interface PlatformConfigResponse {
   maxWalletBalance: number;
   reservationWindowMinutes: number;
   lowBalanceThreshold: number;
+  defaultPricingPlanId: number | null;
   updatedAt: string;
 }
 
@@ -56,6 +57,7 @@ export interface UpdatePlatformConfigRequest {
   maxWalletBalance?: number;
   reservationWindowMinutes?: number;
   lowBalanceThreshold?: number;
+  defaultPricingPlanId?: number | null;
 }
 
 /* ── Pricing Plans ── */
@@ -117,4 +119,36 @@ export async function updatePlatformConfig(
     method: "PUT",
     body: data,
   });
+}
+
+/* ── Assignments ── */
+
+export interface PricingAssignment {
+  operatorId: number;
+  pricingPlanId: number;
+  pricingPlanName: string;
+  assignedAt: string;
+}
+
+const ASSIGNMENTS_BASE = "/api/v1/admin/pricing-assignments";
+
+export async function fetchPricingAssignments(): Promise<PricingAssignment[]> {
+  return apiRequestAuth<PricingAssignment[]>(csmsApiPath(ASSIGNMENTS_BASE));
+}
+
+export async function assignPricingPlan(
+  operatorId: number,
+  pricingPlanId: number,
+): Promise<PricingAssignment> {
+  return apiRequestAuth<PricingAssignment>(
+    csmsApiPath(`${ASSIGNMENTS_BASE}/${operatorId}`),
+    { method: "PUT", body: { pricingPlanId } },
+  );
+}
+
+export async function removeAssignment(operatorId: number): Promise<void> {
+  return apiRequestAuth<void>(
+    csmsApiPath(`${ASSIGNMENTS_BASE}/${operatorId}`),
+    { method: "DELETE" },
+  );
 }
