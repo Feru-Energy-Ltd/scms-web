@@ -6,18 +6,22 @@ import styles from "./users.module.css";
 
 interface Props {
   staff: StaffMember;
+  callerIsOwner: boolean;
   loading: boolean;
   onSave: (role: ProviderStaffRole) => void;
   onCancel: () => void;
 }
 
-const ROLE_OPTIONS: { value: ProviderStaffRole; label: string }[] = [
+const ALL_ROLES: { value: ProviderStaffRole; label: string }[] = [
   { value: "SERVICE_PROVIDER_OWNER", label: "Owner" },
   { value: "SERVICE_PROVIDER_MANAGER", label: "Manager" },
   { value: "SERVICE_PROVIDER_STAFF", label: "Staff" },
 ];
 
-export default function EditRoleModal({ staff, loading, onSave, onCancel }: Props) {
+export default function EditRoleModal({ staff, callerIsOwner, loading, onSave, onCancel }: Props) {
+  const roleOptions = callerIsOwner
+    ? ALL_ROLES
+    : ALL_ROLES.filter((r) => r.value !== "SERVICE_PROVIDER_OWNER");
   const [selectedRole, setSelectedRole] = useState<ProviderStaffRole>(
     staff.role as ProviderStaffRole,
   );
@@ -43,7 +47,7 @@ export default function EditRoleModal({ staff, loading, onSave, onCancel }: Prop
             onChange={(e) => setSelectedRole(e.target.value as ProviderStaffRole)}
             disabled={loading}
           >
-            {ROLE_OPTIONS.map((opt) => (
+            {roleOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>

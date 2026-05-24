@@ -223,6 +223,9 @@ export default function UsersPage() {
       {editTarget && (
         <EditRoleModal
           staff={editTarget}
+          callerIsOwner={staff.some(
+            (s) => s.userId === currentUserId && s.role === "SERVICE_PROVIDER_OWNER",
+          )}
           loading={acting}
           onSave={handleUpdateRole}
           onCancel={() => setEditTarget(null)}
