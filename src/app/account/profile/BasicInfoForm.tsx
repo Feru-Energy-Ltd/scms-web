@@ -38,8 +38,9 @@ export default function BasicInfoForm({ profile, onUpdated }: Props) {
   return (
     <div className={styles.formSection}>
       <div className={styles.formField}>
-        <label className={styles.formLabel}>First Name</label>
+        <label className={styles.formLabel} htmlFor="profile-firstName">First Name</label>
         <input
+          id="profile-firstName"
           className={styles.formInput}
           type="text"
           value={firstName}
@@ -49,8 +50,9 @@ export default function BasicInfoForm({ profile, onUpdated }: Props) {
       </div>
 
       <div className={styles.formField}>
-        <label className={styles.formLabel}>Last Name</label>
+        <label className={styles.formLabel} htmlFor="profile-lastName">Last Name</label>
         <input
+          id="profile-lastName"
           className={styles.formInput}
           type="text"
           value={lastName}
@@ -60,8 +62,9 @@ export default function BasicInfoForm({ profile, onUpdated }: Props) {
       </div>
 
       <div className={styles.formField}>
-        <label className={styles.formLabel}>Display Name</label>
+        <label className={styles.formLabel} htmlFor="profile-displayName">Display Name</label>
         <input
+          id="profile-displayName"
           className={styles.formInput}
           type="text"
           value={displayName}
@@ -71,6 +74,7 @@ export default function BasicInfoForm({ profile, onUpdated }: Props) {
       </div>
 
       <button
+        type="button"
         className={styles.saveBtn}
         onClick={handleSave}
         disabled={!hasChanges || loading}

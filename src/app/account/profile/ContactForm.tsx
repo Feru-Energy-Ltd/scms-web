@@ -33,10 +33,11 @@ export default function ContactForm({ profile, onUpdated }: Props) {
   return (
     <div className={styles.formSection}>
       <div className={styles.formField}>
-        <label className={styles.formLabel}>
+        <label className={styles.formLabel} htmlFor="profile-email">
           Email (login username — cannot be changed)
         </label>
         <input
+          id="profile-email"
           className={styles.readOnlyInput}
           type="email"
           value={profile.email}
@@ -50,8 +51,9 @@ export default function ContactForm({ profile, onUpdated }: Props) {
       </div>
 
       <div className={styles.formField}>
-        <label className={styles.formLabel}>Phone</label>
+        <label className={styles.formLabel} htmlFor="profile-phone">Phone</label>
         <input
+          id="profile-phone"
           className={styles.formInput}
           type="tel"
           value={phone}
@@ -61,6 +63,7 @@ export default function ContactForm({ profile, onUpdated }: Props) {
       </div>
 
       <button
+        type="button"
         className={styles.saveBtn}
         onClick={handleSave}
         disabled={!hasChanges || loading}

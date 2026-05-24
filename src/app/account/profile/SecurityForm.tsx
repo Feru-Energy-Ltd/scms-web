@@ -50,10 +50,12 @@ export default function SecurityForm() {
   return (
     <div className={styles.formSection}>
       <div className={styles.formField}>
-        <label className={styles.formLabel}>Current Password</label>
+        <label className={styles.formLabel} htmlFor="profile-currentPassword">Current Password</label>
         <input
+          id="profile-currentPassword"
           className={styles.formInput}
           type="password"
+          autoComplete="current-password"
           value={currentPassword}
           onChange={(e) => {
             setCurrentPassword(e.target.value);
@@ -67,10 +69,12 @@ export default function SecurityForm() {
       </div>
 
       <div className={styles.formField}>
-        <label className={styles.formLabel}>New Password</label>
+        <label className={styles.formLabel} htmlFor="profile-newPassword">New Password</label>
         <input
+          id="profile-newPassword"
           className={styles.formInput}
           type="password"
+          autoComplete="new-password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           disabled={loading}
@@ -83,10 +87,12 @@ export default function SecurityForm() {
       </div>
 
       <div className={styles.formField}>
-        <label className={styles.formLabel}>Confirm New Password</label>
+        <label className={styles.formLabel} htmlFor="profile-confirmPassword">Confirm New Password</label>
         <input
+          id="profile-confirmPassword"
           className={styles.formInput}
           type="password"
+          autoComplete="new-password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           disabled={loading}
@@ -97,6 +103,7 @@ export default function SecurityForm() {
       </div>
 
       <button
+        type="button"
         className={styles.saveBtn}
         onClick={handleChangePassword}
         disabled={!canSubmit}

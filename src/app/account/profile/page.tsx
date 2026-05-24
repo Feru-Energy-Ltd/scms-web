@@ -17,6 +17,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   const loadProfile = useCallback(async () => {
+    setLoading(true);
     try {
       const data = await fetchProfile();
       setProfile(data);

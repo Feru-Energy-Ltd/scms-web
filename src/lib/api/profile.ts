@@ -38,7 +38,7 @@ export async function updateProfile(
 ): Promise<ProfileResponse> {
   return apiRequestAuth<ProfileResponse>(authApiPath("/profile"), {
     method: "PUT",
-    body: JSON.stringify(data),
+    body: data,
   });
 }
 
@@ -47,6 +47,6 @@ export async function changePassword(
 ): Promise<void> {
   await apiRequestAuth<void>(authApiPath("/profile/change-password"), {
     method: "POST",
-    body: JSON.stringify(data),
+    body: data,
   });
 }
