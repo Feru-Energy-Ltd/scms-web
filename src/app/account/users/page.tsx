@@ -1,80 +1,160 @@
 "use client";
 
-import { useCallback, useState } from "react"; 
-import { fetchProviderStaff } from "@/lib/api/providerUsers";
-import { asArray } from "@/lib/api/normalize";
-import { formatRoleValue } from "@/lib/auth/roles";
+import { useCallback, useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import {
+  fetchProviderStaff,
+  updateStaffRole,
+  suspendStaff,
+  type StaffMember,
+  type ProviderStaffRole,
+} from "@/lib/api/providerUsers";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
+import userStyles from "./users.module.css";
+import EditRoleModal from "./EditRoleModal";
+import ConfirmModal from "./ConfirmModal";
 
-type ProviderUserRow = Record<string, unknown>;
+const ROLE_LABELS: Record<string, string> = {
+  SERVICE_PROVIDER_OWNER: "Owner",
+  SERVICE_PROVIDER_MANAGER: "Manager",
+  SERVICE_PROVIDER_STAFF: "Staff",
+};
 
-function cell(row: ProviderUserRow, ...keys: string[]) {
-  for (const k of keys) {
-    const v = row[k];
-    if (v != null && v !== "") return String(v);
-  }
-  return "—";
+function formatRole(role: string): string {
+  return ROLE_LABELS[role] ?? role;
 }
 
-export default function AccountUsersPage() {
-  const [search, setSearch] = useState("");
-  const [rows, setRows] = useState<ProviderUserRow[]>([]);
+export default function UsersPage() {
+  const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [acting, setActing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { identityType, providerId } = getAccessTokenContext();
 
-  const load = useCallback(async () => {
-    if (identityType !== "SERVICE_PROVIDER" || providerId == null) {
-      setRows([]);
+  const [editTarget, setEditTarget] = useState<StaffMember | null>(null);
+  const [deactivateTarget, setDeactivateTarget] = useState<StaffMember | null>(null);
+
+  const ctx = getAccessTokenContext();
+  const providerId = ctx?.providerId;
+  const currentUserId = ctx?.userId;
+
+  // Extract permissions from JWT for UI gating
+  const [userPermissions, setUserPermissions] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    try {
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("access_token") ?? sessionStorage.getItem("access_token")
+          : null;
+      if (token) {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        if (Array.isArray(payload.permissions)) {
+          setUserPermissions(new Set(payload.permissions));
+        }
+      }
+    } catch {
+      /* ignore parse errors */
+    }
+  }, []);
+
+  const canEditRole = userPermissions.has("provider:org:update");
+  const canDeactivate = userPermissions.has("provider:org:delete");
+
+  const loadStaff = useCallback(async () => {
+    if (!providerId) {
+      setStaff([]);
       setLoading(false);
-      setError(
-        "No provider id found on the access token. Users list requires a provider-scoped session.",
-      );
+      setError("No provider context found. Staff list requires a provider-scoped session.");
       return;
     }
-
     setLoading(true);
     setError(null);
     try {
-      const raw = await fetchProviderStaff(providerId);
-      setRows(asArray(raw));
+      setStaff(await fetchProviderStaff(providerId));
     } catch (e) {
-      showApiErrorToast(e, { fallbackMessage: "Could not load users." });
+      showApiErrorToast(e, { fallbackMessage: "Failed to load staff" });
+    } finally {
+      setLoading(false);
     }
-  }, [identityType, providerId]);
+  }, [providerId]);
+
+  useEffect(() => {
+    loadStaff();
+  }, [loadStaff]);
+
+  const activeOwnerCount = staff.filter(
+    (s) => s.role === "SERVICE_PROVIDER_OWNER" && s.status === "ACTIVE",
+  ).length;
+
+  function canModify(member: StaffMember): boolean {
+    if (member.userId === currentUserId) return false;
+    if (member.status !== "ACTIVE") return false;
+    if (member.role === "SERVICE_PROVIDER_OWNER" && activeOwnerCount <= 1) return false;
+    return true;
+  }
+
+  async function handleUpdateRole(role: ProviderStaffRole) {
+    if (!providerId || !editTarget) return;
+    setActing(true);
+    try {
+      await updateStaffRole(providerId, editTarget.userId, role);
+      toast.success(`${editTarget.displayName}'s role updated to ${formatRole(role)}`);
+      setEditTarget(null);
+      loadStaff();
+    } catch (e) {
+      showApiErrorToast(e, { fallbackMessage: "Failed to update role" });
+    } finally {
+      setActing(false);
+    }
+  }
+
+  async function handleDeactivate() {
+    if (!providerId || !deactivateTarget) return;
+    setActing(true);
+    try {
+      await suspendStaff(providerId, deactivateTarget.userId);
+      toast.success(`${deactivateTarget.displayName} has been deactivated`);
+      setDeactivateTarget(null);
+      loadStaff();
+    } catch (e) {
+      showApiErrorToast(e, { fallbackMessage: "Failed to deactivate staff member" });
+    } finally {
+      setActing(false);
+    }
+  }
+
+  const filtered = search
+    ? staff.filter(
+        (s) =>
+          s.displayName?.toLowerCase().includes(search.toLowerCase()) ||
+          s.email?.toLowerCase().includes(search.toLowerCase()),
+      )
+    : staff;
 
   return (
     <div>
+      <h1 className={styles.h1}>Staff</h1>
+
       <div className={styles.toolbar}>
         <input
           className={styles.searchInput}
-          placeholder="Search…"
+          placeholder="Search by name or email"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") void load();
-          }}
         />
-        <button
-          type="button"
-          className={styles.button}
-          onClick={() => void load()}
-        >
-          Search
-        </button>
-        <button type="button" className={styles.button} onClick={() => void load()}>
+        <button className={styles.button} onClick={loadStaff}>
           Refresh
         </button>
       </div>
 
-      {error ? <p className={styles.error}>{error}</p> : null}
+      {error && <p className={styles.error}>{error}</p>}
 
       {loading ? (
-        <p className={styles.muted}>Loading…</p>
-      ) : rows.length === 0 ? (
-        <p className={styles.muted}>No users to show.</p>
+        <p className={styles.muted}>Loading staff…</p>
+      ) : filtered.length === 0 ? (
+        <p className={styles.muted}>No staff members found.</p>
       ) : (
         <div className={styles.tableWrap}>
           <table className={styles.table}>
@@ -82,50 +162,71 @@ export default function AccountUsersPage() {
               <tr>
                 <th className={styles.th}>Name</th>
                 <th className={styles.th}>Email</th>
-                <th className={styles.th}>Phone</th>
                 <th className={styles.th}>Role</th>
                 <th className={styles.th}>Status</th>
+                {(canEditRole || canDeactivate) && <th className={styles.th}>Actions</th>}
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, i) => {
-                const id = cell(row, "id", "userId");
-                const active = row.active;
-                const activeBool =
-                  identityType === "SERVICE_PROVIDER"
-                    ? cell(row, "status") === "ACTIVE"
-                    : typeof active === "boolean"
-                      ? active
-                      : active === "true" || active === 1;
-                return (
-                  <tr key={`${id}-${i}`}>
+              {filtered.map((m) => (
+                <tr key={m.userId}>
+                  <td className={styles.td}>{m.displayName || "—"}</td>
+                  <td className={styles.td}>{m.email}</td>
+                  <td className={styles.td}>{formatRole(m.role)}</td>
+                  <td className={styles.td}>
+                    <span className={m.status === "ACTIVE" ? styles.badgeOk : styles.badgeNo}>
+                      {m.status === "ACTIVE" ? "Active" : "Suspended"}
+                    </span>
+                  </td>
+                  {(canEditRole || canDeactivate) && (
                     <td className={styles.td}>
-                      {cell(row, "firstName", "lastName")
-                        ? `${cell(row, "firstName")} ${cell(row, "lastName")}`.trim()
-                        : cell(row, "displayName", "name", "username")}
+                      {canModify(m) ? (
+                        <div className={userStyles.actions}>
+                          {canEditRole && (
+                            <button className={userStyles.actionBtn} onClick={() => setEditTarget(m)}>
+                              Edit
+                            </button>
+                          )}
+                          {canDeactivate && (
+                            <button
+                              className={userStyles.deactivateBtn}
+                              onClick={() => setDeactivateTarget(m)}
+                            >
+                              Deactivate
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <span className={styles.muted}>—</span>
+                      )}
                     </td>
-                    <td className={styles.td}>{cell(row, "email")}</td>
-                    <td className={styles.td}>
-                      {identityType === "SERVICE_PROVIDER"
-                        ? "—"
-                        : cell(row, "phoneNumber", "phone")}
-                    </td>
-                    <td className={styles.td}>
-                      {formatRoleValue(row.roles ?? row.role ?? row.roleName)}
-                    </td>
-                    <td className={styles.td}>
-                      <span
-                        className={activeBool ? styles.badgeOk : styles.badgeNo}
-                      >
-                        {activeBool ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
+                  )}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
+      )}
+
+      {editTarget && (
+        <EditRoleModal
+          staff={editTarget}
+          loading={acting}
+          onSave={handleUpdateRole}
+          onCancel={() => setEditTarget(null)}
+        />
+      )}
+
+      {deactivateTarget && (
+        <ConfirmModal
+          title="Deactivate Staff Member"
+          message={`Are you sure you want to deactivate ${deactivateTarget.displayName}? They will lose access to the organization.`}
+          confirmLabel="Deactivate"
+          confirmDestructive
+          loading={acting}
+          onConfirm={handleDeactivate}
+          onCancel={() => setDeactivateTarget(null)}
+        />
       )}
     </div>
   );
