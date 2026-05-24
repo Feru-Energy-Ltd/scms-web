@@ -6,6 +6,7 @@ import {
   fetchProviderStaff,
   updateStaffRole,
   suspendStaff,
+  activateStaff,
   type StaffMember,
   type ProviderStaffRole,
 } from "@/lib/api/providerUsers";
@@ -108,6 +109,20 @@ export default function UsersPage() {
     }
   }
 
+  async function handleActivate(member: StaffMember) {
+    if (!providerId) return;
+    setActing(true);
+    try {
+      await activateStaff(providerId, member.userId);
+      toast.success(`${member.displayName} has been reactivated`);
+      loadStaff();
+    } catch (e) {
+      showApiErrorToast(e, { fallbackMessage: "Failed to activate staff member" });
+    } finally {
+      setActing(false);
+    }
+  }
+
   const filtered = search
     ? staff.filter(
         (s) =>
@@ -163,11 +178,25 @@ export default function UsersPage() {
                   </td>
                   {(canEditRole || canDeactivate) && (
                     <td className={styles.td}>
-                      {canModify(m) ? (
+                      {m.status === "SUSPENDED" ? (
+                        canEditRole ? (
+                          <div className={userStyles.actions}>
+                            <button
+                              className={userStyles.activateBtn}
+                              onClick={() => handleActivate(m)}
+                              disabled={acting}
+                            >
+                              Activate
+                            </button>
+                          </div>
+                        ) : (
+                          <span className={styles.muted}>—</span>
+                        )
+                      ) : canModify(m) ? (
                         <div className={userStyles.actions}>
                           {canEditRole && (
                             <button className={userStyles.actionBtn} onClick={() => setEditTarget(m)}>
-                              Edit
+                              Edit Role
                             </button>
                           )}
                           {canDeactivate && (

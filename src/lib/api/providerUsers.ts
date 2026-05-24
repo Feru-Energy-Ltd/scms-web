@@ -36,3 +36,12 @@ export async function suspendStaff(
     method: "DELETE",
   });
 }
+
+export async function activateStaff(
+  providerId: number,
+  userId: number,
+): Promise<StaffMember> {
+  return apiRequestAuth<StaffMember>(`/auth/providers/${providerId}/staff/${userId}/activate`, {
+    method: "POST",
+  });
+}
