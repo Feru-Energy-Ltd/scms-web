@@ -1,0 +1,307 @@
+/* pricing.module.css */
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.tab {
+  padding: 8px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 500;
+}
+
+.tabActive {
+  padding: 8px 18px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in oklab, var(--color-primary) 85%, black);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 500;
+}
+
+/* ── Status badges ── */
+.badgeActive {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badgeDraft {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.badgeArchived {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* ── Platform default row highlight ── */
+.platformRow {
+  background: #eff6ff;
+  border-left: 3px solid #3b82f6;
+}
+
+.starIcon {
+  margin-right: 4px;
+}
+
+/* ── Config cards grid ── */
+.cardGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.configCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.cardTitle {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.cardEditBtn {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface-2);
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.cardEditBtn:hover {
+  background: color-mix(in oklab, var(--color-primary) 10%, transparent);
+}
+
+.cardRow {
+  font-size: 0.88rem;
+  line-height: 2;
+  color: var(--color-text-muted);
+}
+
+.cardValue {
+  font-weight: 600;
+  color: inherit;
+}
+
+/* ── Modal ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 24px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.modalTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 16px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.formGridFull {
+  grid-column: 1 / -1;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.formLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.formInput {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.formSelect {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
+}
+
+.cancelBtn {
+  padding: 8px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.primaryBtn {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+  background: var(--color-primary);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.primaryBtn:disabled,
+.cancelBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Action buttons in table ── */
+.actionBtn {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.activateBtn {
+  padding: 4px 10px;
+  border: 1px solid #86efac;
+  border-radius: 6px;
+  background: #f0fdf4;
+  color: #16a34a;
+  cursor: pointer;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.deactivateBtn {
+  padding: 4px 10px;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  background: #fef2f2;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+/* ── Warning banner ── */
+.warning {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #fef9c3;
+  border: 1px solid #fde047;
+  color: #854d0e;
+  font-size: 0.88rem;
+  margin-bottom: 16px;
+}
+
+/* ── Filter pills ── */
+.filterPills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.pillActive {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-primary);
+  background: color-mix(in oklab, var(--color-primary) 15%, transparent);
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+}

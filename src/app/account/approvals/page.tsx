@@ -10,6 +10,7 @@ import {
 } from "@/lib/api/serviceProviders";
 import { asArray } from "@/lib/api/normalize";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
+import toast from "react-hot-toast";
 import styles from "@/components/account/ResourceList.module.css";
 
 type ProviderRow = Record<string, unknown>;
@@ -72,6 +73,21 @@ export default function AccountApprovalsPage() {
     try {
       await setServiceProviderStatus(id, "ACTIVE");
       await load();
+      toast.success(
+        (t) => (
+          <span>
+            Provider approved. Using default pricing plan.{" "}
+            <a
+              href={`/account/pricing?tab=assignments&assign=${id}`}
+              style={{ color: "#3b82f6", fontWeight: 600 }}
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Assign custom plan →
+            </a>
+          </span>
+        ),
+        { duration: 8000 },
+      );
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not approve provider." });
     } finally {

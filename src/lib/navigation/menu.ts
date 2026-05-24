@@ -26,6 +26,10 @@ const permissionMenuItems: { item: AppMenuItem; permissions: string[] }[] = [
     permissions: ["admin:users:read"],
   },
   {
+    item: { name: "Pricing", url: "/account/pricing" },
+    permissions: ["admin:providers:read"],
+  },
+  {
     item: { name: "Charge Boxes", url: "/account/charge-boxes" },
     permissions: [
       "admin:chargers:read",
