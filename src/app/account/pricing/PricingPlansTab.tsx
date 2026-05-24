@@ -37,6 +37,7 @@ export default function PricingPlansTab({ preselectedOperatorId }: Props) {
   const [showModal, setShowModal] = useState(false);
   const [editPlan, setEditPlan] = useState<PricingPlan | null>(null);
   const [saving, setSaving] = useState(false);
+  const [confirmDeactivateId, setConfirmDeactivateId] = useState<number | null>(null);
 
   const loadPlans = useCallback(async () => {
     setLoading(true);
@@ -105,11 +106,12 @@ export default function PricingPlansTab({ preselectedOperatorId }: Props) {
     }
   };
 
-  const handleDeactivate = async (id: number) => {
-    if (!window.confirm("Deactivate this plan? It will be archived.")) return;
+  const handleDeactivate = async () => {
+    if (confirmDeactivateId == null) return;
     try {
-      await deactivatePricingPlan(id);
+      await deactivatePricingPlan(confirmDeactivateId);
       toast.success("Plan deactivated.");
+      setConfirmDeactivateId(null);
       await loadPlans();
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not deactivate plan." });
@@ -243,7 +245,7 @@ export default function PricingPlansTab({ preselectedOperatorId }: Props) {
                       {plan.status === "ACTIVE" && (
                         <button
                           className={styles.deactivateBtn}
-                          onClick={() => void handleDeactivate(plan.id)}
+                          onClick={() => setConfirmDeactivateId(plan.id)}
                         >
                           Deactivate
                         </button>
@@ -266,6 +268,32 @@ export default function PricingPlansTab({ preselectedOperatorId }: Props) {
           onSave={handleSave}
           onCancel={() => { setShowModal(false); setEditPlan(null); }}
         />
+      )}
+
+      {confirmDeactivateId != null && (
+        <div className={styles.overlay} onClick={() => setConfirmDeactivateId(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Deactivate Plan</h2>
+            <p style={{ fontSize: "0.9rem", color: "var(--color-text-muted)", margin: "0 0 20px" }}>
+              This plan will be archived and can no longer be used for charging sessions. Are you sure?
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.cancelBtn}
+                onClick={() => setConfirmDeactivateId(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.deactivateBtn}
+                style={{ padding: "8px 18px", fontSize: "0.875rem", fontWeight: 600 }}
+                onClick={() => void handleDeactivate()}
+              >
+                Deactivate
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
