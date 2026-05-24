@@ -10,6 +10,7 @@ import {
   type ProviderStaffRole,
 } from "@/lib/api/providerUsers";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
+import { getStoredPermissions } from "@/lib/auth/session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 import userStyles from "./users.module.css";
@@ -40,27 +41,9 @@ export default function UsersPage() {
   const providerId = ctx?.providerId;
   const currentUserId = ctx?.userId;
 
-  // Extract permissions from JWT for UI gating
-  const [userPermissions, setUserPermissions] = useState<Set<string>>(new Set());
-  useEffect(() => {
-    try {
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("access_token") ?? sessionStorage.getItem("access_token")
-          : null;
-      if (token) {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        if (Array.isArray(payload.permissions)) {
-          setUserPermissions(new Set(payload.permissions));
-        }
-      }
-    } catch {
-      /* ignore parse errors */
-    }
-  }, []);
-
-  const canEditRole = userPermissions.has("provider:org:update");
-  const canDeactivate = userPermissions.has("provider:org:delete");
+  const perms = new Set(getStoredPermissions());
+  const canEditRole = perms.has("provider:org:update");
+  const canDeactivate = perms.has("provider:org:delete");
 
   const loadStaff = useCallback(async () => {
     if (!providerId) {
