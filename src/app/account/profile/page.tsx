@@ -1,41 +1,76 @@
 "use client";
 
-import { useState } from "react";
-import { decodeJwtPayload } from "@/lib/auth/jwt";
-import { getAccessTokenContext } from "@/lib/auth/jwtContext";
-import { getAccessToken } from "@/lib/auth/session";
+import { useCallback, useEffect, useState } from "react";
+import { fetchProfile, type ProfileResponse } from "@/lib/api/profile";
+import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
+import pStyles from "./profile.module.css";
+import BasicInfoForm from "./BasicInfoForm";
+import ContactForm from "./ContactForm";
+import SecurityForm from "./SecurityForm";
+
+type Tab = "basic" | "contact" | "security";
 
 export default function ProfilePage() {
-  const [ctx] = useState(() => getAccessTokenContext());
-  const [rawClaims] = useState<Record<string, unknown> | null>(() => {
-    const token = getAccessToken();
-    return token ? decodeJwtPayload(token) : null;
-  });
+  const [tab, setTab] = useState<Tab>("basic");
+  const [profile, setProfile] = useState<ProfileResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadProfile = useCallback(async () => {
+    try {
+      const data = await fetchProfile();
+      setProfile(data);
+    } catch (e) {
+      showApiErrorToast(e, { fallbackMessage: "Could not load profile." });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadProfile();
+  }, [loadProfile]);
 
   return (
     <div>
       <h1 className={styles.h1}>Profile</h1>
-      <p className={styles.muted}>
-        Session-backed profile context. Full account forms can call the users
-        API next.
-      </p>
 
-      <div className={styles.field}>
-        <span className={styles.label}>Email</span>
-        <p>{ctx.email ?? "—"}</p>
+      <div className={pStyles.tabs}>
+        <button
+          className={tab === "basic" ? pStyles.tabActive : pStyles.tab}
+          onClick={() => setTab("basic")}
+        >
+          Basic Info
+        </button>
+        <button
+          className={tab === "contact" ? pStyles.tabActive : pStyles.tab}
+          onClick={() => setTab("contact")}
+        >
+          Contact
+        </button>
+        <button
+          className={tab === "security" ? pStyles.tabActive : pStyles.tab}
+          onClick={() => setTab("security")}
+        >
+          Security
+        </button>
       </div>
 
-      {rawClaims ? (
-        <div className={styles.field}>
-          <span className={styles.label}>Access token claims</span>
-          <pre className={styles.pre}>
-            {JSON.stringify(rawClaims, null, 2)}
-          </pre>
-        </div>
-      ) : (
-        <p className={styles.muted}>No access token in this session.</p>
+      {loading && <p className={styles.muted}>Loading profile...</p>}
+
+      {!loading && !profile && (
+        <p className={styles.muted}>Could not load profile.</p>
       )}
+
+      {!loading && profile && tab === "basic" && (
+        <BasicInfoForm profile={profile} onUpdated={loadProfile} />
+      )}
+
+      {!loading && profile && tab === "contact" && (
+        <ContactForm profile={profile} onUpdated={loadProfile} />
+      )}
+
+      {!loading && tab === "security" && <SecurityForm />}
     </div>
   );
 }
