@@ -46,11 +46,7 @@ export default function PricingPlansTab({ preselectedOperatorId }: Props) {
         operatorFilter ? Number(operatorFilter) : undefined,
         statusFilter || undefined,
       );
-      data.sort((a, b) => {
-        if (a.operatorId == null && b.operatorId != null) return -1;
-        if (a.operatorId != null && b.operatorId == null) return 1;
-        return a.name.localeCompare(b.name);
-      });
+      data.sort((a, b) => a.name.localeCompare(b.name));
       setPlans(data);
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load pricing plans." });
@@ -131,19 +127,8 @@ export default function PricingPlansTab({ preselectedOperatorId }: Props) {
     return <span className={cls}>{status}</span>;
   };
 
-  const hasPlatformDefault = plans.some(
-    (p) => p.operatorId == null && p.status === "ACTIVE",
-  );
-
   return (
     <>
-      {!hasPlatformDefault && !loading && (
-        <div className={styles.warning}>
-          No active Platform Default plan. The system needs at least one active
-          plan with no operator assigned.
-        </div>
-      )}
-
       <div className={rlStyles.toolbar}>
         <div className={styles.filterPills}>
           {STATUS_FILTERS.map((f) => (
@@ -208,16 +193,8 @@ export default function PricingPlansTab({ preselectedOperatorId }: Props) {
             </thead>
             <tbody>
               {plans.map((plan) => (
-                <tr
-                  key={plan.id}
-                  className={plan.operatorId == null ? styles.platformRow : undefined}
-                >
-                  <td className={rlStyles.td}>
-                    {plan.operatorId == null && (
-                      <span className={styles.starIcon}>{"\u2B50"}</span>
-                    )}
-                    {plan.name}
-                  </td>
+                <tr key={plan.id}>
+                  <td className={rlStyles.td}>{plan.name}</td>
                   <td className={rlStyles.td}>{operatorName(plan.operatorId)}</td>
                   <td className={rlStyles.td}>RWF {plan.energyRatePerKwh.toFixed(2)}/kWh</td>
                   <td className={rlStyles.td}>RWF {plan.idleFeePerMin.toFixed(2)}/min</td>
