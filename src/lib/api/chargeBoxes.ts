@@ -1,5 +1,5 @@
 import { csmsApiPath } from "../config";
-import { ApiError, apiRequestAuth } from "./http";
+import { apiRequestAuth } from "./http";
 
 /** Must match `com.safaricharge.csms.models.chargeboxes.ConnectorType`. */
 export const CHARGE_BOX_CONNECTOR_TYPES = [
@@ -40,23 +40,6 @@ export async function createChargeBox(payload: CreateChargeBoxPayload) {
     method: "POST",
     body: payload,
   });
-}
-
-/**
- * CSMS geo list: `GET …/chargeboxes/geo/locations` (via gateway: `/csms/chargeboxes/geo/locations`).
- * Backend returns 404 with an empty list when there are no locations; we normalize that to [].
- */
-export async function fetchChargeBoxGeoLocations() {
-  try {
-    return await apiRequestAuth<unknown>(csmsApiPath("/chargeboxes/geo/locations"), {
-      method: "GET",
-    });
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 404) {
-      return [];
-    }
-    throw e;
-  }
 }
 
 export async function fetchChargeBoxes(page = 0, size = 20) {
