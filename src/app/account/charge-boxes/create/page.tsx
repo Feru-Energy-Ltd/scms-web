@@ -3,13 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
   CHARGE_BOX_CONNECTOR_TYPES,
   createChargeBox,
   type CreateChargeBoxPayload,
-} from "@/lib/api/chargingStations";
+} from "@/lib/api/chargeBoxes";
+import { fetchStations, type ChargingStation } from "@/lib/api/stations";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import listStyles from "@/components/account/ResourceList.module.css";
 import styles from "./create-charge-box.module.css";
@@ -24,6 +25,11 @@ const OCPP_OPTIONS = ["OCPP_J16", "OCPP_J20", "OCPP_J21"] as const;
 export default function CreateChargeBoxPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+
+  // Station selection: attach to an existing station, or create a new 1:1 station.
+  const [stationMode, setStationMode] = useState<"existing" | "new">("new");
+  const [stations, setStations] = useState<ChargingStation[]>([]);
+  const [selectedStationId, setSelectedStationId] = useState("");
 
   const [chargeBoxId, setChargeBoxId] = useState("");
   const [idTag, setIdTag] = useState("");
@@ -64,6 +70,22 @@ export default function CreateChargeBoxPage() {
     [],
   );
 
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const list = await fetchStations();
+        if (active) setStations(list);
+      } catch {
+        // Non-fatal: the user can still create a new station.
+        if (active) setStations([]);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   function onImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) {
@@ -87,11 +109,30 @@ export default function CreateChargeBoxPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const id = chargeBoxId.trim();
-    const addr = locationAddressName.trim();
     const tag = idTag.trim();
 
-    if (!id || !addr || !tag) {
-      toast.error("Charge box id, address, and id tag are required.");
+    const existingStation =
+      stationMode === "existing"
+        ? stations.find((s) => String(s.id) === selectedStationId)
+        : undefined;
+
+    // Address is required by the server. For an existing station it's inherited
+    // from the station; for a new station the user supplies it.
+    const addr =
+      stationMode === "existing"
+        ? (existingStation?.locationAddressName ?? "").trim()
+        : locationAddressName.trim();
+
+    if (!id || !tag) {
+      toast.error("Charge box id and id tag are required.");
+      return;
+    }
+    if (stationMode === "existing" && !existingStation) {
+      toast.error("Please select a station to attach this charger to.");
+      return;
+    }
+    if (stationMode === "new" && !addr) {
+      toast.error("Location address is required for a new station.");
       return;
     }
     if (!imageDataUrl.startsWith("data:image/")) {
@@ -105,10 +146,15 @@ export default function CreateChargeBoxPage() {
 
     const payload: CreateChargeBoxPayload = {
       chargeBoxId: id,
+      stationId: existingStation ? existingStation.id : undefined,
       ocppProtocol,
       description: description.trim() || undefined,
-      locationLatitude: locationLatitude.trim() || undefined,
-      locationLongitude: locationLongitude.trim() || undefined,
+      locationLatitude:
+        existingStation?.locationLatitude ??
+        (locationLatitude.trim() || undefined),
+      locationLongitude:
+        existingStation?.locationLongitude ??
+        (locationLongitude.trim() || undefined),
       locationAddressName: addr,
       currentType,
       numberOfConnectors: numConnectors,
@@ -182,47 +228,104 @@ export default function CreateChargeBoxPage() {
         </div>
 
         <div className={listStyles.field}>
-          <label className={listStyles.label} htmlFor="locationAddressName">
-            Location address
+          <label className={listStyles.label} htmlFor="stationMode">
+            Station
           </label>
-          <input
-            id="locationAddressName"
+          <select
+            id="stationMode"
             className={listStyles.textInput}
-            value={locationAddressName}
-            onChange={(e) => setLocationAddressName(e.target.value)}
-            required
-            placeholder="Street, city"
-          />
+            value={stationMode}
+            onChange={(e) =>
+              setStationMode(e.target.value as "existing" | "new")
+            }
+          >
+            <option value="new">Create a new station (this charger only)</option>
+            <option value="existing" disabled={stations.length === 0}>
+              Attach to an existing station
+              {stations.length === 0 ? " (none available)" : ""}
+            </option>
+          </select>
+          <p className={listStyles.muted}>
+            Location and ownership belong to the station. Attaching groups this
+            charger with others at the same site.
+          </p>
         </div>
 
-        <div className={styles.row2}>
+        {stationMode === "existing" ? (
           <div className={listStyles.field}>
-            <label className={listStyles.label} htmlFor="locationLatitude">
-              Latitude (optional)
+            <label className={listStyles.label} htmlFor="selectedStationId">
+              Existing station
             </label>
-            <input
-              id="locationLatitude"
+            <select
+              id="selectedStationId"
               className={listStyles.textInput}
-              value={locationLatitude}
-              onChange={(e) => setLocationLatitude(e.target.value)}
-              inputMode="decimal"
-              placeholder="-1.94"
-            />
+              value={selectedStationId}
+              onChange={(e) => setSelectedStationId(e.target.value)}
+            >
+              <option value="">Select a station…</option>
+              {stations.map((s) => (
+                <option key={s.id} value={String(s.id)}>
+                  {s.name}
+                  {s.locationAddressName ? ` — ${s.locationAddressName}` : ""}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className={listStyles.field}>
-            <label className={listStyles.label} htmlFor="locationLongitude">
-              Longitude (optional)
-            </label>
-            <input
-              id="locationLongitude"
-              className={listStyles.textInput}
-              value={locationLongitude}
-              onChange={(e) => setLocationLongitude(e.target.value)}
-              inputMode="decimal"
-              placeholder="30.06"
-            />
-          </div>
-        </div>
+        ) : (
+          <>
+            <div className={listStyles.field}>
+              <label
+                className={listStyles.label}
+                htmlFor="locationAddressName"
+              >
+                Location address
+              </label>
+              <input
+                id="locationAddressName"
+                className={listStyles.textInput}
+                value={locationAddressName}
+                onChange={(e) => setLocationAddressName(e.target.value)}
+                required
+                placeholder="Street, city"
+              />
+            </div>
+
+            <div className={styles.row2}>
+              <div className={listStyles.field}>
+                <label
+                  className={listStyles.label}
+                  htmlFor="locationLatitude"
+                >
+                  Latitude (optional)
+                </label>
+                <input
+                  id="locationLatitude"
+                  className={listStyles.textInput}
+                  value={locationLatitude}
+                  onChange={(e) => setLocationLatitude(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="-1.94"
+                />
+              </div>
+              <div className={listStyles.field}>
+                <label
+                  className={listStyles.label}
+                  htmlFor="locationLongitude"
+                >
+                  Longitude (optional)
+                </label>
+                <input
+                  id="locationLongitude"
+                  className={listStyles.textInput}
+                  value={locationLongitude}
+                  onChange={(e) => setLocationLongitude(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="30.06"
+                />
+              </div>
+            </div>
+          </>
+        )}
 
         <div className={listStyles.field}>
           <label className={listStyles.label} htmlFor="description">

@@ -16,7 +16,7 @@ import {
   Marker,
   useJsApiLoader,
 } from "@react-google-maps/api";
-import { fetchChargeBoxGeoLocations } from "@/lib/api/chargingStations";
+import { fetchStationGeoLocations } from "@/lib/api/stations";
 import { asArray } from "@/lib/api/normalize";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "./dashboard-map.module.css";
@@ -313,7 +313,7 @@ export default function ChargingStationsMap() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const raw = await fetchChargeBoxGeoLocations();
+      const raw = await fetchStationGeoLocations();
       setRows(asArray<ChargerRow>(raw));
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load stations for the map." });
@@ -336,21 +336,19 @@ export default function ChargingStationsMap() {
       if (lat == null || lng == null) return;
       if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
 
-      const id =
-        cell(row, "chargeBoxId", "id", "chargerId") || `row-${i}`;
-      const description = cell(row, "description", "address");
-      const statusLine = statusParts(
-        row,
-        "chargeStatus",
-        "registrationStatus",
-      );
+      // One pin per station: key + id are the stationId.
+      const id = cell(row, "stationId", "id") || `station-${i}`;
+      const description = cell(row, "name", "address");
+      const chargerCount = cell(row, "chargerCount");
+      const statusLine = statusParts(row, "address") +
+        (chargerCount ? ` · ${chargerCount} charger${chargerCount === "1" ? "" : "s"}` : "");
       out.push({
-        key: `${id}-${lat}-${lng}-${i}`,
+        key: id,
         id,
         lat,
         lng,
         description,
-        statusLine,
+        statusLine: statusLine.replace(/^ · /, ""),
       });
     });
 

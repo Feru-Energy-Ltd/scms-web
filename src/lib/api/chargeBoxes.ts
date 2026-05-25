@@ -1,5 +1,5 @@
 import { csmsApiPath } from "../config";
-import { ApiError, apiRequestAuth } from "./http";
+import { apiRequestAuth } from "./http";
 
 /** Must match `com.safaricharge.csms.models.chargeboxes.ConnectorType`. */
 export const CHARGE_BOX_CONNECTOR_TYPES = [
@@ -22,6 +22,8 @@ export type CreateChargeBoxConnectorPayload = {
 
 export type CreateChargeBoxPayload = {
   chargeBoxId: string;
+  /** Attach to an existing station; when omitted, the backend creates a 1:1 station. */
+  stationId?: number;
   ocppProtocol?: "OCPP_J16" | "OCPP_J20" | "OCPP_J21";
   description?: string;
   locationLatitude?: string;
@@ -42,24 +44,7 @@ export async function createChargeBox(payload: CreateChargeBoxPayload) {
   });
 }
 
-/**
- * CSMS geo list: `GET …/chargeboxes/geo/locations` (via gateway: `/csms/chargeboxes/geo/locations`).
- * Backend returns 404 with an empty list when there are no locations; we normalize that to [].
- */
-export async function fetchChargeBoxGeoLocations() {
-  try {
-    return await apiRequestAuth<unknown>(csmsApiPath("/chargeboxes/geo/locations"), {
-      method: "GET",
-    });
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 404) {
-      return [];
-    }
-    throw e;
-  }
-}
-
-export async function fetchChargingStations(page = 0, size = 20) {
+export async function fetchChargeBoxes(page = 0, size = 20) {
   const q = new URLSearchParams({
     page: String(page),
     size: String(size),
@@ -67,6 +52,6 @@ export async function fetchChargingStations(page = 0, size = 20) {
   return apiRequestAuth<unknown>(csmsApiPath(`/chargeboxes?${q.toString()}`));
 }
 
-export async function fetchChargingStationById(chargerId: string) {
+export async function fetchChargeBoxById(chargerId: string) {
   return apiRequestAuth<unknown>(csmsApiPath(`/chargeboxes/${chargerId}`));
 }

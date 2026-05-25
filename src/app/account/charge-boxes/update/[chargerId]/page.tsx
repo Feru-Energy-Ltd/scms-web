@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { fetchChargingStationById } from "@/lib/api/chargingStations";
+import { fetchChargeBoxById } from "@/lib/api/chargeBoxes";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 
@@ -20,7 +20,7 @@ export default function UpdateChargeBoxPage() {
     }
     setLoading(true);
     try {
-      const raw = await fetchChargingStationById(
+      const raw = await fetchChargeBoxById(
         decodeURIComponent(chargerId),
       );
       setPayload(raw);
