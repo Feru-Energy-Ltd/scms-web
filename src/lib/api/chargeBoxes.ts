@@ -22,6 +22,8 @@ export type CreateChargeBoxConnectorPayload = {
 
 export type CreateChargeBoxPayload = {
   chargeBoxId: string;
+  /** Attach to an existing station; when omitted, the backend creates a 1:1 station. */
+  stationId?: number;
   ocppProtocol?: "OCPP_J16" | "OCPP_J20" | "OCPP_J21";
   description?: string;
   locationLatitude?: string;

@@ -32,6 +32,13 @@ export type StationGeoLocation = {
   chargerCount: number;
 };
 
+export async function fetchStations(): Promise<ChargingStation[]> {
+  const raw = await apiRequestAuth<unknown>(csmsApiPath("/stations"), {
+    method: "GET",
+  });
+  return Array.isArray(raw) ? (raw as ChargingStation[]) : [];
+}
+
 export async function createStation(payload: CreateChargingStationPayload) {
   return apiRequestAuth<ChargingStation>(csmsApiPath("/stations"), {
     method: "POST",
