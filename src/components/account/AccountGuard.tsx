@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clearSession, hasActiveAccessSession } from "@/lib/auth/session";
+import { buildLoginPath } from "@/lib/auth/redirect";
 
 export default function AccountGuard({
   children,
@@ -15,7 +16,8 @@ export default function AccountGuard({
   useEffect(() => {
     if (!hasActiveAccessSession()) {
       clearSession();
-      router.replace("/login");
+      const intended = window.location.pathname + window.location.search;
+      router.replace(buildLoginPath(intended));
       return;
     }
     setReady(true); // eslint-disable-line react-hooks/set-state-in-effect -- auth guard must defer render until client-side session check

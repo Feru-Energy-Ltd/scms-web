@@ -10,6 +10,7 @@ import {
   hasActiveAccessSession,
   setSessionTokensFromResponse
 } from "@/lib/auth/session";
+import { resolveNextFromSearch } from "@/lib/auth/redirect";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import PasswordEyeIcon from "./PasswordEyeIcon";
 
@@ -21,7 +22,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (hasActiveAccessSession()) {
-      router.replace("/account");
+      router.replace(resolveNextFromSearch(window.location.search));
       return;
     }
     setShowForm(true);
@@ -40,7 +41,7 @@ export default function LoginPage() {
       const res = await login(email, password);
       setSessionTokensFromResponse(res);
       toast.success("Signed in successfully");
-      router.push("/account");
+      router.push(resolveNextFromSearch(window.location.search));
     } catch (err) {
       showApiErrorToast(err, {
         fallbackMessage: "Login failed. Please check your credentials.",
