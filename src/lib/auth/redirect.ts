@@ -53,8 +53,22 @@ export function buildLoginPath(intendedPath: string): string {
 /**
  * Reads and sanitizes the ?next= param from a query string.
  * Pass window.location.search (client-side only).
+ *
+ * Extracts the RAW (still percent-encoded) param value rather than using
+ * URLSearchParams.get(), which would decode it. sanitizeNextPath owns the
+ * single decode — this keeps exactly one decode layer (no corruption of
+ * %-encoded query values) and lets the decode normalize encoded-slash
+ * open-redirect tricks (e.g. /%2F%2Fevil.com -> //evil.com -> rejected).
  */
 export function resolveNextFromSearch(search: string): string {
-  const params = new URLSearchParams(search);
-  return sanitizeNextPath(params.get(NEXT_PARAM));
+  const query = search.startsWith("?") ? search.slice(1) : search;
+  for (const pair of query.split("&")) {
+    const eq = pair.indexOf("=");
+    const key = eq === -1 ? pair : pair.slice(0, eq);
+    if (key === NEXT_PARAM) {
+      const raw = eq === -1 ? "" : pair.slice(eq + 1);
+      return sanitizeNextPath(raw);
+    }
+  }
+  return sanitizeNextPath(null);
 }
