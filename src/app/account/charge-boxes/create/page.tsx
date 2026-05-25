@@ -9,7 +9,7 @@ import {
   CHARGE_BOX_CONNECTOR_TYPES,
   createChargeBox,
   type CreateChargeBoxPayload,
-} from "@/lib/api/chargingStations";
+} from "@/lib/api/chargeBoxes";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import listStyles from "@/components/account/ResourceList.module.css";
 import styles from "./create-charge-box.module.css";

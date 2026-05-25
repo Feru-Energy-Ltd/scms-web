@@ -16,7 +16,7 @@ import {
   Marker,
   useJsApiLoader,
 } from "@react-google-maps/api";
-import { fetchChargeBoxGeoLocations } from "@/lib/api/chargingStations";
+import { fetchChargeBoxGeoLocations } from "@/lib/api/chargeBoxes";
 import { asArray } from "@/lib/api/normalize";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "./dashboard-map.module.css";

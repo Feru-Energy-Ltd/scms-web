@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { fetchChargingStations } from "@/lib/api/chargingStations";
+import { fetchChargeBoxes } from "@/lib/api/chargeBoxes";
 import { asArray } from "@/lib/api/normalize";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
@@ -26,7 +26,7 @@ export default function AccountChargeBoxesPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const raw = await fetchChargingStations(page, size);
+      const raw = await fetchChargeBoxes(page, size);
       setRows(asArray<ChargerRow>(raw));
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load charge boxes." });

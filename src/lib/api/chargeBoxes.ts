@@ -59,7 +59,7 @@ export async function fetchChargeBoxGeoLocations() {
   }
 }
 
-export async function fetchChargingStations(page = 0, size = 20) {
+export async function fetchChargeBoxes(page = 0, size = 20) {
   const q = new URLSearchParams({
     page: String(page),
     size: String(size),
@@ -67,6 +67,6 @@ export async function fetchChargingStations(page = 0, size = 20) {
   return apiRequestAuth<unknown>(csmsApiPath(`/chargeboxes?${q.toString()}`));
 }
 
-export async function fetchChargingStationById(chargerId: string) {
+export async function fetchChargeBoxById(chargerId: string) {
   return apiRequestAuth<unknown>(csmsApiPath(`/chargeboxes/${chargerId}`));
 }
