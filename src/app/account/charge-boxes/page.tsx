@@ -80,9 +80,8 @@ export default function AccountChargeBoxesPage() {
             <thead>
               <tr>
                 <th className={styles.th}>Charge box id</th>
+                <th className={styles.th}>Station</th>
                 <th className={styles.th}>Address</th>
-                <th className={styles.th}>Latitude</th>
-                <th className={styles.th}>Longitude</th>
                 <th className={styles.th}>Registration</th>
                 <th className={styles.th}>Online</th>
                 <th className={styles.th} />
@@ -100,13 +99,10 @@ export default function AccountChargeBoxesPage() {
                     <td className={styles.td}>
                       {cell(row, "chargeBoxId", "id")}
                     </td>
+                    <td className={styles.td}>
+                      {cell(row, "stationName", "stationId")}
+                    </td>
                     <td className={styles.td}>{cell(row, "address")}</td>
-                    <td className={styles.td}>
-                      {cell(row, "locationLatitude", "latitude")}
-                    </td>
-                    <td className={styles.td}>
-                      {cell(row, "locationLongitude", "longitude")}
-                    </td>
                     <td className={styles.td}>
                       <span
                         className={accepted ? styles.badgeOk : styles.badgeNo}
