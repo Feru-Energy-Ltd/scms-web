@@ -1,0 +1,29 @@
+# Local Docker compose for the scms-web dashboard.
+# App lives here; infra (Nginx, MySQL, RabbitMQ, Redis) lives in csms-infra.
+# Joins the external csms-ms-net so csms-nginx proxies to scms-web:3000.
+#
+# NEXT_PUBLIC_* are inlined at build time -> passed as build args, sourced from .env.
+
+services:
+  scms-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+        NEXT_PUBLIC_CSMS_PATH_PREFIX: ${NEXT_PUBLIC_CSMS_PATH_PREFIX}
+        NEXT_PUBLIC_PAYMENT_PATH_PREFIX: ${NEXT_PUBLIC_PAYMENT_PATH_PREFIX}
+        NEXT_PUBLIC_AUTH_PATH_PREFIX: ${NEXT_PUBLIC_AUTH_PATH_PREFIX}
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+    image: scms-web:local
+    container_name: scms-web
+    restart: unless-stopped
+    # Host publish is optional (Nginx reaches it in-network). Kept for direct debugging.
+    ports:
+      - "3000:3000"
+    networks:
+      - csms-ms-net
+
+networks:
+  csms-ms-net:
+    external: true
