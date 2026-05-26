@@ -16,7 +16,7 @@ import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 import userStyles from "./users.module.css";
 import EditRoleModal from "./EditRoleModal";
-import ConfirmModal from "./ConfirmModal";
+import ConfirmModal from "@/components/account/ConfirmModal";
 
 const ROLE_LABELS: Record<string, string> = {
   SERVICE_PROVIDER_OWNER: "Owner",
