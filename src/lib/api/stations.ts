@@ -4,7 +4,6 @@ import { ApiError, apiRequestAuth } from "./http";
 export type ChargingStation = {
   id: number;
   stationId: string;
-  name: string;
   providerId?: number | null;
   locationLatitude?: string;
   locationLongitude?: string;
@@ -14,7 +13,6 @@ export type ChargingStation = {
 };
 
 export type CreateChargingStationPayload = {
-  name: string;
   providerId?: number;
   locationLatitude?: string;
   locationLongitude?: string;
@@ -25,7 +23,6 @@ export type CreateChargingStationPayload = {
 
 export type StationGeoLocation = {
   stationId: string;
-  name: string;
   latitude: string;
   longitude: string;
   address: string;
