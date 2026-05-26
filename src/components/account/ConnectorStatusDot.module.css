@@ -1,0 +1,28 @@
+.wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.available {
+  background: #22c55e;
+}
+
+.occupied {
+  background: #ef4444;
+}
+
+.offline {
+  background: #6b7280;
+}
+
+.faulted {
+  background: #eab308;
+}

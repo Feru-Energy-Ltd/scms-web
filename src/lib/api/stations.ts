@@ -43,6 +43,40 @@ export async function createStation(payload: CreateChargingStationPayload) {
   });
 }
 
+export type ChargeBoxSummary = {
+  id: number;
+  chargeBoxId: string;
+  currentType: string | null;
+  onlineStatus: string | null;
+  enabled: boolean;
+  createdAt: string | null;
+};
+
+export type StationDetail = {
+  id: number;
+  stationId: string;
+  providerId: number | null;
+  locationLatitude?: string;
+  locationLongitude?: string;
+  locationAddressName: string;
+  imageUrl?: string;
+  enabled: boolean;
+  chargeBoxCount: number;
+  onlineCount: number;
+  chargeBoxes: ChargeBoxSummary[];
+};
+
+export async function fetchStationDetail(id: number): Promise<StationDetail> {
+  return apiRequestAuth<StationDetail>(csmsApiPath(`/stations/${id}`), { method: "GET" });
+}
+
+export async function setChargeBoxEnabled(chargeBoxId: string, enabled: boolean) {
+  return apiRequestAuth<void>(csmsApiPath(`/chargeboxes/${chargeBoxId}/status`), {
+    method: "PATCH",
+    body: { enabled },
+  });
+}
+
 /**
  * New per-station geo feed: `GET …/stations/geo/locations`
  * (via gateway: `/csms/stations/geo/locations`). Backend returns 404 with an

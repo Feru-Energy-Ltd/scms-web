@@ -1,6 +1,6 @@
 "use client";
 
-import styles from "./users.module.css";
+import styles from "./ConfirmModal.module.css";
 
 interface Props {
   title: string;
