@@ -35,7 +35,7 @@ export default function PricingPlansTab() {
   const [saving, setSaving] = useState(false);
   const [confirmDeactivateId, setConfirmDeactivateId] = useState<number | null>(null);
   const [page, setPage] = useState(0);
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 5;
   const totalPages = Math.ceil(plans.length / PAGE_SIZE);
   const pagedPlans = useMemo(
     () => plans.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),

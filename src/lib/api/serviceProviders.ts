@@ -82,6 +82,15 @@ export async function suspendProviderStaffAdmin(id: number, userId: number): Pro
   await apiRequestAuth<void>(`${BASE}/${id}/staff/${userId}`, { method: "DELETE" });
 }
 
+export async function activateProviderStaffAdmin(
+  id: number,
+  userId: number,
+): Promise<AdminStaffMember> {
+  return apiRequestAuth<AdminStaffMember>(`${BASE}/${id}/staff/${userId}/activate`, {
+    method: "POST",
+  });
+}
+
 export async function fetchPendingServiceProviders(page = 0, size = 20, search?: string) {
   const q = new URLSearchParams({
     status: "PENDING",
