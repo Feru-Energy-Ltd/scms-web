@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import DataTable, { type DataTableColumn } from "@/components/account/DataTable";
 import { SkeletonTable } from "@/components/account/Skeleton";
 import ConfirmModal from "@/components/account/ConfirmModal";
+import Pagination from "@/components/account/Pagination";
 import {
   fetchProviderStations,
   setStationEnabled,
@@ -23,6 +24,8 @@ export default function StationsTab({ providerId }: { providerId: number }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [toggle, setToggle] = useState<ProviderStation | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -32,22 +35,31 @@ export default function StationsTab({ providerId }: { providerId: number }) {
     setLoading(true);
     try {
       const enabled = status === "all" ? undefined : status === "active";
-      const data = await fetchProviderStations(providerId, {
+      const res = await fetchProviderStations(providerId, {
         enabled,
         search: search.trim() || undefined,
+        page,
+        size: 20,
       });
-      setRows(data);
+      setRows(res.content ?? []);
+      setTotalPages(res.totalPages ?? 0);
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load stations." });
       setRows([]);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
-  }, [providerId, status, search]);
+  }, [providerId, status, search, page]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Reset to first page when filters change.
+  useEffect(() => {
+    setPage(0);
+  }, [status, providerId]);
 
   const applyToggle = async () => {
     if (!toggle) return;
@@ -102,14 +114,14 @@ export default function StationsTab({ providerId }: { providerId: number }) {
           placeholder="Search…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && void load()}
+          onKeyDown={(e) => e.key === "Enter" && (page === 0 ? void load() : setPage(0))}
         />
         <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)}>
           <option value="all">All</option>
           <option value="active">Active</option>
           <option value="disabled">Disabled</option>
         </select>
-        <button className={styles.actionBtn} onClick={() => void load()}>
+        <button className={styles.actionBtn} onClick={() => (page === 0 ? void load() : setPage(0))}>
           Refresh
         </button>
       </div>
@@ -119,7 +131,10 @@ export default function StationsTab({ providerId }: { providerId: number }) {
       ) : rows.length === 0 ? (
         <p>No stations registered yet.</p>
       ) : (
-        <DataTable columns={columns} rows={rows} getRowKey={(r) => r.id} />
+        <>
+          <DataTable columns={columns} rows={rows} getRowKey={(r) => r.id} />
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
       )}
 
       {toggle && (

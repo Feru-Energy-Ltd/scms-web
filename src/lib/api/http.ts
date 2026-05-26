@@ -7,6 +7,14 @@ import {
 import type { TokenResponse } from "../types/auth";
 import { API_BASE_URL } from "../config";
 
+/** Spring Data `Page<T>` JSON shape (subset we consume). */
+export type Page<T> = {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+};
+
 export type ProblemDetail = {
   type?: string;
   title?: string;

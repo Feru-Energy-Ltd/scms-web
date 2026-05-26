@@ -1,6 +1,6 @@
 import { API_BASE_URL } from "../config";
 import { getAccessToken } from "../auth/session";
-import { apiRequestAuth } from "./http";
+import { apiRequestAuth, type Page } from "./http";
 
 const BASE = "/auth/management/service-providers";
 
@@ -58,8 +58,13 @@ export interface AdminStaffMember {
   status: string;
 }
 
-export async function fetchProviderStaffAdmin(id: number): Promise<AdminStaffMember[]> {
-  return apiRequestAuth<AdminStaffMember[]>(`${BASE}/${id}/staff`);
+export async function fetchProviderStaffAdmin(
+  id: number,
+  page = 0,
+  size = 20,
+): Promise<Page<AdminStaffMember>> {
+  const q = new URLSearchParams({ page: String(page), size: String(size) });
+  return apiRequestAuth<Page<AdminStaffMember>>(`${BASE}/${id}/staff?${q}`);
 }
 
 export async function updateProviderStaffAdmin(

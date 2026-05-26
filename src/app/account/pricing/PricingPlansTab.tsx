@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Pagination from "@/components/account/Pagination";
 import {
   fetchPricingPlans,
   createPricingPlan,
@@ -33,6 +34,13 @@ export default function PricingPlansTab() {
   const [editPlan, setEditPlan] = useState<PricingPlan | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmDeactivateId, setConfirmDeactivateId] = useState<number | null>(null);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 10;
+  const totalPages = Math.ceil(plans.length / PAGE_SIZE);
+  const pagedPlans = useMemo(
+    () => plans.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [plans, page],
+  );
 
   const loadPlans = useCallback(async () => {
     setLoading(true);
@@ -61,6 +69,10 @@ export default function PricingPlansTab() {
   useEffect(() => {
     void loadPlans();
   }, [loadPlans]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [statusFilter]);
 
   useEffect(() => {
     void loadOperators();
@@ -163,7 +175,7 @@ export default function PricingPlansTab() {
               </tr>
             </thead>
             <tbody>
-              {plans.map((plan) => (
+              {pagedPlans.map((plan) => (
                 <tr key={plan.id}>
                   <td className={rlStyles.td}>{plan.name}</td>
                   <td className={rlStyles.td}>RWF {plan.energyRatePerKwh.toFixed(2)}/kWh</td>
@@ -203,6 +215,7 @@ export default function PricingPlansTab() {
               ))}
             </tbody>
           </table>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </div>
       )}
 

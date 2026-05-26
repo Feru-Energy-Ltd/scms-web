@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import DataTable, { type DataTableColumn } from "@/components/account/DataTable";
 import { SkeletonTable } from "@/components/account/Skeleton";
 import ConfirmModal from "@/components/account/ConfirmModal";
+import Pagination from "@/components/account/Pagination";
 import {
   fetchProviderStaffAdmin,
   updateProviderStaffAdmin,
@@ -20,6 +21,8 @@ const ROLES = ["SERVICE_PROVIDER_OWNER", "SERVICE_PROVIDER_MANAGER", "SERVICE_PR
 export default function TeamTab({ providerId }: { providerId: number }) {
   const [rows, setRows] = useState<AdminStaffMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [suspendTarget, setSuspendTarget] = useState<AdminStaffMember | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -28,18 +31,25 @@ export default function TeamTab({ providerId }: { providerId: number }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setRows(await fetchProviderStaffAdmin(providerId));
+      const res = await fetchProviderStaffAdmin(providerId, page, 20);
+      setRows(res.content ?? []);
+      setTotalPages(res.totalPages ?? 0);
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load team members." });
       setRows([]);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
-  }, [providerId]);
+  }, [providerId, page]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [providerId]);
 
   const changeRole = async (m: AdminStaffMember, role: string) => {
     if (role === m.role) return;
@@ -107,7 +117,10 @@ export default function TeamTab({ providerId }: { providerId: number }) {
       ) : rows.length === 0 ? (
         <p>No team members found.</p>
       ) : (
-        <DataTable columns={columns} rows={rows} getRowKey={(r) => r.userId} />
+        <>
+          <DataTable columns={columns} rows={rows} getRowKey={(r) => r.userId} />
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
       )}
 
       {suspendTarget && (
