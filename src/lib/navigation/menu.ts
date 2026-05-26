@@ -18,6 +18,10 @@ const permissionMenuItems: { item: AppMenuItem; permissions: string[] }[] = [
     permissions: ["admin:providers:read", "admin:providers:create"],
   },
   {
+    item: { name: "Manage Providers", url: "/account/service-providers" },
+    permissions: ["admin:providers:read"],
+  },
+  {
     item: { name: "Roles and Permissions", url: "/account/permissions" },
     permissions: ["admin:roles:read"],
   },
