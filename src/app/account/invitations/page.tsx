@@ -10,6 +10,7 @@ import {
 import DataTable, {
   type DataTableColumn,
 } from "@/components/account/DataTable";
+import ConfirmModal from "@/components/account/ConfirmModal";
 import {
   fetchProviderInvitations,
   revokeProviderInvitation,
@@ -63,6 +64,7 @@ export default function AccountInvitationsPage() {
     useState<ProviderStaffRole>("SERVICE_PROVIDER_STAFF");
   const [submitting, setSubmitting] = useState(false);
   const [actingId, setActingId] = useState<number | null>(null);
+  const [revokeId, setRevokeId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     if (identityType !== "SERVICE_PROVIDER" || providerId == null) {
@@ -108,24 +110,22 @@ export default function AccountInvitationsPage() {
     }
   };
 
-  const onRevoke = useCallback(
-    async (id: number) => {
-      if (providerId == null) return;
-      if (!window.confirm("Revoke this invitation?")) return;
-      setActingId(id);
-      try {
-        await revokeProviderInvitation(providerId, id);
-        await load();
-      } catch (err) {
-        showApiErrorToast(err, {
-          fallbackMessage: "Could not revoke invitation.",
-        });
-      } finally {
-        setActingId(null);
-      }
-    },
-    [providerId, load],
-  );
+  const confirmRevoke = useCallback(async () => {
+    if (providerId == null || revokeId == null) return;
+    const id = revokeId;
+    setActingId(id);
+    try {
+      await revokeProviderInvitation(providerId, id);
+      setRevokeId(null);
+      await load();
+    } catch (err) {
+      showApiErrorToast(err, {
+        fallbackMessage: "Could not revoke invitation.",
+      });
+    } finally {
+      setActingId(null);
+    }
+  }, [providerId, revokeId, load]);
 
   const columns = useMemo<DataTableColumn<InvitationRow>[]>(
     () => [
@@ -173,7 +173,7 @@ export default function AccountInvitationsPage() {
               type="button"
               className={styles.button}
               disabled={!canRevoke || !Number.isFinite(id) || busy}
-              onClick={() => void onRevoke(id)}
+              onClick={() => setRevokeId(id)}
             >
               Revoke
             </button>
@@ -181,7 +181,7 @@ export default function AccountInvitationsPage() {
         },
       },
     ],
-    [actingId, onRevoke],
+    [actingId],
   );
 
   if (identityType !== "SERVICE_PROVIDER") {
@@ -251,6 +251,18 @@ export default function AccountInvitationsPage() {
           columns={columns}
           rows={rows}
           getRowKey={(row, i) => `${rowId(row)}-${i}`}
+        />
+      )}
+
+      {revokeId != null && (
+        <ConfirmModal
+          title="Revoke invitation"
+          message="Revoke this invitation? The recipient will no longer be able to accept it."
+          confirmLabel="Revoke"
+          confirmDestructive
+          loading={actingId === revokeId}
+          onConfirm={() => void confirmRevoke()}
+          onCancel={() => setRevokeId(null)}
         />
       )}
     </div>

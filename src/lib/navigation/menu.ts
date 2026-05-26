@@ -5,7 +5,6 @@ export type AppMenuItem = {
 
 const baseLinks: AppMenuItem[] = [
   { name: "Dashboard", url: "/account" },
-  { name: "Station map", url: "/account/dashboard" },
 ];
 
 /**
@@ -14,12 +13,8 @@ const baseLinks: AppMenuItem[] = [
  */
 const permissionMenuItems: { item: AppMenuItem; permissions: string[] }[] = [
   {
-    item: { name: "Service providers", url: "/account/approvals" },
+    item: { name: "Service Providers", url: "/account/service-providers" },
     permissions: ["admin:providers:read", "admin:providers:create"],
-  },
-  {
-    item: { name: "Manage Providers", url: "/account/service-providers" },
-    permissions: ["admin:providers:read"],
   },
   {
     item: { name: "Roles and Permissions", url: "/account/permissions" },
