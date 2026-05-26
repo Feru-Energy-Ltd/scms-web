@@ -91,34 +91,36 @@ export async function activateProviderStaffAdmin(
   });
 }
 
-export async function fetchPendingServiceProviders(page = 0, size = 20, search?: string) {
-  const q = new URLSearchParams({
-    status: "PENDING",
-    page: String(page),
-    size: String(size),
-  });
-  if (search) {
-    q.set("search", search);
-  }
-  return apiRequestAuth<unknown>(`${BASE}?${q}`);
-}
-
 export interface ProviderListItem {
   id: number;
   businessName: string;
   displayName: string;
-  status: string;
+  email: string | null;
+  phone: string | null;
+  registration: string | null;
+  status: "PENDING" | "ACTIVE" | "SUSPENDED";
+  createdAt: string | null;
+}
+
+export interface FetchProvidersOptions {
+  status?: "PENDING" | "ACTIVE" | "SUSPENDED";
+  search?: string;
+  page?: number;
+  size?: number;
+}
+
+export async function fetchServiceProviders(
+  opts: FetchProvidersOptions = {},
+): Promise<Page<ProviderListItem>> {
+  const { status, search, page = 0, size = 20 } = opts;
+  const q = new URLSearchParams({ page: String(page), size: String(size) });
+  if (status) q.set("status", status);
+  if (search) q.set("search", search);
+  return apiRequestAuth<Page<ProviderListItem>>(`${BASE}?${q}`);
 }
 
 export async function fetchActiveProviders(): Promise<ProviderListItem[]> {
   const q = new URLSearchParams({ status: "ACTIVE", size: "200" });
-  const res = await apiRequestAuth<{ content: ProviderListItem[] }>(`${BASE}?${q}`);
-  return res.content ?? [];
-}
-
-export async function fetchManagedProviders(search?: string): Promise<ProviderListItem[]> {
-  const q = new URLSearchParams({ size: "200" });
-  if (search) q.set("search", search);
   const res = await apiRequestAuth<{ content: ProviderListItem[] }>(`${BASE}?${q}`);
   return res.content ?? [];
 }
