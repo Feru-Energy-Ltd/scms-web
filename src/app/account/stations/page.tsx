@@ -17,7 +17,6 @@ export default function ChargingStationsPage() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
@@ -40,22 +39,19 @@ export default function ChargingStationsPage() {
 
   async function onCreate(e: React.FormEvent) {
     e.preventDefault();
-    const trimmedName = name.trim();
     const trimmedAddr = address.trim();
-    if (!trimmedName || !trimmedAddr) {
-      toast.error("Station name and address are required.");
+    if (!trimmedAddr) {
+      toast.error("Station address is required.");
       return;
     }
     setSubmitting(true);
     try {
       await createStation({
-        name: trimmedName,
         locationAddressName: trimmedAddr,
         locationLatitude: latitude.trim() || undefined,
         locationLongitude: longitude.trim() || undefined,
       });
       toast.success("Station created");
-      setName("");
       setAddress("");
       setLatitude("");
       setLongitude("");
@@ -91,19 +87,6 @@ export default function ChargingStationsPage() {
 
       {showCreate ? (
         <form className={styles.toolbar} onSubmit={onCreate}>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="stationName">
-              Name
-            </label>
-            <input
-              id="stationName"
-              className={styles.textInput}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              placeholder="e.g. Westlands Mall"
-            />
-          </div>
           <div className={styles.field}>
             <label className={styles.label} htmlFor="stationAddress">
               Address
@@ -165,7 +148,6 @@ export default function ChargingStationsPage() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th className={styles.th}>Name</th>
                 <th className={styles.th}>Station id</th>
                 <th className={styles.th}>Address</th>
                 <th className={styles.th}>Chargers</th>
@@ -174,7 +156,6 @@ export default function ChargingStationsPage() {
             <tbody>
               {stations.map((s) => (
                 <tr key={s.id}>
-                  <td className={styles.td}>{s.name}</td>
                   <td className={styles.td}>{s.stationId}</td>
                   <td className={styles.td}>{s.locationAddressName || "—"}</td>
                   <td className={styles.td}>{s.chargeBoxCount}</td>

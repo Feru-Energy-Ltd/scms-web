@@ -265,8 +265,8 @@ export default function CreateChargeBoxPage() {
               <option value="">Select a station…</option>
               {stations.map((s) => (
                 <option key={s.id} value={String(s.id)}>
-                  {s.name}
-                  {s.locationAddressName ? ` — ${s.locationAddressName}` : ""}
+                  {s.locationAddressName || s.stationId}
+                  {s.locationAddressName ? ` (${s.stationId})` : ""}
                 </option>
               ))}
             </select>

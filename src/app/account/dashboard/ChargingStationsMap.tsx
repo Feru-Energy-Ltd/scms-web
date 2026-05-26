@@ -338,7 +338,7 @@ export default function ChargingStationsMap() {
 
       // One pin per station: key + id are the stationId.
       const id = cell(row, "stationId", "id") || `station-${i}`;
-      const description = cell(row, "name", "address");
+      const description = cell(row, "address");
       const chargerCount = cell(row, "chargerCount");
       const statusLine = statusParts(row, "address") +
         (chargerCount ? ` · ${chargerCount} charger${chargerCount === "1" ? "" : "s"}` : "");

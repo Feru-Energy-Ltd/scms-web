@@ -100,7 +100,7 @@ export default function AccountChargeBoxesPage() {
                       {cell(row, "chargeBoxId", "id")}
                     </td>
                     <td className={styles.td}>
-                      {cell(row, "stationName", "stationId")}
+                      {cell(row, "stationId")}
                     </td>
                     <td className={styles.td}>{cell(row, "address")}</td>
                     <td className={styles.td}>
