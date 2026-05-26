@@ -55,3 +55,64 @@ export async function fetchChargeBoxes(page = 0, size = 20) {
 export async function fetchChargeBoxById(chargerId: string) {
   return apiRequestAuth<unknown>(csmsApiPath(`/chargeboxes/${chargerId}`));
 }
+
+export type ChargerDetail = {
+  id: number;
+  chargeBoxId: string;
+  ocppProtocol?: string;
+  chargePointVendor?: string;
+  chargePointModel?: string;
+  chargePointSerialNumber?: string;
+  firmwareVersion?: string;
+  lastHeartbeatTimestamp?: string;
+  onlineStatus?: string;
+  enabled?: boolean;
+  stationId?: string;
+};
+
+// Mirrors csms-service SessionTransactionDto (Plan 3).
+export type ChargerTransaction = {
+  id: number;
+  transactionId?: number;
+  walletAccountNumber?: string;
+  connectorId?: number;
+  energyKwh?: number;
+  totalDriverCost?: number;
+  status?: string;
+  startedAt?: string;
+  stoppedAt?: string;
+};
+
+export type ChargerBooking = {
+  id: number;
+  username: string;
+  connectorId: number;
+  scheduledStart: string;
+  scheduledEnd: string;
+  status: string;
+  reservationAmount?: number;
+};
+
+type Page<T> = { content: T[]; totalElements: number; number: number };
+
+export async function fetchChargerDetail(chargeBoxId: string): Promise<ChargerDetail> {
+  // GET /chargeboxes/{id} returns ResponseObject<ChargeBox> = { status, data, code, message }.
+  const raw = await apiRequestAuth<{ data?: ChargerDetail } & ChargerDetail>(
+    csmsApiPath(`/chargeboxes/${chargeBoxId}`),
+  );
+  return (raw.data ?? raw) as ChargerDetail;
+}
+
+export async function fetchChargerTransactions(chargeBoxId: string, page = 0, size = 20) {
+  const q = new URLSearchParams({ page: String(page), size: String(size) });
+  return apiRequestAuth<Page<ChargerTransaction>>(
+    csmsApiPath(`/chargeboxes/${chargeBoxId}/transactions?${q}`),
+  );
+}
+
+export async function fetchChargerBookings(chargeBoxId: string, page = 0, size = 20) {
+  const q = new URLSearchParams({ page: String(page), size: String(size) });
+  return apiRequestAuth<Page<ChargerBooking>>(
+    csmsApiPath(`/chargeboxes/${chargeBoxId}/reservations?${q}`),
+  );
+}
