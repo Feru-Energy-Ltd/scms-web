@@ -28,9 +28,17 @@ export default function ChargerDetailPage() {
   const [charger, setCharger] = useState<ChargerDetail | null>(null);
 
   useEffect(() => {
+    let alive = true;
     fetchChargerDetail(chargerId)
-      .then(setCharger)
-      .catch((e) => showApiErrorToast(e, { fallbackMessage: "Could not load charger." }));
+      .then((c) => {
+        if (alive) setCharger(c);
+      })
+      .catch((e) => {
+        if (alive) showApiErrorToast(e, { fallbackMessage: "Could not load charger." });
+      });
+    return () => {
+      alive = false;
+    };
   }, [chargerId]);
 
   const base = `/account/service-providers/${id}/stations/${stationId}`;
@@ -97,10 +105,20 @@ function TransactionsTab({ chargerId }: { chargerId: string }) {
   const [rows, setRows] = useState<ChargerTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
+    let alive = true;
     fetchChargerTransactions(chargerId)
-      .then((p) => setRows(p.content ?? []))
-      .catch((e) => showApiErrorToast(e, { fallbackMessage: "Could not load transactions." }))
-      .finally(() => setLoading(false));
+      .then((p) => {
+        if (alive) setRows(p.content ?? []);
+      })
+      .catch((e) => {
+        if (alive) showApiErrorToast(e, { fallbackMessage: "Could not load transactions." });
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, [chargerId]);
   const cols: DataTableColumn<ChargerTransaction>[] = [
     { id: "n", header: "#", cell: (_r, i) => i + 1 },
@@ -130,10 +148,20 @@ function BookingsTab({ chargerId }: { chargerId: string }) {
   const [rows, setRows] = useState<ChargerBooking[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
+    let alive = true;
     fetchChargerBookings(chargerId)
-      .then((p) => setRows(p.content ?? []))
-      .catch((e) => showApiErrorToast(e, { fallbackMessage: "Could not load bookings." }))
-      .finally(() => setLoading(false));
+      .then((p) => {
+        if (alive) setRows(p.content ?? []);
+      })
+      .catch((e) => {
+        if (alive) showApiErrorToast(e, { fallbackMessage: "Could not load bookings." });
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, [chargerId]);
   const cols: DataTableColumn<ChargerBooking>[] = [
     { id: "n", header: "#", cell: (_r, i) => i + 1 },

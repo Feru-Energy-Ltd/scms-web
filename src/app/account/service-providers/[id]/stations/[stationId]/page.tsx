@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Breadcrumb from "@/components/account/Breadcrumb";
@@ -26,17 +26,28 @@ export default function StationDetailPage() {
   const [toggle, setToggle] = useState<ChargeBoxSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const canManage = getStoredPermissions().includes("admin:chargers:update");
+  const alive = useRef(true);
 
   const load = useCallback(() => {
     setLoading(true);
     return fetchStationDetail(Number(stationId))
-      .then(setStation)
-      .catch((e) => showApiErrorToast(e, { fallbackMessage: "Could not load station." }))
-      .finally(() => setLoading(false));
+      .then((d) => {
+        if (alive.current) setStation(d);
+      })
+      .catch((e) => {
+        if (alive.current) showApiErrorToast(e, { fallbackMessage: "Could not load station." });
+      })
+      .finally(() => {
+        if (alive.current) setLoading(false);
+      });
   }, [stationId]);
 
   useEffect(() => {
+    alive.current = true;
     void load();
+    return () => {
+      alive.current = false;
+    };
   }, [load]);
 
   const applyToggle = async () => {
