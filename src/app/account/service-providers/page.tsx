@@ -15,7 +15,8 @@ import {
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
+const FETCH_SIZE = 200;
 
 type StatusFilter = "ALL" | "PENDING" | "ACTIVE" | "SUSPENDED";
 
@@ -37,7 +38,6 @@ export default function ServiceProvidersPage() {
   const [filter, setFilter] = useState<StatusFilter>("ALL");
   const [page, setPage] = useState(0);
   const [rows, setRows] = useState<ProviderListItem[]>([]);
-  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<number | null>(null);
   const [rejectTarget, setRejectTarget] = useState<ProviderListItem | null>(null);
@@ -47,23 +47,26 @@ export default function ServiceProvidersPage() {
     try {
       const res = await fetchServiceProviders({
         status: filter === "ALL" ? undefined : filter,
-        page,
-        size: PAGE_SIZE,
+        size: FETCH_SIZE,
       });
       setRows(res.content ?? []);
-      setTotalPages(Math.max(1, res.totalPages));
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load providers." });
       setRows([]);
-      setTotalPages(1);
     } finally {
       setLoading(false);
     }
-  }, [filter, page]);
+  }, [filter]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const pagedRows = useMemo(
+    () => rows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [rows, page],
+  );
 
   const onApprove = useCallback(
     async (id: number) => {
@@ -193,7 +196,7 @@ export default function ServiceProvidersPage() {
         <p className={styles.muted}>No providers found.</p>
       ) : (
         <>
-          <DataTable columns={columns} rows={rows} getRowKey={(r) => r.id} />
+          <DataTable columns={columns} rows={pagedRows} getRowKey={(r) => r.id} />
           <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </>
       )}
