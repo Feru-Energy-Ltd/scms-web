@@ -1,5 +1,5 @@
 import { csmsApiPath } from "../config";
-import { ApiError, apiRequestAuth } from "./http";
+import { ApiError, apiRequestAuth, type Page } from "./http";
 
 export type ChargingStation = {
   id: number;
@@ -29,11 +29,21 @@ export type StationGeoLocation = {
   chargerCount: number;
 };
 
-export async function fetchStations(): Promise<ChargingStation[]> {
-  const raw = await apiRequestAuth<unknown>(csmsApiPath("/stations"), {
+/** Paged station list. `GET /stations` now returns a Spring `Page`. */
+export async function fetchStationsPage(
+  page = 0,
+  size = 20,
+): Promise<Page<ChargingStation>> {
+  const q = new URLSearchParams({ page: String(page), size: String(size) });
+  return apiRequestAuth<Page<ChargingStation>>(csmsApiPath(`/stations?${q}`), {
     method: "GET",
   });
-  return Array.isArray(raw) ? (raw as ChargingStation[]) : [];
+}
+
+/** Convenience: fetch all stations (single large page) for dropdowns / aggregate counts. */
+export async function fetchStations(size = 500): Promise<ChargingStation[]> {
+  const res = await fetchStationsPage(0, size);
+  return res.content ?? [];
 }
 
 export async function createStation(payload: CreateChargingStationPayload) {

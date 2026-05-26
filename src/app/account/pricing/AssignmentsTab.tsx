@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Pagination from "@/components/account/Pagination";
 import {
   fetchPricingAssignments,
   fetchPricingPlans,
@@ -31,6 +32,13 @@ export default function AssignmentsTab({ preselectedOperatorId }: Props) {
   const [saving, setSaving] = useState(false);
   const [assignOperator, setAssignOperator] = useState<{ id: number; name: string; currentPlanId?: number } | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<number | null>(null);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 10;
+  const totalPages = Math.ceil(operators.length / PAGE_SIZE);
+  const pagedOperators = useMemo(
+    () => operators.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [operators, page],
+  );
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -120,7 +128,7 @@ export default function AssignmentsTab({ preselectedOperatorId }: Props) {
             </tr>
           </thead>
           <tbody>
-            {operators.map((op) => {
+            {pagedOperators.map((op) => {
               const assignment = assignmentMap.get(op.id);
               return (
                 <tr key={op.id}>
@@ -166,6 +174,7 @@ export default function AssignmentsTab({ preselectedOperatorId }: Props) {
             })}
           </tbody>
         </table>
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
       {assignOperator && (

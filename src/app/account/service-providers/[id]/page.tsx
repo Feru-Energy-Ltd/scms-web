@@ -24,11 +24,11 @@ export default function ProviderProfilePage() {
       try {
         const [p, s] = await Promise.all([
           fetchProvider(providerId),
-          fetchProviderStations(providerId),
+          fetchProviderStations(providerId, { size: 500 }),
         ]);
         if (!alive) return;
         setProvider(p);
-        setStations(s);
+        setStations(s.content ?? []);
       } catch (e) {
         showApiErrorToast(e, { fallbackMessage: "Could not load provider." });
       } finally {
