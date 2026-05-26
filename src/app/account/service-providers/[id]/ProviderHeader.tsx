@@ -94,9 +94,13 @@ export default function ProviderHeader({
             <span className={styles.logoPlaceholder}>No logo</span>
           )}
           {canEdit && (
-            <div className={styles.logoOverlay} onClick={() => fileInput.current?.click()}>
+            <button
+              type="button"
+              className={styles.logoOverlay}
+              onClick={() => fileInput.current?.click()}
+            >
               Replace
-            </div>
+            </button>
           )}
           <input
             ref={fileInput}

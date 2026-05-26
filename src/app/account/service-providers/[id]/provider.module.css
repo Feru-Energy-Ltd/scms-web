@@ -43,6 +43,8 @@
   opacity: 0;
   cursor: pointer;
   transition: opacity 0.15s;
+  border: none;
+  font-family: inherit;
 }
 
 .logoBox:hover .logoOverlay {
