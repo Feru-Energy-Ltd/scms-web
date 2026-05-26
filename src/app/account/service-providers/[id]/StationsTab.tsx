@@ -39,7 +39,7 @@ export default function StationsTab({ providerId }: { providerId: number }) {
         enabled,
         search: search.trim() || undefined,
         page,
-        size: 20,
+        size: 5,
       });
       setRows(res.content ?? []);
       setTotalPages(res.totalPages ?? 0);
@@ -111,12 +111,17 @@ export default function StationsTab({ providerId }: { providerId: number }) {
     <div>
       <div className={styles.toolbar}>
         <input
+          className={styles.control}
           placeholder="Search…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && (page === 0 ? void load() : setPage(0))}
         />
-        <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)}>
+        <select
+          className={styles.control}
+          value={status}
+          onChange={(e) => setStatus(e.target.value as StatusFilter)}
+        >
           <option value="all">All</option>
           <option value="active">Active</option>
           <option value="disabled">Disabled</option>

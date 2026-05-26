@@ -10,6 +10,7 @@ import {
   fetchProviderStaffAdmin,
   updateProviderStaffAdmin,
   suspendProviderStaffAdmin,
+  activateProviderStaffAdmin,
   type AdminStaffMember,
 } from "@/lib/api/serviceProviders";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
@@ -31,7 +32,7 @@ export default function TeamTab({ providerId }: { providerId: number }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetchProviderStaffAdmin(providerId, page, 20);
+      const res = await fetchProviderStaffAdmin(providerId, page, 5);
       setRows(res.content ?? []);
       setTotalPages(res.totalPages ?? 0);
     } catch (e) {
@@ -77,6 +78,16 @@ export default function TeamTab({ providerId }: { providerId: number }) {
     }
   };
 
+  const activate = async (m: AdminStaffMember) => {
+    try {
+      await activateProviderStaffAdmin(providerId, m.userId);
+      toast.success("Member activated");
+      void load();
+    } catch (e) {
+      showApiErrorToast(e, { fallbackMessage: "Could not activate member." });
+    }
+  };
+
   const columns: DataTableColumn<AdminStaffMember>[] = [
     { id: "n", header: "#", cell: (_r, i) => i + 1 },
     { id: "name", header: "Full Name", cell: (r) => r.displayName },
@@ -86,7 +97,11 @@ export default function TeamTab({ providerId }: { providerId: number }) {
       header: "Role",
       cell: (r) =>
         canManage ? (
-          <select value={r.role} onChange={(e) => changeRole(r, e.target.value)}>
+          <select
+            className={styles.control}
+            value={r.role}
+            onChange={(e) => changeRole(r, e.target.value)}
+          >
             {ROLES.map((role) => (
               <option key={role} value={role}>
                 {role.replace("SERVICE_PROVIDER_", "")}
@@ -101,12 +116,18 @@ export default function TeamTab({ providerId }: { providerId: number }) {
     {
       id: "actions",
       header: "",
-      cell: (r) =>
-        canManage && r.status === "ACTIVE" ? (
+      cell: (r) => {
+        if (!canManage) return null;
+        return r.status === "ACTIVE" ? (
           <button className={styles.actionBtn} onClick={() => setSuspendTarget(r)}>
             Disable
           </button>
-        ) : null,
+        ) : (
+          <button className={styles.actionBtn} onClick={() => void activate(r)}>
+            Activate
+          </button>
+        );
+      },
     },
   ];
 

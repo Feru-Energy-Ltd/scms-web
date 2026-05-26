@@ -40,9 +40,13 @@ export default function PricingTab({ providerId }: { providerId: number }) {
       {assignment ? (
         <div className={styles.info}>
           <h1 style={{ fontSize: "1.1rem" }}>{assignment.pricingPlanName}</h1>
-          <p className={styles.infoRow}>
-            Assigned {new Date(assignment.assignedAt).toLocaleDateString()}
-          </p>
+          {(() => {
+            const d = assignment.assignedAt ? new Date(assignment.assignedAt) : null;
+            const valid = d && !Number.isNaN(d.getTime());
+            return valid ? (
+              <p className={styles.infoRow}>Assigned {d.toLocaleDateString()}</p>
+            ) : null;
+          })()}
         </div>
       ) : (
         <p>No pricing plan assigned (platform default applies).</p>

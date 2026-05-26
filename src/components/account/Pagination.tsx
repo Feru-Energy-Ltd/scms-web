@@ -11,7 +11,7 @@ export default function Pagination({
   totalPages: number;
   onPageChange: (p: number) => void;
 }) {
-  if (totalPages <= 1) return null;
+  const pages = Math.max(totalPages, 1);
   return (
     <div className={styles.bar}>
       <button
@@ -23,12 +23,12 @@ export default function Pagination({
         Previous
       </button>
       <span className={styles.label}>
-        Page {page + 1} of {totalPages}
+        Page {page + 1} of {pages}
       </span>
       <button
         type="button"
         className={styles.btn}
-        disabled={page >= totalPages - 1}
+        disabled={page >= pages - 1}
         onClick={() => onPageChange(page + 1)}
       >
         Next

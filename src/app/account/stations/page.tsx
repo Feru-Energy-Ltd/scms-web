@@ -5,15 +5,18 @@ import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
   createStation,
-  fetchStations,
+  fetchStationsPage,
   type ChargingStation,
 } from "@/lib/api/stations";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
+import Pagination from "@/components/account/Pagination";
 import styles from "@/components/account/ResourceList.module.css";
 
 export default function ChargingStationsPage() {
   const [stations, setStations] = useState<ChargingStation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const [showCreate, setShowCreate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -24,14 +27,17 @@ export default function ChargingStationsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setStations(await fetchStations());
+      const res = await fetchStationsPage(page, 5);
+      setStations(res.content ?? []);
+      setTotalPages(res.totalPages ?? 0);
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load stations." });
       setStations([]);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page]);
 
   useEffect(() => {
     void load();
@@ -163,6 +169,7 @@ export default function ChargingStationsPage() {
               ))}
             </tbody>
           </table>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </div>
       )}
 

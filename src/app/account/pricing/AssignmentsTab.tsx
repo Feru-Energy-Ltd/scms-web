@@ -33,7 +33,7 @@ export default function AssignmentsTab({ preselectedOperatorId }: Props) {
   const [assignOperator, setAssignOperator] = useState<{ id: number; name: string; currentPlanId?: number } | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<number | null>(null);
   const [page, setPage] = useState(0);
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 5;
   const totalPages = Math.ceil(operators.length / PAGE_SIZE);
   const pagedOperators = useMemo(
     () => operators.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),

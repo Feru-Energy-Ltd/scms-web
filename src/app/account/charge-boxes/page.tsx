@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { fetchChargeBoxes } from "@/lib/api/chargeBoxes";
 import { asArray } from "@/lib/api/normalize";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
+import Pagination from "@/components/account/Pagination";
 import styles from "@/components/account/ResourceList.module.css";
 
 type ChargerRow = Record<string, unknown>;
@@ -19,22 +20,24 @@ function cell(row: ChargerRow, ...keys: string[]) {
 
 export default function AccountChargeBoxesPage() {
   const [page, setPage] = useState(0);
-  const [size] = useState(20);
+  const [totalPages, setTotalPages] = useState(0);
   const [rows, setRows] = useState<ChargerRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const raw = await fetchChargeBoxes(page, size);
+      const raw = (await fetchChargeBoxes(page, 5)) as { totalPages?: number };
       setRows(asArray<ChargerRow>(raw));
+      setTotalPages(raw?.totalPages ?? 0);
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load charge boxes." });
       setRows([]);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
-  }, [page, size]);
+  }, [page]);
 
   useEffect(() => {
     void load();
@@ -52,22 +55,6 @@ export default function AccountChargeBoxesPage() {
         <button type="button" className={styles.button} onClick={() => void load()}>
           Refresh
         </button>
-        <button
-          type="button"
-          className={styles.button}
-          disabled={page <= 0}
-          onClick={() => setPage((p) => Math.max(0, p - 1))}
-        >
-          Previous
-        </button>
-        <button
-          type="button"
-          className={styles.button}
-          onClick={() => setPage((p) => p + 1)}
-        >
-          Next
-        </button>
-        <span className={styles.muted}>Page {page + 1}</span>
       </div>
 
       {loading ? (
@@ -125,6 +112,7 @@ export default function AccountChargeBoxesPage() {
               })}
             </tbody>
           </table>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </div>
       )}
     </div>
