@@ -25,13 +25,17 @@ export default function Drawer({
 
   if (!open) return null;
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <aside
-        className={styles.drawer}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-label={title}
-      >
+    <div
+      className={styles.overlay}
+      role="presentation"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+    >
+      <aside className={styles.drawer} role="dialog" aria-label={title}>
         <header className={styles.header}>
           <h2 className={styles.title}>{title}</h2>
           <button className={styles.close} onClick={onClose} type="button" aria-label="Close">

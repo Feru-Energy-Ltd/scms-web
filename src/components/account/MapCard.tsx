@@ -28,7 +28,16 @@ export default function MapCard({
   return (
     <div
       className={`${styles.card} ${expanded ? styles.expanded : ""}`}
+      role="button"
+      tabIndex={0}
+      aria-expanded={expanded}
       onClick={() => setExpanded((v) => !v)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setExpanded((v) => !v);
+        }
+      }}
     >
       <GoogleMap
         mapContainerClassName={styles.map}
