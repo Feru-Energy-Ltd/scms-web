@@ -136,7 +136,7 @@ export default function CreateChargeBoxPage() {
       return;
     }
     if (!imageDataUrl.startsWith("data:image/")) {
-      toast.error("Please upload a station image (required by the server).");
+      toast.error("Please upload a station image .");
       return;
     }
     if (connectorSlots.length !== numConnectors) {
@@ -172,7 +172,8 @@ export default function CreateChargeBoxPage() {
     try {
       await createChargeBox(payload);
       toast.success("Charger created");
-      router.push(`/account/charge-boxes/update/${encodeURIComponent(id)}`);
+      //router.push(`/account/charge-boxes/update/${encodeURIComponent(id)}`);
+      router.push(`/account/charge-boxes/`);
     } catch (err) {
       showApiErrorToast(err, { fallbackMessage: "Could not create charger." });
     } finally {

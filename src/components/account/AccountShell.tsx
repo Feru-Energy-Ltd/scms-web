@@ -74,7 +74,7 @@ export default function AccountShell({
 
   function signOut() {
     clearSession();
-    router.push("/");
+    router.push("/login");
   }
 
   return (
