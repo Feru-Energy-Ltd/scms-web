@@ -14,11 +14,11 @@ import {
   GoogleMap,
   InfoWindow,
   Marker,
-  useJsApiLoader,
 } from "@react-google-maps/api";
 import { fetchStationGeoLocations } from "@/lib/api/stations";
 import { asArray } from "@/lib/api/normalize";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
+import { useGoogleMapsLoader } from "@/lib/googleMapsLoader";
 import styles from "./dashboard-map.module.css";
 
 type ChargerRow = Record<string, unknown>;
@@ -241,20 +241,15 @@ function GoogleStationsMap({
 }
 
 function GoogleMapShell({
-  apiKey,
   markers,
   pendingCenter,
   onPendingCenterConsumed,
 }: {
-  apiKey: string;
   markers: MapMarker[];
   pendingCenter: google.maps.LatLngLiteral | null;
   onPendingCenterConsumed: () => void;
 }) {
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: apiKey,
-  });
+  const { isLoaded, loadError } = useGoogleMapsLoader();
 
   if (loadError) {
     return (
@@ -378,7 +373,6 @@ export default function ChargingStationsMap() {
         ) : (
           <div className={styles.mapStack}>
             <GoogleMapShell
-              apiKey={apiKey}
               markers={markers}
               pendingCenter={pendingCenter}
               onPendingCenterConsumed={clearPendingCenter}

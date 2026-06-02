@@ -8,8 +8,10 @@ import {
   fetchStationsPage,
   type ChargingStation,
 } from "@/lib/api/stations";
+import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import Pagination from "@/components/account/Pagination";
+import CreateStationModal from "@/components/account/CreateStationModal";
 import styles from "@/components/account/ResourceList.module.css";
 
 export default function ChargingStationsPage() {
@@ -23,6 +25,10 @@ export default function ChargingStationsPage() {
   const [address, setAddress] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
+  const [adminAddress, setAdminAddress] = useState("");
+  const [imageBase64, setImageBase64] = useState("");
+  const [imageName, setImageName] = useState("");
+  const [convertingImage, setConvertingImage] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -43,25 +49,75 @@ export default function ChargingStationsPage() {
     void load();
   }, [load]);
 
+  async function toBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error("Could not read selected image."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function onImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setImageBase64("");
+      setImageName("");
+      return;
+    }
+    setConvertingImage(true);
+    try {
+      const encoded = await toBase64(file);
+      setImageBase64(encoded);
+      setImageName(file.name);
+    } catch {
+      setImageBase64("");
+      setImageName("");
+      toast.error("Could not process selected image.");
+    } finally {
+      setConvertingImage(false);
+    }
+  }
+
   async function onCreate(e: React.FormEvent) {
     e.preventDefault();
     const trimmedAddr = address.trim();
+    const trimmedAdminAddress = adminAddress.trim();
     if (!trimmedAddr) {
       toast.error("Station address is required.");
       return;
     }
+    if (!trimmedAdminAddress) {
+      toast.error("Admin address is required.");
+      return;
+    }
     setSubmitting(true);
     try {
+      const authContext = getAccessTokenContext();
+      const providerId = authContext.providerId;
+      const userId = authContext.userId;
+      if (providerId == null && userId == null) {
+        toast.error("Session context missing. Please log in again.");
+        return;
+      }
+
       await createStation({
+        providerId,
         locationAddressName: trimmedAddr,
         locationLatitude: latitude.trim() || undefined,
         locationLongitude: longitude.trim() || undefined,
+        adminAddress: trimmedAdminAddress,
+        imageBase64: imageBase64.trim() || undefined,
       });
       toast.success("Station created");
       setAddress("");
       setLatitude("");
       setLongitude("");
+      setAdminAddress("");
+      setImageBase64("");
+      setImageName("");
       setShowCreate(false);
+      setPage(0);
       await load();
     } catch (err) {
       showApiErrorToast(err, { fallbackMessage: "Could not create station." });
@@ -82,9 +138,9 @@ export default function ChargingStationsPage() {
         <button
           type="button"
           className={styles.buttonPrimary}
-          onClick={() => setShowCreate((v) => !v)}
+          onClick={() => setShowCreate(true)}
         >
-          {showCreate ? "Close" : "New station"}
+          New station
         </button>
         <button type="button" className={styles.button} onClick={() => void load()}>
           Refresh
@@ -92,54 +148,22 @@ export default function ChargingStationsPage() {
       </div>
 
       {showCreate ? (
-        <form className={styles.toolbar} onSubmit={onCreate}>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="stationAddress">
-              Address
-            </label>
-            <input
-              id="stationAddress"
-              className={styles.textInput}
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              required
-              placeholder="Street, city"
-            />
-          </div>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="stationLat">
-              Latitude (optional)
-            </label>
-            <input
-              id="stationLat"
-              className={styles.textInput}
-              value={latitude}
-              onChange={(e) => setLatitude(e.target.value)}
-              inputMode="decimal"
-              placeholder="-1.26"
-            />
-          </div>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="stationLng">
-              Longitude (optional)
-            </label>
-            <input
-              id="stationLng"
-              className={styles.textInput}
-              value={longitude}
-              onChange={(e) => setLongitude(e.target.value)}
-              inputMode="decimal"
-              placeholder="36.80"
-            />
-          </div>
-          <button
-            type="submit"
-            className={styles.buttonPrimary}
-            disabled={submitting}
-          >
-            {submitting ? "Creating…" : "Create station"}
-          </button>
-        </form>
+        <CreateStationModal
+          submitting={submitting}
+          convertingImage={convertingImage}
+          address={address}
+          setAddress={setAddress}
+          latitude={latitude}
+          setLatitude={setLatitude}
+          longitude={longitude}
+          setLongitude={setLongitude}
+          adminAddress={adminAddress}
+          setAdminAddress={setAdminAddress}
+          imageName={imageName}
+          onImageChange={(e) => void onImageChange(e)}
+          onClose={() => setShowCreate(false)}
+          onSubmit={onCreate}
+        />
       ) : null}
 
       {loading ? (
@@ -155,7 +179,11 @@ export default function ChargingStationsPage() {
             <thead>
               <tr>
                 <th className={styles.th}>Station id</th>
+                <th className={styles.th}>Provider</th>
                 <th className={styles.th}>Address</th>
+                <th className={styles.th}>Latitude</th>
+                <th className={styles.th}>Longitude</th>
+                <th className={styles.th}>Image</th>
                 <th className={styles.th}>Chargers</th>
               </tr>
             </thead>
@@ -163,7 +191,19 @@ export default function ChargingStationsPage() {
               {stations.map((s) => (
                 <tr key={s.id}>
                   <td className={styles.td}>{s.stationId}</td>
+                  <td className={styles.td}>{s.providerId ?? "—"}</td>
                   <td className={styles.td}>{s.locationAddressName || "—"}</td>
+                  <td className={styles.td}>{s.locationLatitude || "—"}</td>
+                  <td className={styles.td}>{s.locationLongitude || "—"}</td>
+                  <td className={styles.td}>
+                    {s.imageUrl ? (
+                      <a href={s.imageUrl} target="_blank" rel="noreferrer">
+                        View
+                      </a>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                   <td className={styles.td}>{s.chargeBoxCount}</td>
                 </tr>
               ))}

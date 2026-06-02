@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
+import { GoogleMap, Marker } from "@react-google-maps/api";
+import { useGoogleMapsLoader } from "@/lib/googleMapsLoader";
 import styles from "./MapCard.module.css";
 
 export default function MapCard({
@@ -14,10 +15,7 @@ export default function MapCard({
   label?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const { isLoaded } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ?? "",
-  });
+  const { isLoaded } = useGoogleMapsLoader();
 
   const hasCoords = Boolean(lat && lng);
   if (!hasCoords) return <div className={styles.card}>No location set.</div>;
