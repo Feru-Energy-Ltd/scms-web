@@ -52,7 +52,7 @@ export default function AccountDashboardPage() {
     n != null ? `${n.toFixed(2)} kWh` : "—";
 
   const fmtMoney = (n: number | undefined) =>
-    n != null ? `KES ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—";
+    n != null ? `RWF ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—";
 
   return (
     <div>
