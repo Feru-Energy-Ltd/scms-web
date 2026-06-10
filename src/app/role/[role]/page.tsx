@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { getRoleLabel } from "@/lib/auth/roles";
 
-export default function RolePage({
+export default async function RolePage({
   params,
 }: {
-  params: { role: string };
+  params: Promise<{ role: string }>;
 }) {
-  const roleCode = decodeURIComponent(params.role);
+  const { role } = await params;
+  const roleCode = decodeURIComponent(role);
   const roleLabel = getRoleLabel(roleCode);
 
   return (
