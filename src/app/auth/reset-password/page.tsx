@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import VerifyEmailLikeLayout from "@/components/verify/VerifyEmailLikeLayout";
 import { apiRequest } from "@/lib/api/http";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
-import PasswordEyeIcon from "../../login/PasswordEyeIcon";
+import PasswordEyeIcon from "../../../components/PasswordEyeIcon";
 import loginStyles from "../../login/login.module.css";
 import verifyStyles from "../../verify/email/page.module.css";
 import listStyles from "@/components/account/ResourceList.module.css";

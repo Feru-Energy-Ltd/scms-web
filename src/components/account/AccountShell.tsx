@@ -5,20 +5,49 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  BarChart3,
+  BatteryCharging,
+  Bell,
+  Building2,
+  ChevronLeft,
+  ChevronRight,
+  CircleUserRound,
+  CreditCard,
+  LayoutDashboard,
+  Lock,
+  LogOut,
+  Mail,
+  MapPin,
+  Tags,
+  User,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
+import { getAccessTokenContext } from "@/lib/auth/jwtContext";
+import { getRoleLabel } from "@/lib/auth/roles";
+import {
   clearSession,
   getStoredIdentityType,
   getStoredPermissions,
+  getStoredRoleCode,
 } from "@/lib/auth/session";
-import { getMenuForPermissions } from "@/lib/navigation/menu";
+import { getMenuSectionsForPermissions } from "@/lib/navigation/menu";
 import ThemeToggleButton from "../theme/ThemeToggleButton";
 import styles from "./AccountShell.module.css";
-function navAbbrev(name: string): string {
-  const words = name.split(/\s+/).filter(Boolean);
-  if (words.length >= 2) {
-    return (words[0][0] + words[1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-}
+
+const NAV_ICONS: Record<string, LucideIcon> = {
+  "/account": LayoutDashboard,
+  "/account/service-providers": Building2,
+  "/account/permissions": Lock,
+  "/account/customers": Users,
+  "/account/pricing": Tags,
+  "/account/stations": MapPin,
+  "/account/charge-boxes": BatteryCharging,
+  "/account/users": User,
+  "/account/invitations": Mail,
+  "/account/billing": CreditCard,
+  "/account/reports": BarChart3,
+};
 
 export default function AccountShell({
   children,
@@ -30,16 +59,43 @@ export default function AccountShell({
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const permissions = getStoredPermissions();
-  const menu = useMemo(() => getMenuForPermissions(permissions), [permissions]);
+  const menuSections = useMemo(
+    () => getMenuSectionsForPermissions(permissions),
+    [permissions],
+  );
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [identityType] = useState(() => getStoredIdentityType() || "Account");
+  const [userCtx] = useState(() => getAccessTokenContext());
+  const [storedRoleCode] = useState(() => getStoredRoleCode());
+
+  const displayName = userCtx.email ?? "User";
+  const displayRole = useMemo(() => {
+    if (userCtx.role) return getRoleLabel(userCtx.role);
+    if (storedRoleCode) return getRoleLabel(storedRoleCode);
+    return identityType;
+  }, [userCtx.role, storedRoleCode, identityType]);
+
+  const userInitials = useMemo(() => {
+    const local = displayName.split("@")[0] ?? "";
+    const parts = local.split(/[._\s-]+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return local.slice(0, 2).toUpperCase() || "U";
+  }, [displayName]);
+
+  const allMenuItems = useMemo(
+    () => menuSections.flatMap((section) => section.items),
+    [menuSections],
+  );
+
   const activeMenuUrl = useMemo(() => {
     if (!pathname) return "";
-    const matched = menu
+    const matched = allMenuItems
       .filter((item) => pathname === item.url || pathname.startsWith(`${item.url}/`))
       .sort((a, b) => b.url.length - a.url.length)[0];
     return matched?.url ?? "";
-  }, [menu, pathname]);
+  }, [allMenuItems, pathname]);
   const profileNavActive = pathname === "/account/profile";
 
   useEffect(() => {
@@ -99,20 +155,7 @@ export default function AccountShell({
             aria-label="Notifications"
             title="Notifications"
           >
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
+            <Bell size={18} aria-hidden />
           </button>
           <div className={styles.topNavMenuWrap} ref={userMenuRef}>
             <button
@@ -126,20 +169,7 @@ export default function AccountShell({
               data-active={profileNavActive ? "true" : undefined}
               onClick={() => setUserMenuOpen((open) => !open)}
             >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
+              <CircleUserRound size={18} aria-hidden />
             </button>
             {userMenuOpen ? (
               <div
@@ -224,23 +254,11 @@ export default function AccountShell({
                 <span className={styles.srOnly}>
                   {sidebarCollapsed ? "Expand menu" : "Collapse menu"}
                 </span>
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                >
-                  {sidebarCollapsed ? (
-                    <path d="M9 18l6-6-6-6" />
-                  ) : (
-                    <path d="M15 18l-6-6 6-6" />
-                  )}
-                </svg>
+                {sidebarCollapsed ? (
+                  <ChevronRight size={16} aria-hidden />
+                ) : (
+                  <ChevronLeft size={16} aria-hidden />
+                )}
               </button>
             </div>
 
@@ -249,31 +267,54 @@ export default function AccountShell({
               className={styles.nav}
               aria-label="Account navigation"
             >
-              {menu.map((item) => (
-                <Link
-                  key={item.url + item.name}
-                  href={item.url}
-                  className={styles.navItem}
-                  aria-current={
-                    activeMenuUrl === item.url ? "page" : undefined
-                  }
-                  title={sidebarCollapsed ? item.name : undefined}
-                >
-                  <span className={styles.navLabelFull}>{item.name}</span>
-                  <span className={styles.navAbbrev}>{navAbbrev(item.name)}</span>
-                </Link>
+              {menuSections.map((section) => (
+                <div key={section.label} className={styles.navSection}>
+                  <div className={styles.navSectionLabel}>{section.label}</div>
+                  {section.items.map((item) => {
+                    const NavIcon = NAV_ICONS[item.url] ?? LayoutDashboard;
+                    return (
+                      <Link
+                        key={item.url + item.name}
+                        href={item.url}
+                        className={styles.navItem}
+                        aria-current={
+                          activeMenuUrl === item.url ? "page" : undefined
+                        }
+                        title={sidebarCollapsed ? item.name : undefined}
+                      >
+                        <NavIcon size={18} className={styles.navIcon} aria-hidden />
+                        <span className={styles.navLabelFull}>{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
               ))}
             </nav>
           </div>
 
           <div className={styles.sidebarFooter}>
-            <button
-              className={styles.logoutButton}
-              type="button"
-              onClick={signOut}
-            >
-              Sign out
-            </button>
+            <div className={styles.sbUser}>
+              <div className={styles.sbAvatar} aria-hidden>
+                {userInitials}
+              </div>
+              {!sidebarCollapsed && (
+                <div className={styles.sbUserInfo}>
+                  <div className={styles.sbUserName} title={displayName}>
+                    {displayName}
+                  </div>
+                  <div className={styles.sbUserRole}>{displayRole}</div>
+                </div>
+              )}
+              <button
+                type="button"
+                className={styles.sbLogout}
+                onClick={signOut}
+                title="Sign out"
+                aria-label="Sign out"
+              >
+                <LogOut size={15} aria-hidden />
+              </button>
+            </div>
           </div>
         </aside>
 

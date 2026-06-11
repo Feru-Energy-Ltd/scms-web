@@ -17,7 +17,7 @@ import {
 import { hasActiveAccessSession } from "@/lib/auth/session";
 import { decodeInvitationTokenMeta } from "@/lib/invitation/decodeInvitationTokenMeta";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
-import PasswordEyeIcon from "../login/PasswordEyeIcon";
+import PasswordEyeIcon from "../../components/PasswordEyeIcon";
 import loginStyles from "../login/login.module.css";
 import verifyStyles from "../verify/email/page.module.css";
 import listStyles from "@/components/account/ResourceList.module.css";

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { signup } from "@/app/actions/signup";
-import PasswordEyeIcon from "../login/PasswordEyeIcon";
+import PasswordEyeIcon from "../../components/PasswordEyeIcon";
 import styles from "./sign-up.module.css";
 
 type FieldErrors = Record<string, string[] | undefined>;

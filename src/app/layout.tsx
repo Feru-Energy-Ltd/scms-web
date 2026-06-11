@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Nunito } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import { AppThemeProvider } from "@/components/theme/ThemeProvider";
 import "./globals.css";
 
-const fontSans = Plus_Jakarta_Sans({
+const fontSans = Nunito({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
@@ -42,7 +42,7 @@ export default function RootLayout({
               },
               error: {
                 iconTheme: {
-                  primary: "#ef4444",
+                  primary: "var(--danger-solid)",
                   secondary: "var(--color-surface)",
                 },
               },

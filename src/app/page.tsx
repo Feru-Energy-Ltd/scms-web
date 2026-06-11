@@ -12,7 +12,7 @@ import {
 } from "@/lib/auth/session";
 import { resolveNextFromSearch } from "@/lib/auth/redirect";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
-import PasswordEyeIcon from "./login/PasswordEyeIcon";
+import PasswordEyeIcon from "../components/PasswordEyeIcon";
 
 export default function LoginPage() {
   const router = useRouter();

@@ -3,83 +3,109 @@ export type AppMenuItem = {
   url: string;
 };
 
-const baseLinks: AppMenuItem[] = [
-  { name: "Dashboard", url: "/account" },
+export type AppMenuSection = {
+  label: string;
+  items: AppMenuItem[];
+};
+
+type MenuEntry = {
+  item: AppMenuItem;
+  /** Empty = always visible when logged in */
+  permissions: string[];
+};
+
+const MENU_SECTIONS: { label: string; entries: MenuEntry[] }[] = [
+  {
+    label: "Main",
+    entries: [
+      { item: { name: "Dashboard", url: "/account" }, permissions: [] },
+      {
+        item: { name: "Charging Stations", url: "/account/stations" },
+        permissions: ["admin:chargers:read", "provider:chargers:read"],
+      },
+      {
+        item: { name: "Charge Boxes", url: "/account/charge-boxes" },
+        permissions: ["admin:chargers:read", "provider:chargers:read"],
+      },
+    ],
+  },
+  {
+    label: "Management",
+    entries: [
+      {
+        item: { name: "Staff", url: "/account/users" },
+        permissions: ["provider:users:read"],
+      },
+      {
+        item: { name: "Invitations", url: "/account/invitations" },
+        permissions: ["provider:org:read", "provider:org:update"],
+      },
+      {
+        item: { name: "Billing", url: "/account/billing" },
+        permissions: ["provider:reports:read"],
+      },
+      {
+        item: { name: "Reports", url: "/account/reports" },
+        permissions: ["provider:reports:read", "admin:reports:read"],
+      },
+      {
+        item: { name: "Service Providers", url: "/account/service-providers" },
+        permissions: ["admin:providers:read", "admin:providers:create"],
+      },
+      {
+        item: { name: "Customers", url: "/account/customers" },
+        permissions: ["admin:users:read"],
+      },
+      {
+        item: { name: "Pricing", url: "/account/pricing" },
+        permissions: ["admin:providers:read"],
+      },
+    ],
+  },
+  {
+    label: "Settings",
+    entries: [
+      {
+        item: { name: "Roles & Permissions", url: "/account/permissions" },
+        permissions: ["admin:roles:read"],
+      },
+    ],
+  },
 ];
 
+function isEntryVisible(entry: MenuEntry, permSet: Set<string>): boolean {
+  if (entry.permissions.length === 0) return true;
+  return entry.permissions.some((p) => permSet.has(p));
+}
+
 /**
- * Each menu item is shown when the user holds ANY of the listed permissions.
- * This replaces the old role-based mapping which broke when role names changed.
+ * Build grouped sidebar menu based on the user's JWT permissions.
+ * Sections with no visible items are omitted.
  */
-const permissionMenuItems: { item: AppMenuItem; permissions: string[] }[] = [
-  {
-    item: { name: "Service Providers", url: "/account/service-providers" },
-    permissions: ["admin:providers:read", "admin:providers:create"],
-  },
-  {
-    item: { name: "Roles and Permissions", url: "/account/permissions" },
-    permissions: ["admin:roles:read"],
-  },
-  {
-    item: { name: "Customers", url: "/account/customers" },
-    permissions: ["admin:users:read"],
-  },
-  {
-    item: { name: "Pricing", url: "/account/pricing" },
-    permissions: ["admin:providers:read"],
-  },
-  {
-    item: { name: "Charging Stations", url: "/account/stations" },
-    permissions: [
-      "admin:chargers:read",
-      "provider:chargers:read",
-    ],
-  },
-  {
-    item: { name: "Charge Boxes", url: "/account/charge-boxes" },
-    permissions: [
-      "admin:chargers:read",
-      "provider:chargers:read",
-    ],
-  },
-  {
-    item: { name: "Staff", url: "/account/users" },
-    permissions: ["provider:users:read"],
-  },
-  {
-    item: { name: "Invitations", url: "/account/invitations" },
-    permissions: ["provider:org:read", "provider:org:update"],
-  },
-  {
-    item: { name: "Billing", url: "/account/billing" },
-    permissions: ["provider:reports:read"],
-  },
-  {
-    item: { name: "Reports", url: "/account/reports" },
-    permissions: ["provider:reports:read", "admin:reports:read"],
-  },
-];
+export function getMenuSectionsForPermissions(
+  permissions: string[],
+): AppMenuSection[] {
+  const permSet = new Set(permissions);
+  return MENU_SECTIONS.map((section) => ({
+    label: section.label,
+    items: section.entries
+      .filter((entry) => isEntryVisible(entry, permSet))
+      .map((entry) => entry.item),
+  })).filter((section) => section.items.length > 0);
+}
 
 /**
- * Build menu based on the user's actual permissions from the JWT.
- * A menu item appears if the user has at least one of its required permissions.
+ * Flat menu list (all sections merged). Useful for active-route matching.
  */
 export function getMenuForPermissions(permissions: string[]): AppMenuItem[] {
-  const permSet = new Set(permissions);
-  const dynamic = permissionMenuItems
-    .filter((entry) => entry.permissions.some((p) => permSet.has(p)))
-    .map((entry) => entry.item);
-  return [...baseLinks, ...dynamic];
+  return getMenuSectionsForPermissions(permissions).flatMap((s) => s.items);
 }
 
 /**
  * @deprecated Use getMenuForPermissions() instead.
- * Kept for backward compat — falls back to base menu if role unknown.
  */
-export function getMenuForRoleCode(roleCode: string): AppMenuItem[] {
-  const links: AppMenuItem[] = [...baseLinks];
-  if (!roleCode) return links;
-  return links;
+export function getMenuForRoleCode(_roleCode: string): AppMenuItem[] {
+  return getMenuForPermissions([]);
 }
 
 export const getMenuForIdentityType = getMenuForRoleCode;

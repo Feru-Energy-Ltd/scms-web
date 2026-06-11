@@ -1,22 +1,59 @@
-.kpiGrid {
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.pageTitle {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--color-text);
+  margin-bottom: 2px;
+}
+
+.pageSubtitle {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.error {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  background: var(--danger-bg);
+  color: var(--danger-fg);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.metrics {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.mapSection {
-  margin-top: 1rem;
+.mapCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-xs);
 }
 
-@media (max-width: 1024px) {
-  .kpiGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.cardTitle {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-@media (max-width: 640px) {
-  .kpiGrid {
-    grid-template-columns: 1fr;
-  }
+.cardTitleIcon {
+  color: var(--color-primary);
 }
