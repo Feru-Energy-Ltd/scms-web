@@ -274,8 +274,18 @@ function GoogleMapShell({
   );
 }
 
+function getGoogleMapsApiKeySource(): "runtime" | "build-time" | "none" {
+  if (typeof window !== "undefined") {
+    const fromRuntime = window.__SCMS_PUBLIC_CONFIG__?.googleMapsApiKey?.trim();
+    if (fromRuntime) return "runtime";
+  }
+  if (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim()) return "build-time";
+  return "none";
+}
+
 export default function ChargingStationsMap() {
   const apiKey = getGoogleMapsApiKey();
+  const apiKeySource = getGoogleMapsApiKeySource();
   const [rows, setRows] = useState<ChargerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [locating, setLocating] = useState(false);
@@ -361,6 +371,10 @@ export default function ChargingStationsMap() {
           {loading
             ? "Loading stations…"
             : ` showing ${markers.length} on map `}
+        </span>
+        <span className={styles.hint}>
+          Maps API key ({apiKeySource}):{" "}
+          <code className={styles.code}>{apiKey || "(empty)"}</code>
         </span>
       </div>
 
