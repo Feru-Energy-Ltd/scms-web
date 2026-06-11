@@ -1,8 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { fetchAdminRoles } from "@/lib/api/security";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { fetchAdminRoles, fetchProviderRoles } from "@/lib/api/security";
 import { asArray } from "@/lib/api/normalize";
+import { getAccessTokenContext } from "@/lib/auth/jwtContext";
+import { getRoleLabel } from "@/lib/auth/roles";
+import { getStoredPermissions } from "@/lib/auth/session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 
@@ -19,19 +22,32 @@ function cell(row: RoleRow, ...keys: string[]) {
 export default function AccountPermissionsPage() {
   const [rows, setRows] = useState<RoleRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isProviderView, setIsProviderView] = useState(false);
+
+  const { providerId } = useMemo(() => getAccessTokenContext(), []);
+  const perms = useMemo(() => new Set(getStoredPermissions()), []);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const raw = await fetchAdminRoles();
-      setRows(asArray<RoleRow>(raw));
+      if (perms.has("admin:roles:read")) {
+        setIsProviderView(false);
+        const raw = await fetchAdminRoles();
+        setRows(asArray<RoleRow>(raw));
+      } else if (perms.has("provider:roles:read") && providerId != null) {
+        setIsProviderView(true);
+        const raw = await fetchProviderRoles(providerId);
+        setRows(asArray<RoleRow>(raw));
+      } else {
+        setRows([]);
+      }
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load roles." });
       setRows([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [perms, providerId]);
 
   useEffect(() => {
     void load();
@@ -41,7 +57,9 @@ export default function AccountPermissionsPage() {
     <div>
       <h1 className={styles.h1}>Roles and permissions</h1>
       <p className={styles.muted}>
-        Manage role definitions and permission mappings.
+        {isProviderView
+          ? "View role definitions and permission mappings for your organization."
+          : "Manage role definitions and permission mappings."}
       </p>
 
       <div className={styles.toolbar}>
@@ -59,7 +77,7 @@ export default function AccountPermissionsPage() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th className={styles.th}>Id</th>
+                {!isProviderView && <th className={styles.th}>Id</th>}
                 <th className={styles.th}>Name</th>
                 <th className={styles.th}>Permissions</th>
               </tr>
@@ -67,6 +85,7 @@ export default function AccountPermissionsPage() {
             <tbody>
               {rows.map((row, i) => {
                 const id = cell(row, "id");
+                const name = cell(row, "name");
                 const perms = row.permissions;
                 let permSummary = "—";
                 if (Array.isArray(perms)) {
@@ -76,9 +95,9 @@ export default function AccountPermissionsPage() {
                       : `${perms.length} items`;
                 }
                 return (
-                  <tr key={`${id}-${i}`}>
-                    <td className={styles.td}>{id}</td>
-                    <td className={styles.td}>{cell(row, "name")}</td>
+                  <tr key={`${id}-${name}-${i}`}>
+                    {!isProviderView && <td className={styles.td}>{id}</td>}
+                    <td className={styles.td}>{getRoleLabel(name)}</td>
                     <td className={styles.td}>{permSummary}</td>
                   </tr>
                 );

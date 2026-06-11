@@ -43,7 +43,7 @@ export default function UsersPage() {
   const currentUserId = ctx?.userId;
 
   const perms = new Set(getStoredPermissions());
-  const canEditRole = perms.has("provider:org:update");
+  const canEditRole = perms.has("provider:roles:update");
   const canDeactivate = perms.has("provider:org:delete");
 
   const loadStaff = useCallback(async () => {

@@ -67,7 +67,7 @@ const MENU_SECTIONS: { label: string; entries: MenuEntry[] }[] = [
     entries: [
       {
         item: { name: "Roles & Permissions", url: "/account/permissions" },
-        permissions: ["admin:roles:read"],
+        permissions: ["admin:roles:read", "provider:roles:read"],
       },
     ],
   },
