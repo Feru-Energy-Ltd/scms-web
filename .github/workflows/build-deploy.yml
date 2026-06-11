@@ -1,6 +1,6 @@
 # Build scms-web on push to main and push the image to Docker Hub.
 #
-# Required repository variables (or prod environment variables):
+# Required Production environment variables:
 #   NEXT_PUBLIC_API_BASE_URL
 #   NEXT_PUBLIC_CSMS_PATH_PREFIX      (e.g. /csms)
 #   NEXT_PUBLIC_PAYMENT_PATH_PREFIX   (e.g. /payment)
@@ -45,7 +45,7 @@ jobs:
     name: Build & Push to Docker Hub
     needs: lint
     runs-on: ubuntu-latest
-    environment: prod
+    environment: Production
     permissions:
       contents: read
 
@@ -55,6 +55,22 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Validate build config
+        env:
+          API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+          CSMS_PREFIX: ${{ vars.NEXT_PUBLIC_CSMS_PATH_PREFIX }}
+          PAYMENT_PREFIX: ${{ vars.NEXT_PUBLIC_PAYMENT_PATH_PREFIX }}
+          AUTH_PREFIX: ${{ vars.NEXT_PUBLIC_AUTH_PATH_PREFIX }}
+        run: |
+          if [[ -z "$API_BASE_URL" ]]; then
+            echo "::error::NEXT_PUBLIC_API_BASE_URL is empty. Add it to the Production environment variables (Settings → Environments → Production)."
+            exit 1
+          fi
+          echo "NEXT_PUBLIC_API_BASE_URL=$API_BASE_URL"
+          echo "NEXT_PUBLIC_CSMS_PATH_PREFIX=${CSMS_PREFIX:-<default /csms>}"
+          echo "NEXT_PUBLIC_PAYMENT_PATH_PREFIX=${PAYMENT_PREFIX:-<default /payment>}"
+          echo "NEXT_PUBLIC_AUTH_PATH_PREFIX=${AUTH_PREFIX:-<default /auth>}"
 
       - name: Resolve image version
         id: version
@@ -84,5 +100,6 @@ jobs:
             NEXT_PUBLIC_PAYMENT_PATH_PREFIX=${{ vars.NEXT_PUBLIC_PAYMENT_PATH_PREFIX }}
             NEXT_PUBLIC_AUTH_PATH_PREFIX=${{ vars.NEXT_PUBLIC_AUTH_PATH_PREFIX }}
             NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+            BUILD_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
