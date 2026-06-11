@@ -22,7 +22,7 @@ export default function EmailVerificationPage() {
         <footer className={styles.footer}>
           Wrong email? <Link href="/sign-up">Go back to sign up</Link>
           {" · "}
-          <Link href="/login">Sign in</Link>
+          <Link href="/">Sign in</Link>
         </footer>
       </div>
     </main>

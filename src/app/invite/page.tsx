@@ -17,7 +17,7 @@ import {
 import { hasActiveAccessSession } from "@/lib/auth/session";
 import { decodeInvitationTokenMeta } from "@/lib/invitation/decodeInvitationTokenMeta";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
-import PasswordEyeIcon from "../login/PasswordEyeIcon";
+import PasswordEyeIcon from "../../components/PasswordEyeIcon";
 import loginStyles from "../login/login.module.css";
 import verifyStyles from "../verify/email/page.module.css";
 import listStyles from "@/components/account/ResourceList.module.css";
@@ -55,9 +55,7 @@ function InviteAcceptContent() {
         subtitle="This page needs a valid invitation token from your email. Open the full link from your message, or ask your administrator to resend the invitation."
         footer={
           <>
-            <Link href="/login">Sign in</Link>
-            {" · "}
-            <Link href="/">Home</Link>
+            <Link href="/">Sign in</Link>
           </>
         }
       />
@@ -69,7 +67,7 @@ function InviteAcceptContent() {
       <VerifyEmailLikeLayout
         title="Invalid or expired invitation"
         subtitle="We could not read this invitation link. It may be corrupted, expired, or not meant for this page."
-        footer={<Link href="/login">Sign in</Link>}
+        footer={<Link href="/">Sign in</Link>}
       />
     );
   }
@@ -122,7 +120,7 @@ function InviteAcceptContent() {
       }
       footer={
         <>
-          Wrong person? <Link href="/login">Sign in</Link> with another account.
+          Wrong person? <Link href="/">Sign in</Link> with another account.
         </>
       }
     >

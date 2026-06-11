@@ -1,6 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  Activity,
+  BatteryCharging,
+  CalendarClock,
+  Gauge,
+  Hourglass,
+  MapPin,
+  Wallet,
+  Wifi,
+  Zap,
+} from "lucide-react";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import {
   fetchOperatorDashboardStats,
@@ -10,7 +21,6 @@ import {
 } from "@/lib/api/dashboard";
 import KpiCard from "@/components/account/KpiCard";
 import DashboardMapClient from "@/app/account/dashboard/DashboardMapClient";
-import listStyles from "@/components/account/ResourceList.module.css";
 import styles from "./page.module.css";
 
 const POLL_INTERVAL_MS = 15_000;
@@ -56,21 +66,27 @@ export default function AccountDashboardPage() {
 
   return (
     <div>
-      <h1 className={listStyles.h1}>Dashboard</h1>
-      <p className={listStyles.muted} style={{ marginBottom: "1.5rem" }}>
-        {ctx.email ? ctx.email : ""}
-        {ctx.identityType ? ` · ${ctx.identityType}` : ""}
-      </p>
+      <div className={styles.pageHeader}>
+        <div>
+          <h1 className={styles.pageTitle}>Dashboard</h1>
+          <p className={styles.pageSubtitle}>
+            {ctx.email ? ctx.email : "Overview of your charging network"}
+            {ctx.identityType ? ` · ${ctx.identityType}` : ""}
+          </p>
+        </div>
+      </div>
 
-      {error && <p className={listStyles.error}>{error}</p>}
+      {error && <p className={styles.error}>{error}</p>}
 
-      {/* Row 1 */}
-      <div className={styles.kpiGrid}>
+      <div className={styles.metrics}>
         <KpiCard
+          icon={BatteryCharging}
           label="Total Chargers"
           value={fmt(providerStats?.totalChargers)}
+          accent
         />
         <KpiCard
+          icon={Wifi}
           label="Online / Offline"
           value={
             providerStats != null
@@ -79,37 +95,43 @@ export default function AccountDashboardPage() {
           }
         />
         <KpiCard
+          icon={Zap}
           label="Active Sessions"
           value={fmt(providerStats?.activeSessions)}
         />
         <KpiCard
+          icon={Wallet}
           label="Earned Balance"
           value={fmtMoney(operatorStats?.earnedBalance)}
         />
-      </div>
-
-      {/* Row 2 */}
-      <div className={styles.kpiGrid}>
         <KpiCard
+          icon={Hourglass}
           label="Pending Settlement"
           value={fmtMoney(operatorStats?.pendingSettlement)}
         />
         <KpiCard
+          icon={Activity}
           label="Sessions Today"
           value={fmt(providerStats?.totalSessionsToday)}
         />
         <KpiCard
+          icon={Gauge}
           label="Energy Delivered"
           value={fmtKwh(providerStats?.energyDeliveredTodayKwh)}
           subtitle="Today"
         />
         <KpiCard
+          icon={CalendarClock}
           label="Active Reservations"
           value={fmt(providerStats?.activeReservations)}
         />
       </div>
 
-      <div className={styles.mapSection}>
+      <div className={styles.mapCard}>
+        <div className={styles.cardTitle}>
+          <MapPin size={16} className={styles.cardTitleIcon} />
+          Station Map
+        </div>
         <DashboardMapClient />
       </div>
     </div>

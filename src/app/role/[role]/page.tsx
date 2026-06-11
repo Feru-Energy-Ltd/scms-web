@@ -19,7 +19,7 @@ export default async function RolePage({
         This is a placeholder view for role-based routing.
       </p>
       <Link href="/" style={{ color: "var(--color-primary)" }}>
-        Back to homepage
+        Back to sign in
       </Link>
     </main>
   );

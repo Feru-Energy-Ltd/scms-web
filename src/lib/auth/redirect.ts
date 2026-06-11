@@ -2,7 +2,7 @@
  * Redirect-after-login helpers.
  *
  * Captures the originally-requested protected URL when an unauthenticated user
- * is bounced to /login, and restores it after a successful sign-in.
+ * is bounced to / (sign-in), and restores it after a successful sign-in.
  *
  * All values are validated as safe internal paths to prevent open-redirect
  * attacks (e.g. //evil.com, /\evil.com, https://evil.com).
@@ -34,6 +34,7 @@ export function sanitizeNextPath(
   if (!value.startsWith("/")) return fallback;
   if (value.startsWith("//") || value.startsWith("/\\")) return fallback;
   if (CONTROL_CHARS.test(value)) return fallback;
+  if (value === "/" || value.startsWith("/?")) return fallback;
   if (value === "/login" || value.startsWith("/login?")) return fallback;
 
   return value;
@@ -41,13 +42,13 @@ export function sanitizeNextPath(
 
 /**
  * Builds the login path carrying the intended destination as ?next=,
- * e.g. "/login?next=%2Faccount%2Fapprovals".
+ * e.g. "/?next=%2Faccount%2Fapprovals".
  * Skips the param when the intended path is just the default landing page.
  */
 export function buildLoginPath(intendedPath: string): string {
   const target = sanitizeNextPath(intendedPath);
-  if (target === DEFAULT_REDIRECT) return "/login";
-  return `/login?${NEXT_PARAM}=${encodeURIComponent(target)}`;
+  if (target === DEFAULT_REDIRECT) return "/";
+  return `/?${NEXT_PARAM}=${encodeURIComponent(target)}`;
 }
 
 /**
