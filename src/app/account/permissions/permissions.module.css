@@ -1,0 +1,174 @@
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface-2);
+  font-size: 0.85rem;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendCode {
+  display: inline-block;
+  min-width: 2.5rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.matrixWrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+.matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.matrix th,
+.matrix td {
+  border-bottom: 1px solid var(--color-border);
+  border-right: 1px solid color-mix(in oklab, var(--color-border) 60%, transparent);
+  padding: 10px 12px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.matrix th:last-child,
+.matrix td:last-child {
+  border-right: none;
+}
+
+.matrix thead th {
+  background: var(--color-surface-2);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.matrix tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.roleCol {
+  text-align: left !important;
+  font-weight: 500;
+  white-space: nowrap;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--color-surface);
+  min-width: 10rem;
+}
+
+.roleColHeader {
+  composes: roleCol;
+  background: var(--color-surface-2);
+  z-index: 2;
+}
+
+.accessCell {
+  font-family: ui-monospace, monospace;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.accessNone {
+  color: var(--color-text-muted);
+}
+
+.notes {
+  margin-top: 16px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.notes ul {
+  margin: 8px 0 0;
+  padding-left: 1.25rem;
+}
+
+.infoCard {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface-2);
+  font-size: 0.9rem;
+}
+
+.infoCardTitle {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.teamPanel {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.teamPanelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.teamPanelTitle {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+}
+
+.teamGroups {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.teamGroup {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--color-surface-2);
+}
+
+.teamGroupTitle {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+}
+
+.teamList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.teamListItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.85rem;
+}
