@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { GoogleMap, Marker } from "@react-google-maps/api";
 import { useGoogleMapsLoader } from "@/lib/googleMapsLoader";
+import { getGoogleMapsApiKey } from "@/lib/publicConfig";
 import styles from "./MapCard.module.css";
 
 export default function MapCard({
@@ -15,10 +16,26 @@ export default function MapCard({
   label?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const { isLoaded } = useGoogleMapsLoader();
+  const apiKey = getGoogleMapsApiKey();
+  const { isLoaded, loadError } = useGoogleMapsLoader();
 
   const hasCoords = Boolean(lat && lng);
   if (!hasCoords) return <div className={styles.card}>No location set.</div>;
+  if (!apiKey) {
+    return (
+      <div className={styles.card} role="alert">
+        Google Maps API key is not configured.
+      </div>
+    );
+  }
+  if (loadError) {
+    return (
+      <div className={styles.card} role="alert">
+        Could not load Google Maps. Check your API key (Maps JavaScript API enabled, billing,
+        HTTP referrers).
+      </div>
+    );
+  }
   if (!isLoaded) return <div className={styles.card}>Loading map…</div>;
 
   const center = { lat: Number(lat), lng: Number(lng) };

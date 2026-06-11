@@ -34,7 +34,6 @@ RUN npm run build -- --webpack
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production \
-    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 COPY --from=builder --chown=node:node /app/.next/standalone ./

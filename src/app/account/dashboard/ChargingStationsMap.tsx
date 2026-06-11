@@ -19,6 +19,7 @@ import { fetchStationGeoLocations } from "@/lib/api/stations";
 import { asArray } from "@/lib/api/normalize";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import { useGoogleMapsLoader } from "@/lib/googleMapsLoader";
+import { getGoogleMapsApiKey } from "@/lib/publicConfig";
 import styles from "./dashboard-map.module.css";
 
 type ChargerRow = Record<string, unknown>;
@@ -274,7 +275,7 @@ function GoogleMapShell({
 }
 
 export default function ChargingStationsMap() {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ?? "";
+  const apiKey = getGoogleMapsApiKey();
   const [rows, setRows] = useState<ChargerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [locating, setLocating] = useState(false);

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "react-hot-toast";
+import { PublicConfigScript } from "@/components/PublicConfigScript";
 import { AppThemeProvider } from "@/components/theme/ThemeProvider";
 import "./globals.css";
 
@@ -23,6 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={fontSans.variable}>
       <body>
+        <PublicConfigScript />
         <AppThemeProvider>
           {children}
           <Toaster

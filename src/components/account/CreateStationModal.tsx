@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import { useGoogleMapsLoader } from "@/lib/googleMapsLoader";
+import { useGooglePlacesLoader } from "@/lib/googleMapsLoader";
 import styles from "./CreateStationModal.module.css";
 import formStyles from "./ResourceList.module.css";
 
@@ -40,7 +40,7 @@ export default function CreateStationModal({
   onSubmit,
 }: Props) {
   const addressInputRef = useRef<HTMLInputElement | null>(null);
-  const { isLoaded } = useGoogleMapsLoader();
+  const { isLoaded } = useGooglePlacesLoader();
 
   useEffect(() => {
     if (!isLoaded || !addressInputRef.current || !window.google?.maps?.places) {
