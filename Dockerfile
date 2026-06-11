@@ -15,6 +15,7 @@ COPY . .
 # Build-time public config (baked into the client bundle)
 ARG BUILD_SHA
 ARG NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 ENV BUILD_SHA=$BUILD_SHA \
     NEXT_TELEMETRY_DISABLED=1 \
     NODE_OPTIONS=--max-old-space-size=4096
