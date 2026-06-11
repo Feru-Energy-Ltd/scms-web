@@ -35,7 +35,7 @@ export default function SecurityForm() {
       });
       toast.success("Password changed. Please log in again.");
       clearSession();
-      router.push("/login");
+      router.push("/");
     } catch (e) {
       if (e instanceof ApiError && (e.status === 401 || e.status === 400)) {
         setPasswordError("Current password is incorrect");

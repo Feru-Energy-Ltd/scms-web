@@ -69,7 +69,7 @@ function VerifyProviderEmailContent() {
           <>
             <Link href="/sign-up">Sign up</Link>
             {" · "}
-            <Link href="/login">Sign in</Link>
+            <Link href="/">Sign in</Link>
           </>
         }
       />

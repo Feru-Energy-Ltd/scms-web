@@ -29,7 +29,7 @@ function ResetPasswordContent() {
       <VerifyEmailLikeLayout
         title="Invalid reset link"
         subtitle="This page needs a valid password reset token from your email. Open the full link from your message, or request a new reset."
-        footer={<Link href="/login">Sign in</Link>}
+        footer={<Link href="/">Sign in</Link>}
       />
     );
   }
@@ -39,7 +39,7 @@ function ResetPasswordContent() {
       <VerifyEmailLikeLayout
         title="Password reset"
         subtitle="Your password has been reset successfully. You can now sign in with your new password."
-        footer={<Link href="/login">Sign in</Link>}
+        footer={<Link href="/">Sign in</Link>}
       />
     );
   }
@@ -85,7 +85,7 @@ function ResetPasswordContent() {
       }
       footer={
         <>
-          Remembered it? <Link href="/login">Sign in</Link>
+          Remembered it? <Link href="/">Sign in</Link>
         </>
       }
     >
