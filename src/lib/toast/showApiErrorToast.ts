@@ -1,5 +1,24 @@
 import toast from "react-hot-toast";
-import { ApiError } from "../api/http";
+import { ApiError, type ProblemDetail } from "../api/http";
+
+const GENERIC_REQUEST_FAILED = /^Request failed with status \d+$/;
+
+const STATUS_MESSAGES: Readonly<Record<number, string>> = {
+  400: "Invalid request. Please check your input.",
+  401: "Invalid email or password. Please try again.",
+  403: "You do not have permission to access this resource.",
+  404: "The requested resource was not found.",
+  409: "An account with this email already exists.",
+  500: "Something went wrong. Please try again later.",
+  502: "Bad Gateway. Please try again later.",
+  503: "Service Unavailable. Please try again later.",
+  504: "Gateway Timeout. Please try again later.",
+};
+
+export type ShowApiErrorToastOptions = {
+  fallbackMessage?: string;
+  toastId?: string;
+};
 
 function joinValidationErrors(errors: Record<string, string> | undefined) {
   if (!errors) return null;
@@ -8,50 +27,71 @@ function joinValidationErrors(errors: Record<string, string> | undefined) {
   return values.join(", ");
 }
 
-export function showApiErrorToast(
+function extractProblemDetail(body: unknown): string | null {
+  if (!body || typeof body !== "object") return null;
+
+  const problem = body as ProblemDetail;
+  const validation = joinValidationErrors(problem.errors);
+  if (validation) return validation;
+
+  if (typeof problem.detail === "string" && problem.detail.trim()) {
+    return problem.detail.trim();
+  }
+  if (typeof problem.title === "string" && problem.title.trim()) {
+    return problem.title.trim();
+  }
+  return null;
+}
+
+function isInformativeMessage(message: string | undefined): message is string {
+  return Boolean(message && !GENERIC_REQUEST_FAILED.test(message));
+}
+
+function defaultMessageForStatus(status: number | undefined): string | null {
+  if (status === undefined) return null;
+
+  const exact = STATUS_MESSAGES[status];
+  if (exact) return exact;
+
+  if (status >= 500 && status < 600) return STATUS_MESSAGES[500]!;
+  if (status >= 400 && status < 500) return STATUS_MESSAGES[400]!;
+
+  return null;
+}
+
+/** Resolves a user-facing message from an API or network error. */
+export function getApiErrorMessage(
   err: unknown,
-  opts?: { fallbackMessage?: string; toastId?: string },
-) {
+  opts?: Pick<ShowApiErrorToastOptions, "fallbackMessage">,
+): string {
   const fallbackMessage = opts?.fallbackMessage ?? "Something went wrong";
 
   if (err instanceof ApiError) {
-    if (err.status === 401 || err.status === 403) {
-      toast.error("You don't have the permission to perform this action.", {
-        id: opts?.toastId,
-      });
-      return;
+    const statusMessage = defaultMessageForStatus(err.status);
+    if (err.status !== undefined && err.status >= 500 && statusMessage) {
+      return statusMessage;
     }
 
-    type ErrorBody = {
-      detail?: string;
-      title?: string;
-      errors?: Record<string, string>;
-    };
-    const body = err.body as ErrorBody | undefined;
+    const fromBody = extractProblemDetail(err.body);
+    if (fromBody) return fromBody;
 
-    const validation = joinValidationErrors(body?.errors);
-    const detail =
-      (typeof body?.detail === "string" && body.detail) ||
-      (typeof body?.title === "string" && body.title);
+    if (isInformativeMessage(err.message)) return err.message;
 
-    const base = validation || detail || err.message || fallbackMessage;
-    const statusSuffix =
-      typeof err.status === "number" ? ` (HTTP ${err.status})` : "";
-    const message = base.includes(`HTTP ${err.status}`) ? base : `${base}${statusSuffix}`;
+    if (statusMessage) return statusMessage;
 
-    console.error(message)
-    toast.error("something went wrong", {
-      id: opts?.toastId,
-    });
-    return;
+    return fallbackMessage;
   }
 
-  // Handle fetch failures where we can't parse JSON.
   if (err instanceof Error) {
-    toast.error(err.message || fallbackMessage, { id: opts?.toastId });
-    return;
+    return isInformativeMessage(err.message) ? err.message : fallbackMessage;
   }
 
-  toast.error(fallbackMessage, { id: opts?.toastId });
+  return fallbackMessage;
 }
 
+export function showApiErrorToast(
+  err: unknown,
+  opts?: ShowApiErrorToastOptions,
+) {
+  toast.error(getApiErrorMessage(err, opts), { id: opts?.toastId });
+}

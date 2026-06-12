@@ -10,8 +10,10 @@ export type AppMenuSection = {
 
 type MenuEntry = {
   item: AppMenuItem;
-  /** Empty = always visible when logged in */
+  /** Empty = always visible when logged in. User needs any listed permission. */
   permissions: string[];
+  /** Hide this entry if the user has any of these permissions (e.g. replace view-only with actionable item). */
+  hideIfPermissions?: string[];
 };
 
 const MENU_SECTIONS: { label: string; entries: MenuEntry[] }[] = [
@@ -35,6 +37,7 @@ const MENU_SECTIONS: { label: string; entries: MenuEntry[] }[] = [
       {
         item: { name: "Staff", url: "/account/users" },
         permissions: ["provider:users:read"],
+        hideIfPermissions: ["provider:roles:update"],
       },
       {
         item: { name: "Invitations", url: "/account/invitations" },
@@ -67,6 +70,14 @@ const MENU_SECTIONS: { label: string; entries: MenuEntry[] }[] = [
     entries: [
       {
         item: { name: "Roles & Permissions", url: "/account/permissions" },
+        permissions: ["admin:roles:read", "provider:roles:read"],
+      },
+      {
+        item: { name: "Assign team roles", url: "/account/users" },
+        permissions: ["provider:roles:update"],
+      },
+      {
+        item: { name: "Back-office users", url: "/account/back-office-users" },
         permissions: ["admin:roles:read"],
       },
     ],
@@ -74,6 +85,7 @@ const MENU_SECTIONS: { label: string; entries: MenuEntry[] }[] = [
 ];
 
 function isEntryVisible(entry: MenuEntry, permSet: Set<string>): boolean {
+  if (entry.hideIfPermissions?.some((p) => permSet.has(p))) return false;
   if (entry.permissions.length === 0) return true;
   return entry.permissions.some((p) => permSet.has(p));
 }

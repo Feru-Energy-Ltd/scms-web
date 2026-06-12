@@ -1,37 +1,69 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { fetchAdminRoles } from "@/lib/api/security";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { fetchAdminRoles, fetchProviderRoles } from "@/lib/api/security";
 import { asArray } from "@/lib/api/normalize";
+import { getAccessTokenContext } from "@/lib/auth/jwtContext";
+import { getStoredPermissions } from "@/lib/auth/session";
+import {
+  ADMIN_MATRIX_COLUMNS,
+  buildAdminMatrix,
+  buildProviderMatrix,
+  MATRIX_LEGEND,
+  PROVIDER_MATRIX_COLUMNS,
+  type RoleMatrixRow,
+  type RolePermissionRow,
+} from "@/lib/security/permissionMatrix";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
+import PermissionMatrixView from "./PermissionMatrixView";
+import matrixStyles from "./permissions.module.css";
 
 type RoleRow = Record<string, unknown>;
 
-function cell(row: RoleRow, ...keys: string[]) {
-  for (const k of keys) {
-    const v = row[k];
-    if (v != null && v !== "") return String(v);
+function toRolePermissionRows(raw: RoleRow[]): RolePermissionRow[] {
+  const rows: RolePermissionRow[] = [];
+  for (const row of raw) {
+    const name = row.name;
+    if (typeof name !== "string" || !name) continue;
+    const perms = row.permissions;
+    const permissions = Array.isArray(perms) ? perms.map(String) : [];
+    rows.push({ name, permissions });
   }
-  return "—";
+  return rows;
 }
 
 export default function AccountPermissionsPage() {
-  const [rows, setRows] = useState<RoleRow[]>([]);
+  const [matrixRows, setMatrixRows] = useState<RoleMatrixRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"admin" | "provider">("admin");
+
+  const { providerId } = useMemo(() => getAccessTokenContext(), []);
+  const perms = useMemo(() => new Set(getStoredPermissions()), []);
+
+  const columns = viewMode === "provider" ? PROVIDER_MATRIX_COLUMNS : ADMIN_MATRIX_COLUMNS;
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const raw = await fetchAdminRoles();
-      setRows(asArray<RoleRow>(raw));
+      if (perms.has("admin:roles:read")) {
+        setViewMode("admin");
+        const raw = await fetchAdminRoles();
+        setMatrixRows(buildAdminMatrix(toRolePermissionRows(asArray<RoleRow>(raw))));
+      } else if (perms.has("provider:roles:read") && providerId != null) {
+        setViewMode("provider");
+        const raw = await fetchProviderRoles(providerId);
+        setMatrixRows(buildProviderMatrix(toRolePermissionRows(asArray<RoleRow>(raw))));
+      } else {
+        setMatrixRows([]);
+      }
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load roles." });
-      setRows([]);
+      setMatrixRows([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [perms, providerId]);
 
   useEffect(() => {
     void load();
@@ -41,7 +73,7 @@ export default function AccountPermissionsPage() {
     <div>
       <h1 className={styles.h1}>Roles and permissions</h1>
       <p className={styles.muted}>
-        Manage role definitions and permission mappings.
+        Reference matrix for what each role can do. Use the sidebar to assign roles to users.
       </p>
 
       <div className={styles.toolbar}>
@@ -50,43 +82,34 @@ export default function AccountPermissionsPage() {
         </button>
       </div>
 
+      <div className={matrixStyles.legend} aria-label="Permission shorthand legend">
+        {MATRIX_LEGEND.map((item) => (
+          <span key={item.code} className={matrixStyles.legendItem}>
+            <span className={matrixStyles.legendCode}>{item.code}</span>
+            <span>{item.meaning}</span>
+          </span>
+        ))}
+      </div>
+
       {loading ? (
         <p className={styles.muted}>Loading…</p>
-      ) : rows.length === 0 ? (
+      ) : matrixRows.length === 0 ? (
         <p className={styles.muted}>No roles.</p>
       ) : (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th className={styles.th}>Id</th>
-                <th className={styles.th}>Name</th>
-                <th className={styles.th}>Permissions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, i) => {
-                const id = cell(row, "id");
-                const perms = row.permissions;
-                let permSummary = "—";
-                if (Array.isArray(perms)) {
-                  permSummary =
-                    perms.length <= 3
-                      ? perms.map((p) => (typeof p === "string" ? p : JSON.stringify(p))).join(", ")
-                      : `${perms.length} items`;
-                }
-                return (
-                  <tr key={`${id}-${i}`}>
-                    <td className={styles.td}>{id}</td>
-                    <td className={styles.td}>{cell(row, "name")}</td>
-                    <td className={styles.td}>{permSummary}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <PermissionMatrixView rows={matrixRows} columns={columns} />
       )}
+
+      <div className={matrixStyles.notes}>
+        <strong>Notes</strong>
+        <ul>
+          <li>Hover a cell to see underlying permission keys.</li>
+          {viewMode === "provider" ? (
+            <li>Assign team roles via <strong>Assign team roles</strong> in the sidebar (owners).</li>
+          ) : (
+            <li>Assign platform roles via <strong>Back-office users</strong> in the sidebar.</li>
+          )}
+        </ul>
+      </div>
     </div>
   );
 }
