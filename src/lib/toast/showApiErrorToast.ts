@@ -67,12 +67,19 @@ export function getApiErrorMessage(
   const fallbackMessage = opts?.fallbackMessage ?? "Something went wrong";
 
   if (err instanceof ApiError) {
+    const statusMessage = defaultMessageForStatus(err.status);
+    if (err.status !== undefined && err.status >= 500 && statusMessage) {
+      return statusMessage;
+    }
+
     const fromBody = extractProblemDetail(err.body);
     if (fromBody) return fromBody;
 
     if (isInformativeMessage(err.message)) return err.message;
 
-    return defaultMessageForStatus(err.status) ?? fallbackMessage;
+    if (statusMessage) return statusMessage;
+
+    return fallbackMessage;
   }
 
   if (err instanceof Error) {

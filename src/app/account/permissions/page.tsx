@@ -17,7 +17,6 @@ import {
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 import PermissionMatrixView from "./PermissionMatrixView";
-import TeamRolePanel from "./TeamRolePanel";
 import matrixStyles from "./permissions.module.css";
 
 type RoleRow = Record<string, unknown>;
@@ -41,9 +40,6 @@ export default function AccountPermissionsPage() {
 
   const { providerId } = useMemo(() => getAccessTokenContext(), []);
   const perms = useMemo(() => new Set(getStoredPermissions()), []);
-  const canAssignProviderRoles = perms.has("provider:roles:update");
-  const canAssignAdminRoles =
-    perms.has("admin:roles:update") || perms.has("admin:roles:create");
 
   const columns = viewMode === "provider" ? PROVIDER_MATRIX_COLUMNS : ADMIN_MATRIX_COLUMNS;
 
@@ -77,20 +73,8 @@ export default function AccountPermissionsPage() {
     <div>
       <h1 className={styles.h1}>Roles and permissions</h1>
       <p className={styles.muted}>
-        {viewMode === "provider"
-          ? "Reference matrix for your organization’s roles. Assign staff below."
-          : "Reference matrix for platform roles. Role templates are defined by the system."}
+        Reference matrix for what each role can do. Use the sidebar to assign roles to users.
       </p>
-
-      {viewMode === "admin" && canAssignAdminRoles && (
-        <div className={matrixStyles.infoCard}>
-          <p className={matrixStyles.infoCardTitle}>Assign platform roles to users</p>
-          <p className={styles.muted}>
-            Use back-office user administration to assign Master, Manager, Staff, and other
-            platform roles to system admin accounts. This page shows what each role can do.
-          </p>
-        </div>
-      )}
 
       <div className={styles.toolbar}>
         <button type="button" className={styles.button} onClick={() => void load()}>
@@ -116,32 +100,16 @@ export default function AccountPermissionsPage() {
       )}
 
       <div className={matrixStyles.notes}>
-        {viewMode === "provider" ? (
-          <>
-            <strong>Notes</strong>
-            <ul>
-              <li>Role capabilities above apply within your organization only.</li>
-              <li>Hover a cell to see underlying permission keys.</li>
-              {canAssignProviderRoles ? (
-                <li>Use the panel below to assign Owner, Manager, or Staff to team members.</li>
-              ) : (
-                <li>Only owners can change staff role assignments.</li>
-              )}
-            </ul>
-          </>
-        ) : (
-          <>
-            <strong>Notes</strong>
-            <ul>
-              <li>This matrix is read-only; it reflects platform role definitions from the backend.</li>
-              <li>Hover a cell to see underlying permission keys.</li>
-              <li>Assign roles to back-office users through system admin management.</li>
-            </ul>
-          </>
-        )}
+        <strong>Notes</strong>
+        <ul>
+          <li>Hover a cell to see underlying permission keys.</li>
+          {viewMode === "provider" ? (
+            <li>Assign team roles via <strong>Assign team roles</strong> in the sidebar (owners).</li>
+          ) : (
+            <li>Assign platform roles via <strong>Back-office users</strong> in the sidebar.</li>
+          )}
+        </ul>
       </div>
-
-      {viewMode === "provider" && <TeamRolePanel />}
     </div>
   );
 }
