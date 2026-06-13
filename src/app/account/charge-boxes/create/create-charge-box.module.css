@@ -132,3 +132,36 @@
   padding: 14px 16px 16px;
   margin: 0 0 18px;
 }
+
+.connectorCardEditable {
+  display: grid;
+  grid-template-columns: auto 1fr 1.4fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+@media (max-width: 720px) {
+  .connectorCardEditable {
+    grid-template-columns: 1fr;
+  }
+}
+
+.connectorToolbar {
+  margin-top: 12px;
+}
+
+.removeButton {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in oklab, var(--color-border) 70%, #c0392b);
+  background: color-mix(in oklab, var(--color-surface) 88%, #c0392b);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+}
+
+.removeButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

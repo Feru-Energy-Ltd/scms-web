@@ -5,17 +5,24 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
+  connectorsToDrafts,
+  draftsToConnectorPayload,
+  fetchChargeBoxConnectors,
   fetchChargeBoxFullDetail,
+  nextConnectorId,
+  replaceChargeBoxConnectors,
   updateChargeBoxInfo,
   updateChargeBoxLocation,
   updateChargeBoxSettings,
   type ChargeBoxFullDetail,
+  type ConnectorSlotDraft,
   type RegistrationStatus,
 } from "@/lib/api/chargeBoxes";
 import { getStoredPermissions } from "@/lib/auth/session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import listStyles from "@/components/account/ResourceList.module.css";
 import formStyles from "../../create/create-charge-box.module.css";
+import ConnectorsSection from "./ConnectorsSection";
 
 function canUpdateChargers(permissions: string[]): boolean {
   const set = new Set(permissions);
@@ -37,6 +44,7 @@ export default function UpdateChargeBoxPage() {
   );
 
   const [charger, setCharger] = useState<ChargeBoxFullDetail | null>(null);
+  const [connectorSlots, setConnectorSlots] = useState<ConnectorSlotDraft[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -63,11 +71,16 @@ export default function UpdateChargeBoxPage() {
     }
     setLoading(true);
     try {
-      const detail = await fetchChargeBoxFullDetail(chargeBoxId);
+      const [detail, connectors] = await Promise.all([
+        fetchChargeBoxFullDetail(chargeBoxId),
+        fetchChargeBoxConnectors(chargeBoxId),
+      ]);
       applyDetail(detail);
+      setConnectorSlots(connectorsToDrafts(connectors));
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load charger." });
       setCharger(null);
+      setConnectorSlots([]);
     } finally {
       setLoading(false);
     }
@@ -77,9 +90,35 @@ export default function UpdateChargeBoxPage() {
     void load();
   }, [load]);
 
+  function addConnector() {
+    setConnectorSlots((prev) => {
+      const connectorId = nextConnectorId(prev);
+      return [
+        ...prev,
+        {
+          key: `new-${connectorId}-${Date.now()}`,
+          connectorId,
+          currentType: "AC",
+          connectorType: "AC_TYPE2_MENNEKES",
+        },
+      ];
+    });
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!charger || !canEdit) return;
+
+    if (connectorSlots.length === 0) {
+      toast.error("At least one connector is required.");
+      return;
+    }
+
+    const connectorIds = connectorSlots.map((slot) => slot.connectorId);
+    if (new Set(connectorIds).size !== connectorIds.length) {
+      toast.error("Each connector must have a unique connector id.");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -98,6 +137,10 @@ export default function UpdateChargeBoxPage() {
           chargeBoxId,
           registrationStatus,
         }),
+        replaceChargeBoxConnectors(
+          chargeBoxId,
+          draftsToConnectorPayload(connectorSlots),
+        ),
       ]);
       toast.success("Charger updated");
       await load();
@@ -181,12 +224,36 @@ export default function UpdateChargeBoxPage() {
           </section>
 
           {!canEdit ? (
-            <p className={listStyles.muted}>
-              You have read-only access. Ask an administrator or provider manager
-              with charger update permission to change settings.
-            </p>
+            <>
+              <section
+                className={formStyles.sectionFieldset}
+                aria-label="Connectors"
+              >
+                <h2 className={listStyles.label}>Connectors</h2>
+                <ConnectorsSection
+                  canEdit={false}
+                  slots={connectorSlots}
+                  onChange={setConnectorSlots}
+                  onAdd={addConnector}
+                />
+              </section>
+              <p className={listStyles.muted}>
+                You have read-only access. Ask an administrator or provider manager
+                with charger update permission to change settings.
+              </p>
+            </>
           ) : (
             <form className={formStyles.form} onSubmit={onSubmit}>
+              <fieldset className={formStyles.sectionFieldset}>
+                <legend className={listStyles.label}>Connectors</legend>
+                <ConnectorsSection
+                  canEdit
+                  slots={connectorSlots}
+                  onChange={setConnectorSlots}
+                  onAdd={addConnector}
+                />
+              </fieldset>
+
               <fieldset className={formStyles.sectionFieldset}>
                 <legend className={listStyles.label}>Registration</legend>
                 <p className={listStyles.muted}>

@@ -1,5 +1,5 @@
 import { csmsApiPath } from "../config";
-import { unwrapData } from "./normalize";
+import { asArray, unwrapData } from "./normalize";
 import { apiRequestAuth } from "./http";
 
 /** Must match `com.safaricharge.csms.models.chargeboxes.ConnectorType`. */
@@ -206,6 +206,100 @@ export async function updateChargeBoxSettings(
   return apiRequestAuth<unknown>(
     csmsApiPath(`/chargeboxes/${chargeBoxId}/settings`),
     { method: "PUT", body: payload },
+  );
+}
+
+export type ChargeBoxConnector = {
+  id: number;
+  connectorId: number;
+  currentType: "AC" | "DC";
+  connectorType: CreateChargeBoxConnectorPayload["connectorType"];
+  status?: string | null;
+};
+
+export type ConnectorSlotDraft = {
+  key: string;
+  connectorId: number;
+  currentType: "AC" | "DC";
+  connectorType: CreateChargeBoxConnectorPayload["connectorType"];
+};
+
+function parseChargeBoxConnector(raw: unknown): ChargeBoxConnector | null {
+  if (!raw || typeof raw !== "object") return null;
+  const row = raw as Record<string, unknown>;
+  const id = asNumber(row.id);
+  const connectorId = asNumber(row.connectorId);
+  const currentType = row.currentType === "AC" || row.currentType === "DC"
+    ? row.currentType
+    : null;
+  const connectorType =
+    typeof row.connectorType === "string" &&
+    (CHARGE_BOX_CONNECTOR_TYPES as readonly string[]).includes(row.connectorType)
+      ? (row.connectorType as ChargeBoxConnector["connectorType"])
+      : null;
+  if (id == null || connectorId == null || !currentType || !connectorType) {
+    return null;
+  }
+  return {
+    id,
+    connectorId,
+    currentType,
+    connectorType,
+    status: typeof row.status === "string" ? row.status : null,
+  };
+}
+
+export function parseChargeBoxConnectors(raw: unknown): ChargeBoxConnector[] {
+  const unwrapped = unwrapData<unknown>(raw);
+  const list = asArray<unknown>(unwrapped ?? raw);
+  return list
+    .map(parseChargeBoxConnector)
+    .filter((row): row is ChargeBoxConnector => row != null)
+    .sort((a, b) => a.connectorId - b.connectorId);
+}
+
+export function connectorsToDrafts(
+  connectors: ChargeBoxConnector[],
+): ConnectorSlotDraft[] {
+  return connectors.map((connector) => ({
+    key: `connector-${connector.connectorId}`,
+    connectorId: connector.connectorId,
+    currentType: connector.currentType,
+    connectorType: connector.connectorType,
+  }));
+}
+
+export function draftsToConnectorPayload(
+  slots: ConnectorSlotDraft[],
+): CreateChargeBoxConnectorPayload[] {
+  return slots.map((slot) => ({
+    connectorId: slot.connectorId,
+    currentType: slot.currentType,
+    connectorType: slot.connectorType,
+  }));
+}
+
+export function nextConnectorId(slots: ConnectorSlotDraft[]): number {
+  if (slots.length === 0) return 1;
+  return Math.max(...slots.map((slot) => slot.connectorId)) + 1;
+}
+
+export async function fetchChargeBoxConnectors(
+  chargeBoxId: string,
+): Promise<ChargeBoxConnector[]> {
+  const raw = await apiRequestAuth<unknown>(
+    csmsApiPath(`/chargeboxes/${chargeBoxId}/connectors`),
+  );
+  return parseChargeBoxConnectors(raw);
+}
+
+export async function replaceChargeBoxConnectors(
+  chargeBoxId: string,
+  connectors: CreateChargeBoxConnectorPayload[],
+) {
+  return apiRequestAuth<unknown>(
+    csmsApiPath(`/chargeboxes/${chargeBoxId}/connectors`),
+    { method: "PUT", body: connectors },
   );
 }
 
