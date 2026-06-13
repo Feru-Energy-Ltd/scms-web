@@ -1,4 +1,5 @@
 import { csmsApiPath } from "../config";
+import { unwrapData } from "./normalize";
 import { apiRequestAuth } from "./http";
 
 /** Must match `com.safaricharge.csms.models.chargeboxes.ConnectorType`. */
@@ -54,6 +55,158 @@ export async function fetchChargeBoxes(page = 0, size = 20) {
 
 export async function fetchChargeBoxById(chargerId: string) {
   return apiRequestAuth<unknown>(csmsApiPath(`/chargeboxes/${chargerId}`));
+}
+
+export type RegistrationStatus = "Accepted" | "Rejected";
+
+export type ChargeBoxStation = {
+  id?: number;
+  stationId?: string;
+  locationLatitude?: string | null;
+  locationLongitude?: string | null;
+  locationAddressName?: string | null;
+  imageUrl?: string | null;
+};
+
+/** Full charge box entity returned by GET /chargeboxes/{id}. */
+export type ChargeBoxFullDetail = {
+  id: number;
+  chargeBoxId: string;
+  description?: string | null;
+  note?: string | null;
+  registrationStatus?: RegistrationStatus | null;
+  onlineStatus?: string | null;
+  ocppProtocol?: string | null;
+  chargePointVendor?: string | null;
+  chargePointModel?: string | null;
+  chargePointSerialNumber?: string | null;
+  firmwareVersion?: string | null;
+  lastHeartbeatTimestamp?: string | null;
+  type?: string | null;
+  currentType?: string | null;
+  idTag?: string | null;
+  enabled?: boolean;
+  station?: ChargeBoxStation | null;
+};
+
+export type UpdateChargeBoxInfoPayload = {
+  id: number;
+  description?: string;
+  note?: string;
+};
+
+export type UpdateChargeBoxLocationPayload = {
+  id: number;
+  latitude?: string;
+  longitude?: string;
+};
+
+export type UpdateChargeBoxSettingsPayload = {
+  chargeBoxId: string;
+  registrationStatus: RegistrationStatus;
+};
+
+function asNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+export function parseChargeBoxFullDetail(raw: unknown): ChargeBoxFullDetail | null {
+  const data = unwrapData<Record<string, unknown>>(raw);
+  if (!data) return null;
+
+  const id = asNumber(data.id);
+  const chargeBoxId =
+    typeof data.chargeBoxId === "string" ? data.chargeBoxId : null;
+  if (id == null || !chargeBoxId) return null;
+
+  const stationRaw = data.station;
+  const station =
+    stationRaw && typeof stationRaw === "object"
+      ? (stationRaw as ChargeBoxStation)
+      : null;
+
+  return {
+    id,
+    chargeBoxId,
+    description: typeof data.description === "string" ? data.description : null,
+    note: typeof data.note === "string" ? data.note : null,
+    registrationStatus:
+      data.registrationStatus === "Accepted" ||
+      data.registrationStatus === "Rejected"
+        ? data.registrationStatus
+        : null,
+    onlineStatus:
+      typeof data.onlineStatus === "string" ? data.onlineStatus : null,
+    ocppProtocol:
+      typeof data.ocppProtocol === "string" ? data.ocppProtocol : null,
+    chargePointVendor:
+      typeof data.chargePointVendor === "string"
+        ? data.chargePointVendor
+        : null,
+    chargePointModel:
+      typeof data.chargePointModel === "string" ? data.chargePointModel : null,
+    chargePointSerialNumber:
+      typeof data.chargePointSerialNumber === "string"
+        ? data.chargePointSerialNumber
+        : null,
+    firmwareVersion:
+      typeof data.firmwareVersion === "string" ? data.firmwareVersion : null,
+    lastHeartbeatTimestamp:
+      typeof data.lastHeartbeatTimestamp === "string"
+        ? data.lastHeartbeatTimestamp
+        : null,
+    type: typeof data.type === "string" ? data.type : null,
+    currentType: typeof data.currentType === "string" ? data.currentType : null,
+    idTag: typeof data.idTag === "string" ? data.idTag : null,
+    enabled: typeof data.enabled === "boolean" ? data.enabled : undefined,
+    station,
+  };
+}
+
+export async function fetchChargeBoxFullDetail(
+  chargeBoxId: string,
+): Promise<ChargeBoxFullDetail> {
+  const raw = await fetchChargeBoxById(chargeBoxId);
+  const parsed = parseChargeBoxFullDetail(raw);
+  if (!parsed) {
+    throw new Error("Unexpected charger response from server.");
+  }
+  return parsed;
+}
+
+export async function updateChargeBoxInfo(
+  chargeBoxId: string,
+  payload: UpdateChargeBoxInfoPayload,
+) {
+  return apiRequestAuth<unknown>(
+    csmsApiPath(`/chargeboxes/${chargeBoxId}/info`),
+    { method: "PUT", body: payload },
+  );
+}
+
+export async function updateChargeBoxLocation(
+  chargeBoxId: string,
+  payload: UpdateChargeBoxLocationPayload,
+) {
+  return apiRequestAuth<unknown>(
+    csmsApiPath(`/chargeboxes/${chargeBoxId}/location`),
+    { method: "PUT", body: payload },
+  );
+}
+
+export async function updateChargeBoxSettings(
+  chargeBoxId: string,
+  payload: UpdateChargeBoxSettingsPayload,
+) {
+  return apiRequestAuth<unknown>(
+    csmsApiPath(`/chargeboxes/${chargeBoxId}/settings`),
+    { method: "PUT", body: payload },
+  );
 }
 
 export type ChargerDetail = {
