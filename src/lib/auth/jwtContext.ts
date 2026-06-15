@@ -10,7 +10,6 @@ import { getAccessToken } from "./session";
 
 export function getAccessTokenContext(): {
   identityType?: string;
-  email?: string;
   providerId?: number;
   userId?: number;
   role?: string;
@@ -23,8 +22,6 @@ export function getAccessTokenContext(): {
   return {
     identityType:
       typeof p.identity_type === "string" ? p.identity_type : undefined,
-    email:
-      typeof p.email === "string" ? p.email : undefined,
     providerId:
       typeof p.provider_id === "number" ? p.provider_id : undefined,
     userId:

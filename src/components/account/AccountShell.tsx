@@ -33,6 +33,7 @@ import {
 } from "@/lib/auth/session";
 import { getMenuSectionsForPermissions } from "@/lib/navigation/menu";
 import ThemeToggleButton from "../theme/ThemeToggleButton";
+import { fetchProfile, type ProfileResponse } from "@/lib/api/profile";
 import styles from "./AccountShell.module.css";
 
 const NAV_ICONS: Record<string, LucideIcon> = {
@@ -68,8 +69,18 @@ export default function AccountShell({
   const [identityType] = useState(() => getStoredIdentityType() || "Account");
   const [userCtx] = useState(() => getAccessTokenContext());
   const [storedRoleCode] = useState(() => getStoredRoleCode());
+  const [profile, setProfile] = useState<ProfileResponse | null>(null);
 
-  const displayName = userCtx.email ?? "User";
+  const displayName = useMemo(() => {
+    if (!profile) return "User";
+    if (profile.displayName?.trim()) return profile.displayName.trim();
+    const fullName = [profile.firstName, profile.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+    return fullName || profile.email || "User";
+  }, [profile]);
+
   const displayRole = useMemo(() => {
     if (userCtx.role) return getRoleLabel(userCtx.role);
     if (storedRoleCode) return getRoleLabel(storedRoleCode);
@@ -98,6 +109,22 @@ export default function AccountShell({
     return matched?.url ?? "";
   }, [allMenuItems, pathname]);
   const profileNavActive = pathname === "/account/profile";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void fetchProfile()
+      .then((data) => {
+        if (!cancelled) setProfile(data);
+      })
+      .catch(() => {
+        // Sidebar falls back to a generic label when profile is unavailable.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {

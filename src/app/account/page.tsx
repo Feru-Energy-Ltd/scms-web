@@ -20,6 +20,7 @@ import {
   type ProviderDashboardStats,
 } from "@/lib/api/dashboard";
 import KpiCard from "@/components/account/KpiCard";
+import { getRoleLabel } from "@/lib/auth/roles"; 
 import DashboardMapClient from "@/app/account/dashboard/DashboardMapClient";
 import styles from "./page.module.css";
 
@@ -70,8 +71,7 @@ export default function AccountDashboardPage() {
         <div>
           <h1 className={styles.pageTitle}>Dashboard</h1>
           <p className={styles.pageSubtitle}>
-            {ctx.email ? ctx.email : "Overview of your charging network"}
-            {ctx.identityType ? ` · ${ctx.identityType}` : ""}
+            {`Viewing dashboard as  ${ctx.role ? getRoleLabel(ctx.role) : "your account"}`}
           </p>
         </div>
       </div>
