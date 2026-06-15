@@ -20,6 +20,7 @@ import {
   type ProviderDashboardStats,
 } from "@/lib/api/dashboard";
 import KpiCard from "@/components/account/KpiCard";
+import { getRoleLabel } from "@/lib/auth/roles"; 
 import DashboardMapClient from "@/app/account/dashboard/DashboardMapClient";
 import styles from "./page.module.css";
 
@@ -28,6 +29,7 @@ const POLL_INTERVAL_MS = 15_000;
 export default function AccountDashboardPage() {
   const [ctx] = useState(() => getAccessTokenContext());
 
+  console.info(ctx);
   const [providerStats, setProviderStats] = useState<ProviderDashboardStats | null>(null);
   const [operatorStats, setOperatorStats] = useState<OperatorDashboardStats | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -70,8 +72,7 @@ export default function AccountDashboardPage() {
         <div>
           <h1 className={styles.pageTitle}>Dashboard</h1>
           <p className={styles.pageSubtitle}>
-            {ctx.email ? ctx.email : "Overview of your charging network"}
-            {ctx.identityType ? ` · ${ctx.identityType}` : ""}
+            {`Viewing dashboard as  ${ctx.role ? getRoleLabel(ctx.role) : "your account"}`}
           </p>
         </div>
       </div>

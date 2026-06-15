@@ -6,7 +6,7 @@ export const ROLE_LABEL_BY_CODE: Record<string, string> = {
   SYSTEM_ADMIN_ACCOUNT_MANAGER: "Account Manager",
   SYSTEM_ADMIN_CUSTOMER_SUPPORT: "Customer Support",
   SYSTEM_ADMIN_REGULATORY_OFFICER: "Regulatory Officer",
-  // Provider roles (V15 names)
+  // Provider roles
   SERVICE_PROVIDER_OWNER: "Owner",
   SERVICE_PROVIDER_MANAGER: "Manager",
   SERVICE_PROVIDER_STAFF: "Staff",
