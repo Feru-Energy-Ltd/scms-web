@@ -29,7 +29,6 @@ const POLL_INTERVAL_MS = 15_000;
 export default function AccountDashboardPage() {
   const [ctx] = useState(() => getAccessTokenContext());
 
-  console.info(ctx);
   const [providerStats, setProviderStats] = useState<ProviderDashboardStats | null>(null);
   const [operatorStats, setOperatorStats] = useState<OperatorDashboardStats | null>(null);
   const [error, setError] = useState<string | null>(null);
