@@ -282,7 +282,12 @@ export default function AccountShell({
                 <div className={styles.brand}>Admin Panel</div>
                 {businessName ? (
                   <div className={styles.brandBusiness} title={businessName}>
-                    {businessName}
+                    <Building2
+                      size={13}
+                      className={styles.brandBusinessIcon}
+                      aria-hidden
+                    />
+                    <span className={styles.brandBusinessText}>{businessName}</span>
                   </div>
                 ) : null}
               </div>
