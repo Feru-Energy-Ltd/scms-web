@@ -233,11 +233,27 @@
   min-width: 0;
 }
 
+.brandBlock {
+  min-width: 0;
+  flex: 1;
+}
+
 .brand {
   font-size: 1.05rem;
   font-weight: 700;
   min-width: 0;
   line-height: 1.25;
+}
+
+.brandBusiness {
+  margin-top: 2px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .brandMark {
@@ -359,7 +375,7 @@
 }
 
 @media (min-width: 901px) {
-  .sidebar[data-collapsed="true"] .brand {
+  .sidebar[data-collapsed="true"] .brandBlock {
     display: none;
   }
 
@@ -497,7 +513,7 @@
   }
 
   /* Collapse toggle is a no-op visually on small screens: always show full labels */
-  .sidebar .brand {
+  .sidebar .brandBlock {
     display: block;
   }
 

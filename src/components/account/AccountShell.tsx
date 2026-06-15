@@ -87,6 +87,17 @@ export default function AccountShell({
     return identityType;
   }, [userCtx.role, storedRoleCode, identityType]);
 
+  const businessName = profile?.businessName?.trim() || null;
+
+  const brandMark = useMemo(() => {
+    const source = businessName ?? "Admin Panel";
+    const parts = source.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return source.slice(0, 2).toUpperCase() || "AP";
+  }, [businessName]);
+
   const userInitials = useMemo(() => {
     const local = displayName.split("@")[0] ?? "";
     const parts = local.split(/[._\s-]+/).filter(Boolean);
@@ -267,9 +278,16 @@ export default function AccountShell({
         >
           <div className={styles.sidebarTop}>
             <div className={styles.brandRow}>
-              <div className={styles.brand}>Admin Panel</div>
+              <div className={styles.brandBlock}>
+                <div className={styles.brand}>Admin Panel</div>
+                {businessName ? (
+                  <div className={styles.brandBusiness} title={businessName}>
+                    {businessName}
+                  </div>
+                ) : null}
+              </div>
               <div className={styles.brandMark} aria-hidden>
-                AP
+                {brandMark}
               </div>
               <button
                 type="button"
