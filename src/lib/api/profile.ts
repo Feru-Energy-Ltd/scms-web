@@ -11,6 +11,7 @@ export interface ProfileResponse {
   firstName: string | null;
   lastName: string | null;
   phone: string | null;
+  businessName: string | null;
   enabled: boolean;
   createdAt: string;
 }
