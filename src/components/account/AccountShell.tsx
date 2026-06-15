@@ -32,6 +32,10 @@ import {
   getStoredRoleCode,
 } from "@/lib/auth/session";
 import { getMenuSectionsForPermissions } from "@/lib/navigation/menu";
+import {
+  AccountBreadcrumbs,
+  BreadcrumbProvider,
+} from "@/components/account/BreadcrumbContext";
 import ThemeToggleButton from "../theme/ThemeToggleButton";
 import { fetchProfile, type ProfileResponse } from "@/lib/api/profile";
 import styles from "./AccountShell.module.css";
@@ -173,6 +177,7 @@ export default function AccountShell({
   }
 
   return (
+    <BreadcrumbProvider>
     <div className={styles.root}>
       <header className={styles.topNav}>
         <Link href="/account" className={styles.topNavHome}>
@@ -370,9 +375,13 @@ export default function AccountShell({
         </aside>
 
         <div className={styles.main}>
-          <section className={styles.content}>{children}</section>
+          <section className={styles.content}>
+            <AccountBreadcrumbs menuItems={allMenuItems} />
+            {children}
+          </section>
         </div>
       </div>
     </div>
+    </BreadcrumbProvider>
   );
 }

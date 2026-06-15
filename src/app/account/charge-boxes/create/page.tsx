@@ -183,14 +183,6 @@ export default function CreateChargeBoxPage() {
 
   return (
     <div>
-      <nav className={listStyles.breadcrumbs} aria-label="Breadcrumb">
-        <Link href="/account">Dashboard</Link>
-        <span>/</span>
-        <Link href="/account/charge-boxes">Charge boxes</Link>
-        <span>/</span>
-        <span>Create</span>
-      </nav>
-
       <h1 className={listStyles.h1}>New charger</h1>
       <p className={listStyles.muted}>
         Register a charge box. You need permission{" "}

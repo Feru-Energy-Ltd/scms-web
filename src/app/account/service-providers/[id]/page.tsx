@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useProviderBreadcrumb } from "@/components/account/useProviderBreadcrumb";
 import Tabs from "@/components/account/Tabs";
 import { fetchProvider, type ProviderDetail } from "@/lib/api/serviceProviders";
 import { fetchProviderStations, type ProviderStation } from "@/lib/api/providerConsole";
@@ -41,6 +42,8 @@ export default function ProviderProfilePage() {
   }, [providerId]);
 
   const totalChargers = stations.reduce((n, s) => n + (s.chargeBoxCount ?? 0), 0);
+
+  useProviderBreadcrumb(id, provider?.businessName);
 
   return (
     <div>
