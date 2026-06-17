@@ -115,8 +115,8 @@ export default function ProviderHeader({
           <h1>{provider.businessName}</h1>
           <div className={styles.infoRow}>
             {provider.registration && <span>TIN: {provider.registration}</span>}
-            {provider.email && <a href={`mailto:${provider.email}`}>{provider.email}</a>}
-            {provider.phone && <a href={`tel:${provider.phone}`}>{provider.phone}</a>}
+            {provider.email && <span>Email: <a href={`mailto:${provider.email}`}>{provider.email}</a> </span>}
+            {provider.phone && <span> Phone: <a href={`tel:${provider.phone}`}>{provider.phone}</a> </span>}
             {provider.website && (
               <a href={provider.website} target="_blank" rel="noreferrer">
                 Website ↗
