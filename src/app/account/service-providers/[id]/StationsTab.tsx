@@ -126,9 +126,6 @@ export default function StationsTab({ providerId }: { providerId: number }) {
           <option value="active">Active</option>
           <option value="disabled">Disabled</option>
         </select>
-        <button className={styles.actionBtn} onClick={() => (page === 0 ? void load() : setPage(0))}>
-          Refresh
-        </button>
       </div>
 
       {loading ? (

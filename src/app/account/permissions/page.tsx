@@ -76,12 +76,6 @@ export default function AccountPermissionsPage() {
         Reference matrix for what each role can do. Use the sidebar to assign roles to users.
       </p>
 
-      <div className={styles.toolbar}>
-        <button type="button" className={styles.button} onClick={() => void load()}>
-          Refresh
-        </button>
-      </div>
-
       <div className={matrixStyles.legend} aria-label="Permission shorthand legend">
         {MATRIX_LEGEND.map((item) => (
           <span key={item.code} className={matrixStyles.legendItem}>

@@ -233,13 +233,6 @@ export default function AccountInvitationsPage() {
         >
           Send invitation
         </button>
-        <button
-          type="button"
-          className={styles.button}
-          onClick={() => void load()}
-        >
-          Refresh
-        </button>
       </form>
 
       {loading ? (

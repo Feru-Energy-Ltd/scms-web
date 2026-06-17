@@ -81,6 +81,24 @@
   align-items: center;
 }
 
+.toolbarBetween {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toolbarGrow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+}
+
 .searchInput {
   padding: 8px 12px;
   border-radius: var(--r-md);
