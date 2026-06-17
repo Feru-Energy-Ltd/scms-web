@@ -14,6 +14,7 @@ import {
 } from "@/lib/api/serviceProviders";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
+import tabStyles from "@/components/account/Tabs.module.css";
 
 const PAGE_SIZE = 10;
 const FETCH_SIZE = 200;
@@ -170,16 +171,15 @@ export default function ServiceProvidersPage() {
   return (
     <div>
       <h1 className={styles.h1}>Service Providers</h1>
-      <p className={styles.muted}>
-        All registered service providers. Pending providers can be approved or rejected here.
-      </p>
 
-      <div className={styles.toolbar}>
+      <div className={tabStyles.tabList} role="tablist">
         {FILTERS.map((f) => (
           <button
             key={f.key}
             type="button"
-            className={filter === f.key ? styles.buttonPrimary : styles.button}
+            role="tab"
+            aria-selected={filter === f.key}
+            className={filter === f.key ? tabStyles.tabActive : tabStyles.tab}
             onClick={() => {
               setFilter(f.key);
               setPage(0);
