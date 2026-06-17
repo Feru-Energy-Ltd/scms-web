@@ -30,7 +30,17 @@ export function BreadcrumbProvider({ children }: { children: ReactNode }) {
 
   const registerOverrides = useCallback(
     (id: string, overrides: Record<string, string>) => {
-      setOverrideSubscribers((current) => ({ ...current, [id]: overrides }));
+      setOverrideSubscribers((current) => {
+        const existing = current[id];
+        if (
+          existing &&
+          Object.keys(existing).length === Object.keys(overrides).length &&
+          Object.entries(overrides).every(([path, label]) => existing[path] === label)
+        ) {
+          return current;
+        }
+        return { ...current, [id]: overrides };
+      });
     },
     [],
   );
@@ -67,20 +77,21 @@ export function BreadcrumbProvider({ children }: { children: ReactNode }) {
 
 export function useBreadcrumbOverrides(overrides: Record<string, string>) {
   const subscriberId = useId();
-  const ctx = useContext(BreadcrumbContext);
-  if (!ctx) {
-    throw new Error(
-      "useBreadcrumbOverrides must be used within BreadcrumbProvider",
-    );
-  }
+  const { registerOverrides, unregisterOverrides } = useContext(BreadcrumbContext) ?? {};
 
   const serialized = JSON.stringify(overrides);
 
   useEffect(() => {
+    if (!registerOverrides || !unregisterOverrides) {
+      throw new Error(
+        "useBreadcrumbOverrides must be used within BreadcrumbProvider",
+      );
+    }
+
     const parsed = JSON.parse(serialized) as Record<string, string>;
-    ctx.registerOverrides(subscriberId, parsed);
-    return () => ctx.unregisterOverrides(subscriberId);
-  }, [ctx, subscriberId, serialized]);
+    registerOverrides(subscriberId, parsed);
+    return () => unregisterOverrides(subscriberId);
+  }, [registerOverrides, unregisterOverrides, subscriberId, serialized]);
 }
 
 export function AccountBreadcrumbs({

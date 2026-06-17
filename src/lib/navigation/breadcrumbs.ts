@@ -49,18 +49,12 @@ function menuLabelForPath(
   return menuItems.find((item) => path === item.url)?.name;
 }
 
-function hasMoreVisibleSegments(
-  segments: string[],
-  fromIndex: number,
-): boolean {
-  let path = "/account";
-  for (let i = 0; i < segments.length; i++) {
-    const parentPath = path;
-    path = `${path}/${segments[i]}`;
-    if (i <= fromIndex) continue;
-    if (isVisibleSegment(segments, i, parentPath)) return true;
+function normalizeAccountPath(pathname: string): string {
+  const path = pathname.split("?")[0]?.split("#")[0] ?? pathname;
+  if (path.length > 1 && path.endsWith("/")) {
+    return path.slice(0, -1);
   }
-  return false;
+  return path;
 }
 
 function defaultDynamicLabel(
@@ -78,14 +72,15 @@ export function buildAccountBreadcrumbs(
   menuItems: AppMenuItem[],
   overrides: Record<string, string> = {},
 ): Crumb[] {
-  if (!pathname?.startsWith("/account")) return [];
+  const normalizedPath = normalizeAccountPath(pathname);
+  if (!normalizedPath.startsWith("/account")) return [];
 
-  if (pathname === "/account") {
+  if (normalizedPath === "/account") {
     return [{ label: "Dashboard" }];
   }
 
   const crumbs: Crumb[] = [{ label: "Dashboard", href: "/account" }];
-  const segments = pathname.slice("/account".length).split("/").filter(Boolean);
+  const segments = normalizedPath.slice("/account".length).split("/").filter(Boolean);
   let path = "/account";
 
   for (let i = 0; i < segments.length; i++) {
@@ -105,10 +100,9 @@ export function buildAccountBreadcrumbs(
       menuLabel ??
       defaultDynamicLabel(segment, parentPath);
 
-    const isLast = !hasMoreVisibleSegments(segments, i);
     crumbs.push({
       label,
-      href: isLast ? undefined : path,
+      href: path === normalizedPath ? undefined : path,
     });
   }
 
