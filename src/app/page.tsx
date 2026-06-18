@@ -6,10 +6,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import styles from "./login/login.module.css";
 import { login } from "@/lib/api/auth";
-import {
-  hasActiveAccessSession,
-  setSessionTokensFromResponse
-} from "@/lib/auth/session";
+import { establishSessionFromAuthResponse } from "@/lib/auth/establishSession";
+import { hasActiveAccessSession } from "@/lib/auth/session";
 import { resolveNextFromSearch } from "@/lib/auth/redirect";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import PasswordEyeIcon from "../components/PasswordEyeIcon";
@@ -39,7 +37,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       const res = await login(email, password);
-      setSessionTokensFromResponse(res);
+      await establishSessionFromAuthResponse(res);
       toast.success("Signed in successfully");
       router.push(resolveNextFromSearch(window.location.search));
     } catch (err) {

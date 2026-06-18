@@ -14,9 +14,13 @@ import {
   acceptAccountInvitation,
   acceptProviderInvitation,
 } from "@/lib/api/auth";
+import { establishSessionAfterInviteAccept } from "@/lib/auth/establishSession";
 import { hasActiveAccessSession } from "@/lib/auth/session";
 import { decodeInvitationTokenMeta } from "@/lib/invitation/decodeInvitationTokenMeta";
-import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
+import {
+  getApiErrorMessage,
+  showApiErrorToast,
+} from "@/lib/toast/showApiErrorToast";
 import PasswordEyeIcon from "../../components/PasswordEyeIcon";
 import loginStyles from "../login/login.module.css";
 import verifyStyles from "../verify/email/page.module.css";
@@ -80,19 +84,26 @@ function InviteAcceptContent() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (submitting) return;
+
+    const trimmedPassword = password.trim();
+    if (trimmedPassword && trimmedPassword.length < 8) {
+      setAcceptError("Password must be at least 8 characters.");
+      return;
+    }
+
     setAcceptError(null);
     setSubmitting(true);
     try {
       const body = {
         token,
-        password: password.trim() || undefined,
+        password: trimmedPassword || undefined,
         displayName: displayName.trim() || undefined,
       };
-      if (meta.scope === "PROVIDER_STAFF") {
-        await acceptProviderInvitation(body);
-      } else {
-        await acceptAccountInvitation(body);
-      }
+      const res =
+        meta.scope === "PROVIDER_STAFF"
+          ? await acceptProviderInvitation(body)
+          : await acceptAccountInvitation(body);
+      await establishSessionAfterInviteAccept(res, meta);
       toast.success("Invitation accepted. You're signed in.");
       router.push("/account");
     } catch (err) {
@@ -100,7 +111,10 @@ function InviteAcceptContent() {
         fallbackMessage: "Could not accept this invitation.",
       });
       setAcceptError(
-        "Check your password if this is a new account, or try signing in if you already have one.",
+        getApiErrorMessage(err, {
+          fallbackMessage:
+            "Could not accept this invitation. If you are new, enter a password (8+ characters). If you already have an account with this email, leave the password blank or sign in from the homepage.",
+        }),
       );
     } finally {
       setSubmitting(false);
@@ -112,7 +126,7 @@ function InviteAcceptContent() {
       title="Accept invitation"
       subtitle={
         <p className={verifyStyles.subtitle}>
-          You&apos;ve been invited to join a {scopeLabel} as{" "}
+          You&apos;ve been invited to join a {scopeLabel} using email {" "}
           <strong>{meta.inviteeEmail}</strong>. If you are new to Safaricharge,
           choose a password (and optional display name). If you already have an
           account with this email, leave the password blank.

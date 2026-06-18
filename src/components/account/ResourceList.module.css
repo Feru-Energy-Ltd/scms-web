@@ -144,6 +144,11 @@
   cursor: not-allowed;
 }
 
+.rowActions {
+  display: inline-flex;
+  gap: 8px;
+}
+
 .buttonPrimary {
   display: inline-flex;
   align-items: center;

@@ -8,41 +8,63 @@ import ConfirmModal from "@/components/account/ConfirmModal";
 import Pagination from "@/components/account/Pagination";
 import {
   fetchProviderStaffAdmin,
+  fetchProviderStaffInvitationsAdmin,
   updateProviderStaffAdmin,
   suspendProviderStaffAdmin,
   activateProviderStaffAdmin,
+  resendProviderStaffInvitationAdmin,
+  resendStaffVerificationEmailAdmin,
+  type AdminStaffInvitation,
   type AdminStaffMember,
 } from "@/lib/api/serviceProviders";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import { getStoredPermissions } from "@/lib/auth/session";
+import { parseApiUtcDateTime } from "@/lib/datetime/formatUtc";
 import styles from "./provider.module.css";
 
 const ROLES = ["SERVICE_PROVIDER_OWNER", "SERVICE_PROVIDER_MANAGER", "SERVICE_PROVIDER_STAFF"];
 
+function formatRole(role: string) {
+  return role.replace("SERVICE_PROVIDER_", "");
+}
+
+function formatWhen(iso: string) {
+  const d = parseApiUtcDateTime(iso);
+  return d ? d.toLocaleString() : iso;
+}
+
 export default function TeamTab({ providerId }: { providerId: number }) {
   const [rows, setRows] = useState<AdminStaffMember[]>([]);
+  const [invitations, setInvitations] = useState<AdminStaffInvitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [suspendTarget, setSuspendTarget] = useState<AdminStaffMember | null>(null);
   const [busy, setBusy] = useState(false);
+  const [resendingUserId, setResendingUserId] = useState<number | null>(null);
+  const [resendingInvitationId, setResendingInvitationId] = useState<number | null>(null);
 
   const canManage = getStoredPermissions().includes("admin:providers:staff");
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetchProviderStaffAdmin(providerId, page, 5);
-      setRows(res.content ?? []);
-      setTotalPages(res.totalPages ?? 0);
+      const [staffRes, invitationRes] = await Promise.all([
+        fetchProviderStaffAdmin(providerId, page, 5),
+        canManage ? fetchProviderStaffInvitationsAdmin(providerId) : Promise.resolve([]),
+      ]);
+      setRows(staffRes.content ?? []);
+      setTotalPages(staffRes.totalPages ?? 0);
+      setInvitations(invitationRes);
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load team members." });
       setRows([]);
       setTotalPages(0);
+      setInvitations([]);
     } finally {
       setLoading(false);
     }
-  }, [providerId, page]);
+  }, [providerId, page, canManage]);
 
   useEffect(() => {
     void load();
@@ -88,6 +110,31 @@ export default function TeamTab({ providerId }: { providerId: number }) {
     }
   };
 
+  const resendVerificationEmail = async (m: AdminStaffMember) => {
+    setResendingUserId(m.userId);
+    try {
+      await resendStaffVerificationEmailAdmin(providerId, m.userId);
+      toast.success(`Verification email sent to ${m.email}`);
+    } catch (e) {
+      showApiErrorToast(e, { fallbackMessage: "Could not resend verification email." });
+    } finally {
+      setResendingUserId(null);
+    }
+  };
+
+  const resendInvitation = async (invitation: AdminStaffInvitation) => {
+    setResendingInvitationId(invitation.id);
+    try {
+      await resendProviderStaffInvitationAdmin(providerId, invitation.id);
+      toast.success(`Invitation resent to ${invitation.inviteeEmail}`);
+      void load();
+    } catch (e) {
+      showApiErrorToast(e, { fallbackMessage: "Could not resend invitation." });
+    } finally {
+      setResendingInvitationId(null);
+    }
+  };
+
   const columns: DataTableColumn<AdminStaffMember>[] = [
     { id: "n", header: "#", cell: (_r, i) => i + 1 },
     { id: "name", header: "Full Name", cell: (r) => r.displayName },
@@ -104,27 +151,69 @@ export default function TeamTab({ providerId }: { providerId: number }) {
           >
             {ROLES.map((role) => (
               <option key={role} value={role}>
-                {role.replace("SERVICE_PROVIDER_", "")}
+                {formatRole(role)}
               </option>
             ))}
           </select>
         ) : (
-          r.role.replace("SERVICE_PROVIDER_", "")
+          formatRole(r.role)
         ),
     },
-    { id: "status", header: "Status", cell: (r) => r.status },
+    {
+      id: "status",
+      header: "Status",
+      cell: (r) => (r.emailVerified === false ? "Unverified" : r.status),
+    },
     {
       id: "actions",
       header: "",
       cell: (r) => {
         if (!canManage) return null;
-        return r.status === "ACTIVE" ? (
-          <button className={styles.actionBtn} onClick={() => setSuspendTarget(r)}>
-            Disable
-          </button>
-        ) : (
-          <button className={styles.actionBtn} onClick={() => void activate(r)}>
-            Activate
+        const resending = resendingUserId === r.userId;
+        return (
+          <span className={styles.rowActions}>
+            {r.emailVerified === false && (
+              <button
+                className={styles.actionBtn}
+                disabled={resending}
+                onClick={() => void resendVerificationEmail(r)}
+              >
+                {resending ? "Sending…" : "Resend email"}
+              </button>
+            )}
+            {r.status === "ACTIVE" ? (
+              <button className={styles.actionBtn} onClick={() => setSuspendTarget(r)}>
+                Disable
+              </button>
+            ) : (
+              <button className={styles.actionBtn} onClick={() => void activate(r)}>
+                Activate
+              </button>
+            )}
+          </span>
+        );
+      },
+    },
+  ];
+
+  const invitationColumns: DataTableColumn<AdminStaffInvitation>[] = [
+    { id: "email", header: "Email", cell: (r) => r.inviteeEmail },
+    { id: "role", header: "Role", cell: (r) => formatRole(r.role) },
+    { id: "status", header: "Status", cell: (r) => r.status },
+    { id: "expires", header: "Expires", cell: (r) => formatWhen(r.expiresAt) },
+    {
+      id: "actions",
+      header: "",
+      cell: (r) => {
+        if (!canManage || r.status !== "PENDING") return null;
+        const resending = resendingInvitationId === r.id;
+        return (
+          <button
+            className={styles.actionBtn}
+            disabled={resending}
+            onClick={() => void resendInvitation(r)}
+          >
+            {resending ? "Sending…" : "Resend email"}
           </button>
         );
       },
@@ -142,6 +231,17 @@ export default function TeamTab({ providerId }: { providerId: number }) {
           <DataTable columns={columns} rows={rows} getRowKey={(r) => r.userId} />
           <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </>
+      )}
+
+      {canManage && !loading && invitations.length > 0 && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Pending invitations</h3>
+          <DataTable
+            columns={invitationColumns}
+            rows={invitations}
+            getRowKey={(r) => r.id}
+          />
+        </div>
       )}
 
       {suspendTarget && (

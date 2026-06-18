@@ -31,3 +31,12 @@ export async function revokeProviderInvitation(
     method: "DELETE",
   });
 }
+
+export async function resendProviderInvitation(
+  providerId: number,
+  invitationId: number,
+) {
+  return apiRequestAuth<unknown>(`${base(providerId)}/${invitationId}/resend`, {
+    method: "POST",
+  });
+}

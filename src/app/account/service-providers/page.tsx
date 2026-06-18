@@ -13,6 +13,7 @@ import {
   type ProviderListItem,
 } from "@/lib/api/serviceProviders";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
+import { formatApiUtcDateTime } from "@/lib/datetime/formatUtc";
 import styles from "@/components/account/ResourceList.module.css";
 import tabStyles from "@/components/account/Tabs.module.css";
 
@@ -29,9 +30,7 @@ const FILTERS: { key: StatusFilter; label: string }[] = [
 ];
 
 function formatWhen(iso: string | null) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString();
+  return formatApiUtcDateTime(iso);
 }
 
 export default function ServiceProvidersPage() {
