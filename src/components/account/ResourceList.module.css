@@ -182,7 +182,7 @@
 }
 
 .tableWrap {
-  overflow: auto;
+  overflow: visible;
   border: 1px solid var(--color-border);
   border-radius: var(--r-lg);
   background: var(--color-surface);
