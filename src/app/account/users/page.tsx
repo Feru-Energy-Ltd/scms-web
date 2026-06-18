@@ -14,7 +14,7 @@ import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { getStoredPermissions } from "@/lib/auth/session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
-import userStyles from "./users.module.css";
+import RowActionsMenu from "@/components/account/RowActionsMenu";
 import EditRoleModal from "./EditRoleModal";
 import ConfirmModal from "@/components/account/ConfirmModal";
 
@@ -175,39 +175,28 @@ export default function UsersPage() {
                   </td>
                   {(canEditRole || canDeactivate) && (
                     <td className={styles.td}>
-                      {m.status === "SUSPENDED" ? (
-                        canEditRole ? (
-                          <div className={userStyles.actions}>
-                            <button
-                              className={userStyles.activateBtn}
-                              onClick={() => handleActivate(m)}
-                              disabled={acting}
-                            >
-                              Activate
-                            </button>
-                          </div>
-                        ) : (
-                          <span className={styles.muted}>—</span>
-                        )
-                      ) : canModify(m) ? (
-                        <div className={userStyles.actions}>
-                          {canEditRole && (
-                            <button className={userStyles.actionBtn} onClick={() => setEditTarget(m)}>
-                              Edit Role
-                            </button>
-                          )}
-                          {canDeactivate && (
-                            <button
-                              className={userStyles.deactivateBtn}
-                              onClick={() => setDeactivateTarget(m)}
-                            >
-                              Deactivate
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <span className={styles.muted}>—</span>
-                      )}
+                      <RowActionsMenu
+                        label={`Actions for ${m.displayName}`}
+                        items={[
+                          {
+                            label: "Edit Role",
+                            onClick: () => setEditTarget(m),
+                            hidden: !canEditRole || m.status !== "ACTIVE" || !canModify(m),
+                          },
+                          {
+                            label: "Deactivate",
+                            onClick: () => setDeactivateTarget(m),
+                            destructive: true,
+                            hidden: !canDeactivate || m.status !== "ACTIVE" || !canModify(m),
+                          },
+                          {
+                            label: acting ? "Activating…" : "Activate",
+                            onClick: () => void handleActivate(m),
+                            hidden: !canEditRole || m.status !== "SUSPENDED",
+                            disabled: acting,
+                          },
+                        ]}
+                      />
                     </td>
                   )}
                 </tr>
