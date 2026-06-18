@@ -6,6 +6,7 @@ import DataTable, { type DataTableColumn } from "@/components/account/DataTable"
 import { SkeletonTable } from "@/components/account/Skeleton";
 import ConfirmModal from "@/components/account/ConfirmModal";
 import Pagination from "@/components/account/Pagination";
+import RowActionsMenu from "@/components/account/RowActionsMenu";
 import {
   fetchProviderStaffAdmin,
   fetchProviderStaffInvitationsAdmin,
@@ -19,7 +20,7 @@ import {
 } from "@/lib/api/serviceProviders";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import { getStoredPermissions } from "@/lib/auth/session";
-import { parseApiUtcDateTime } from "@/lib/datetime/formatUtc";
+import { formatApiUtcDateTime } from "@/lib/datetime/formatUtc";
 import styles from "./provider.module.css";
 
 const ROLES = ["SERVICE_PROVIDER_OWNER", "SERVICE_PROVIDER_MANAGER", "SERVICE_PROVIDER_STAFF"];
@@ -29,7 +30,7 @@ function formatRole(role: string) {
 }
 
 function formatWhen(iso: string) {
-  const d = parseApiUtcDateTime(iso);
+  const d = formatApiUtcDateTime(iso);
   return d ? d.toLocaleString() : iso;
 }
 
@@ -166,31 +167,33 @@ export default function TeamTab({ providerId }: { providerId: number }) {
     },
     {
       id: "actions",
-      header: "",
+      header: "Actions",
       cell: (r) => {
         if (!canManage) return null;
         const resending = resendingUserId === r.userId;
         return (
-          <span className={styles.rowActions}>
-            {r.emailVerified === false && (
-              <button
-                className={styles.actionBtn}
-                disabled={resending}
-                onClick={() => void resendVerificationEmail(r)}
-              >
-                {resending ? "Sending…" : "Resend email"}
-              </button>
-            )}
-            {r.status === "ACTIVE" ? (
-              <button className={styles.actionBtn} onClick={() => setSuspendTarget(r)}>
-                Disable
-              </button>
-            ) : (
-              <button className={styles.actionBtn} onClick={() => void activate(r)}>
-                Activate
-              </button>
-            )}
-          </span>
+          <RowActionsMenu
+            label={`Actions for ${r.displayName}`}
+            items={[
+              {
+                label: resending ? "Sending…" : "Resend verification email",
+                onClick: () => void resendVerificationEmail(r),
+                hidden: r.emailVerified !== false,
+                disabled: resending,
+              },
+              {
+                label: "Activate",
+                onClick: () => void activate(r),
+                hidden: r.status === "ACTIVE",
+              },
+              {
+                label: "Disable member",
+                onClick: () => setSuspendTarget(r),
+                destructive: true,
+                hidden: r.status !== "ACTIVE",
+              },
+            ]}
+          />
         );
       },
     },
@@ -203,18 +206,21 @@ export default function TeamTab({ providerId }: { providerId: number }) {
     { id: "expires", header: "Expires", cell: (r) => formatWhen(r.expiresAt) },
     {
       id: "actions",
-      header: "",
+      header: "Actions",
       cell: (r) => {
         if (!canManage || r.status !== "PENDING") return null;
         const resending = resendingInvitationId === r.id;
         return (
-          <button
-            className={styles.actionBtn}
-            disabled={resending}
-            onClick={() => void resendInvitation(r)}
-          >
-            {resending ? "Sending…" : "Resend email"}
-          </button>
+          <RowActionsMenu
+            label={`Actions for ${r.inviteeEmail}`}
+            items={[
+              {
+                label: resending ? "Sending…" : "Resend invitation",
+                onClick: () => void resendInvitation(r),
+                disabled: resending,
+              },
+            ]}
+          />
         );
       },
     },
