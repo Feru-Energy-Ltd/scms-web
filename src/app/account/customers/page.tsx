@@ -42,7 +42,7 @@ export default function AccountCustomersPage() {
   return (
     <div>
       <h1 className={styles.h1}>Customers</h1>
-      <p className={styles.muted}>Customer accounts visible to your session.</p>
+      <p className={styles.muted}>Customer accounts visible to you.</p>
 
       <div className={styles.toolbar}>
         <input
@@ -60,9 +60,6 @@ export default function AccountCustomersPage() {
           onClick={() => setApplied(search.trim())}
         >
           Search
-        </button>
-        <button type="button" className={styles.button} onClick={() => void load()}>
-          Refresh
         </button>
       </div>
 

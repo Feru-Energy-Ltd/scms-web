@@ -15,6 +15,7 @@ import { fetchActiveProviders, type ProviderListItem } from "@/lib/api/servicePr
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import toast from "react-hot-toast";
 import CreatePlanModal from "./CreatePlanModal";
+import { AddIconButton } from "@/components/account/PageHeader";
 import styles from "./pricing.module.css";
 import rlStyles from "@/components/account/ResourceList.module.css";
 
@@ -127,25 +128,28 @@ export default function PricingPlansTab() {
 
   return (
     <>
-      <div className={rlStyles.toolbar}>
-        <div className={styles.filterPills}>
-          {STATUS_FILTERS.map((f) => (
-            <button
-              key={f.value}
-              className={statusFilter === f.value ? styles.pillActive : styles.pill}
-              onClick={() => setStatusFilter(f.value)}
-            >
-              {f.label}
-            </button>
-          ))}
+      <div className={rlStyles.toolbarBetween}>
+        <div className={rlStyles.toolbarGrow}>
+          <div className={styles.filterPills}>
+            {STATUS_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                className={statusFilter === f.value ? styles.pillActive : styles.pill}
+                onClick={() => setStatusFilter(f.value)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <button
-          className={rlStyles.buttonPrimary}
-          onClick={() => { setEditPlan(null); setShowModal(true); }}
-        >
-          + New Plan
-        </button>
+        <AddIconButton
+          label="New plan"
+          onClick={() => {
+            setEditPlan(null);
+            setShowModal(true);
+          }}
+        />
       </div>
 
       {loading ? (

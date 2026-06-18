@@ -7,6 +7,7 @@ import {
   useState,
   type FormEvent,
 } from "react";
+import toast from "react-hot-toast";
 import DataTable, {
   type DataTableColumn,
 } from "@/components/account/DataTable";
@@ -14,6 +15,7 @@ import ConfirmModal from "@/components/account/ConfirmModal";
 import {
   fetchProviderInvitations,
   revokeProviderInvitation,
+  resendProviderInvitation,
   sendProviderInvitation,
   type ProviderStaffRole,
 } from "@/lib/api/providerInvitations";
@@ -21,6 +23,7 @@ import { asArray } from "@/lib/api/normalize";
 import { formatRoleValue } from "@/lib/auth/roles";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
+import { formatApiUtcDateTime } from "@/lib/datetime/formatUtc";
 import styles from "@/components/account/ResourceList.module.css";
 
 type InvitationRow = Record<string, unknown>;
@@ -47,8 +50,8 @@ function rowId(row: InvitationRow): number {
 }
 
 function formatWhen(iso: string) {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString();
+  const d = formatApiUtcDateTime(iso);
+  return d ? d.toLocaleString() : iso;
 }
 
 export default function AccountInvitationsPage() {
@@ -64,6 +67,7 @@ export default function AccountInvitationsPage() {
     useState<ProviderStaffRole>("SERVICE_PROVIDER_STAFF");
   const [submitting, setSubmitting] = useState(false);
   const [actingId, setActingId] = useState<number | null>(null);
+  const [resendingId, setResendingId] = useState<number | null>(null);
   const [revokeId, setRevokeId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
@@ -127,6 +131,25 @@ export default function AccountInvitationsPage() {
     }
   }, [providerId, revokeId, load]);
 
+  const onResend = useCallback(
+    async (id: number, email: string) => {
+      if (providerId == null) return;
+      setResendingId(id);
+      try {
+        await resendProviderInvitation(providerId, id);
+        toast.success(`Invitation resent to ${email}`);
+        await load();
+      } catch (err) {
+        showApiErrorToast(err, {
+          fallbackMessage: "Could not resend invitation.",
+        });
+      } finally {
+        setResendingId(null);
+      }
+    },
+    [providerId, load],
+  );
+
   const columns = useMemo<DataTableColumn<InvitationRow>[]>(
     () => [
       {
@@ -166,22 +189,34 @@ export default function AccountInvitationsPage() {
         cell: (row) => {
           const id = rowId(row);
           const status = cell(row, "status");
-          const canRevoke = status === "PENDING";
-          const busy = actingId === id;
+          const email = cell(row, "inviteeEmail", "email");
+          const canAct = status === "PENDING";
+          const revoking = actingId === id;
+          const resending = resendingId === id;
           return (
-            <button
-              type="button"
-              className={styles.button}
-              disabled={!canRevoke || !Number.isFinite(id) || busy}
-              onClick={() => setRevokeId(id)}
-            >
-              Revoke
-            </button>
+            <span className={styles.rowActions}>
+              <button
+                type="button"
+                className={styles.button}
+                disabled={!canAct || !Number.isFinite(id) || resending || revoking}
+                onClick={() => void onResend(id, email)}
+              >
+                {resending ? "Sending…" : "Resend"}
+              </button>
+              <button
+                type="button"
+                className={styles.button}
+                disabled={!canAct || !Number.isFinite(id) || resending || revoking}
+                onClick={() => setRevokeId(id)}
+              >
+                Revoke
+              </button>
+            </span>
           );
         },
       },
     ],
-    [actingId],
+    [actingId, resendingId, onResend],
   );
 
   if (identityType !== "SERVICE_PROVIDER") {
@@ -200,8 +235,8 @@ export default function AccountInvitationsPage() {
     <div>
       <h1 className={styles.h1}>Invitations</h1>
       <p className={styles.muted}>
-        Invite people to join your organisation as staff. Pending
-        invites can be revoked before they are accepted.
+        Invite people to join your organisation as staff. Pending invites can be
+        resent or revoked before they are accepted.
       </p>
 
       <form className={styles.toolbar} onSubmit={onInvite}>
@@ -232,13 +267,6 @@ export default function AccountInvitationsPage() {
           disabled={submitting}
         >
           Send invitation
-        </button>
-        <button
-          type="button"
-          className={styles.button}
-          onClick={() => void load()}
-        >
-          Refresh
         </button>
       </form>
 

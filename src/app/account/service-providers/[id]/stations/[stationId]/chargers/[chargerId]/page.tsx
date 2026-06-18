@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import Breadcrumb from "@/components/account/Breadcrumb";
+import { useBreadcrumbOverrides } from "@/components/account/BreadcrumbContext";
+import { useProviderBreadcrumb } from "@/components/account/useProviderBreadcrumb";
 import Tabs from "@/components/account/Tabs";
 import DataTable, { type DataTableColumn } from "@/components/account/DataTable";
 import { SkeletonTable } from "@/components/account/Skeleton";
@@ -41,19 +42,21 @@ export default function ChargerDetailPage() {
     };
   }, [chargerId]);
 
-  const base = `/account/service-providers/${id}/stations/${stationId}`;
+  useProviderBreadcrumb(id);
+
+  useBreadcrumbOverrides(
+    useMemo(
+      () => ({
+        [`/account/service-providers/${id}/stations/${stationId}`]: "Station",
+        [`/account/service-providers/${id}/stations/${stationId}/chargers/${chargerId}`]:
+          charger?.chargeBoxId ?? "Charger",
+      }),
+      [id, stationId, chargerId, charger?.chargeBoxId],
+    ),
+  );
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Service Providers", href: "/account/service-providers" },
-          { label: "Provider", href: `/account/service-providers/${id}` },
-          { label: "Station", href: base },
-          { label: charger?.chargeBoxId ?? "Charger" },
-        ]}
-      />
-
       <div className={styles.infoCard}>
         <h1>{charger?.chargeBoxId ?? "—"}</h1>
         <dl className={styles.specs}>

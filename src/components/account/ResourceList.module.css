@@ -81,6 +81,24 @@
   align-items: center;
 }
 
+.toolbarBetween {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toolbarGrow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+}
+
 .searchInput {
   padding: 8px 12px;
   border-radius: var(--r-md);
@@ -126,6 +144,11 @@
   cursor: not-allowed;
 }
 
+.rowActions {
+  display: inline-flex;
+  gap: 8px;
+}
+
 .buttonPrimary {
   display: inline-flex;
   align-items: center;
@@ -159,7 +182,7 @@
 }
 
 .tableWrap {
-  overflow: auto;
+  overflow: visible;
   border: 1px solid var(--color-border);
   border-radius: var(--r-lg);
   background: var(--color-surface);

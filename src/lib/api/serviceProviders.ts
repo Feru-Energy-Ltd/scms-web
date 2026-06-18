@@ -56,6 +56,16 @@ export interface AdminStaffMember {
   displayName: string;
   role: string;
   status: string;
+  emailVerified?: boolean;
+}
+
+export interface AdminStaffInvitation {
+  id: number;
+  inviteeEmail: string;
+  role: string;
+  status: string;
+  expiresAt: string;
+  createdAt: string;
 }
 
 export async function fetchProviderStaffAdmin(
@@ -87,6 +97,31 @@ export async function activateProviderStaffAdmin(
   userId: number,
 ): Promise<AdminStaffMember> {
   return apiRequestAuth<AdminStaffMember>(`${BASE}/${id}/staff/${userId}/activate`, {
+    method: "POST",
+  });
+}
+
+export async function fetchProviderStaffInvitationsAdmin(
+  id: number,
+): Promise<AdminStaffInvitation[]> {
+  return apiRequestAuth<AdminStaffInvitation[]>(`${BASE}/${id}/staff/invitations`);
+}
+
+export async function resendProviderStaffInvitationAdmin(
+  id: number,
+  invitationId: number,
+): Promise<AdminStaffInvitation> {
+  return apiRequestAuth<AdminStaffInvitation>(
+    `${BASE}/${id}/staff/invitations/${invitationId}/resend`,
+    { method: "POST" },
+  );
+}
+
+export async function resendStaffVerificationEmailAdmin(
+  id: number,
+  userId: number,
+): Promise<void> {
+  await apiRequestAuth<void>(`${BASE}/${id}/staff/${userId}/resend-email`, {
     method: "POST",
   });
 }

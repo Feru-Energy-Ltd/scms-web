@@ -12,6 +12,7 @@ import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import Pagination from "@/components/account/Pagination";
 import CreateStationModal from "@/components/account/CreateStationModal";
+import PageHeader from "@/components/account/PageHeader";
 import styles from "@/components/account/ResourceList.module.css";
 
 export default function ChargingStationsPage() {
@@ -128,24 +129,12 @@ export default function ChargingStationsPage() {
 
   return (
     <div>
-      <h1 className={styles.h1}>Charging stations</h1>
-      <p className={styles.muted}>
-        Physical sites that group one or more chargeboxes. Location and ownership
-        belong to the station.
-      </p>
-
-      <div className={styles.toolbar}>
-        <button
-          type="button"
-          className={styles.buttonPrimary}
-          onClick={() => setShowCreate(true)}
-        >
-          New station
-        </button>
-        <button type="button" className={styles.button} onClick={() => void load()}>
-          Refresh
-        </button>
-      </div>
+      <PageHeader
+        title="Charging stations"
+        description="Physical sites that group one or more chargeboxes."
+        addLabel="New station"
+        onAdd={() => setShowCreate(true)}
+      />
 
       {showCreate ? (
         <CreateStationModal

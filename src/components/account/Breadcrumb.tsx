@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import styles from "./Breadcrumb.module.css";
 
@@ -7,8 +9,8 @@ export default function Breadcrumb({ items }: { items: Crumb[] }) {
   return (
     <nav className={styles.nav} aria-label="Breadcrumb">
       {items.map((c, i) => (
-        <span key={i} className={styles.item}>
-          {c.href && i < items.length - 1 ? (
+        <span key={c.href ?? c.label} className={styles.item}>
+          {c.href ? (
             <Link href={c.href} className={styles.link}>
               {c.label}
             </Link>

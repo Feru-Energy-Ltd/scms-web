@@ -142,9 +142,6 @@ export default function UsersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button className={styles.button} onClick={loadStaff}>
-          Refresh
-        </button>
       </div>
 
       {error && <p className={styles.error}>{error}</p>}

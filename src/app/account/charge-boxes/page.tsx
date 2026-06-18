@@ -6,6 +6,7 @@ import { fetchChargeBoxes } from "@/lib/api/chargeBoxes";
 import { asArray } from "@/lib/api/normalize";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import Pagination from "@/components/account/Pagination";
+import PageHeader from "@/components/account/PageHeader";
 import styles from "@/components/account/ResourceList.module.css";
 
 type ChargerRow = Record<string, unknown>;
@@ -45,17 +46,12 @@ export default function AccountChargeBoxesPage() {
 
   return (
     <div>
-      <h1 className={styles.h1}>Charge boxes</h1>
-      <p className={styles.muted}>Charging stations linked to your account.</p>
-
-      <div className={styles.toolbar}>
-        <Link href="/account/charge-boxes/create" className={styles.buttonPrimary}>
-          New charger
-        </Link>
-        <button type="button" className={styles.button} onClick={() => void load()}>
-          Refresh
-        </button>
-      </div>
+      <PageHeader
+        title="Charge boxes"
+        description="Charging stations linked to your account."
+        addHref="/account/charge-boxes/create"
+        addLabel="New charger"
+      />
 
       {loading ? (
         <p className={styles.muted}>Loading…</p>

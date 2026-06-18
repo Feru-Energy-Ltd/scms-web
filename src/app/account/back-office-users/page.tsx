@@ -138,12 +138,6 @@ export default function BackOfficeUsersPage() {
           : "View back-office users and their platform roles."}
       </p>
 
-      <div className={styles.toolbar}>
-        <button type="button" className={styles.button} onClick={() => void load()}>
-          Refresh
-        </button>
-      </div>
-
       {loadError && <p className={styles.error}>{loadError}</p>}
 
       {loading ? (

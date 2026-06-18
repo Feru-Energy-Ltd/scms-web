@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import Breadcrumb from "@/components/account/Breadcrumb";
+import { useBreadcrumbOverrides } from "@/components/account/BreadcrumbContext";
+import { useProviderBreadcrumb } from "@/components/account/useProviderBreadcrumb";
 import DataTable, { type DataTableColumn } from "@/components/account/DataTable";
 import MapCard from "@/components/account/MapCard";
 import { SkeletonTable } from "@/components/account/Skeleton";
@@ -66,6 +67,19 @@ export default function StationDetailPage() {
   };
 
   const base = `/account/service-providers/${id}/stations/${stationId}`;
+
+  useProviderBreadcrumb(id);
+
+  useBreadcrumbOverrides(
+    useMemo(
+      () => ({
+        [`/account/service-providers/${id}/stations/${stationId}`]:
+          station?.locationAddressName ?? "Station",
+      }),
+      [id, stationId, station?.locationAddressName],
+    ),
+  );
+
   const columns: DataTableColumn<ChargeBoxSummary>[] = [
     { id: "n", header: "#", cell: (_r, i) => i + 1 },
     { id: "cb", header: "Charger ID", cell: (r) => r.chargeBoxId },
@@ -104,13 +118,6 @@ export default function StationDetailPage() {
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Service Providers", href: "/account/service-providers" },
-          { label: "Provider", href: `/account/service-providers/${id}` },
-          { label: station?.locationAddressName ?? "Station" },
-        ]}
-      />
       <div className={styles.cards}>
         <div className={styles.infoCard}>
           <h1>{station?.locationAddressName ?? "—"}</h1>

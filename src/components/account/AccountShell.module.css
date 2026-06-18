@@ -226,7 +226,7 @@
 
 .brandRow {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 18px;
@@ -246,14 +246,46 @@
 }
 
 .brandBusiness {
-  margin-top: 2px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
-  line-height: 1.25;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  max-width: 100%;
+  padding: 4px 10px 4px 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid color-mix(in oklab, var(--color-primary) 32%, var(--color-border));
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--color-primary) 14%, var(--color-surface-2)),
+    color-mix(in oklab, var(--color-primary) 6%, var(--color-surface))
+  );
+  box-shadow: var(--shadow-xs);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--green-hover);
+  line-height: 1.3;
+}
+
+.brandBusinessIcon {
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+.brandBusinessText {
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+:global([data-theme="dark"]) .brandBusiness {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--color-primary) 18%, transparent),
+    color-mix(in oklab, var(--color-primary) 8%, var(--color-surface-2))
+  );
+  color: var(--green-light);
 }
 
 .brandMark {
