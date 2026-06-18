@@ -59,3 +59,10 @@ export async function acceptAccountInvitation(body: {
   });
 }
 
+export async function requestPasswordReset(email: string) {
+  await apiRequest<void>("/auth/password/forgot", {
+    method: "POST",
+    body: { email },
+  });
+}
+

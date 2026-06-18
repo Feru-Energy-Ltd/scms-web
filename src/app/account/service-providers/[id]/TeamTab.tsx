@@ -18,6 +18,7 @@ import {
   type AdminStaffInvitation,
   type AdminStaffMember,
 } from "@/lib/api/serviceProviders";
+import { requestPasswordReset } from "@/lib/api/auth";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import { getStoredPermissions } from "@/lib/auth/session";
 import { formatApiUtcDateTime } from "@/lib/datetime/formatUtc";
@@ -41,8 +42,10 @@ export default function TeamTab({ providerId }: { providerId: number }) {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [suspendTarget, setSuspendTarget] = useState<AdminStaffMember | null>(null);
+  const [resetPasswordTarget, setResetPasswordTarget] = useState<AdminStaffMember | null>(null);
   const [busy, setBusy] = useState(false);
   const [resendingUserId, setResendingUserId] = useState<number | null>(null);
+  const [resettingUserId, setResettingUserId] = useState<number | null>(null);
   const [resendingInvitationId, setResendingInvitationId] = useState<number | null>(null);
 
   const canManage = getStoredPermissions().includes("admin:providers:staff");
@@ -111,6 +114,22 @@ export default function TeamTab({ providerId }: { providerId: number }) {
     }
   };
 
+  const applyResetPassword = async () => {
+    if (!resetPasswordTarget) return;
+    setBusy(true);
+    setResettingUserId(resetPasswordTarget.userId);
+    try {
+      await requestPasswordReset(resetPasswordTarget.email);
+      toast.success(`Password reset email sent to ${resetPasswordTarget.email}`);
+      setResetPasswordTarget(null);
+    } catch (e) {
+      showApiErrorToast(e, { fallbackMessage: "Could not send password reset email." });
+    } finally {
+      setBusy(false);
+      setResettingUserId(null);
+    }
+  };
+
   const resendVerificationEmail = async (m: AdminStaffMember) => {
     setResendingUserId(m.userId);
     try {
@@ -171,6 +190,7 @@ export default function TeamTab({ providerId }: { providerId: number }) {
       cell: (r) => {
         if (!canManage) return null;
         const resending = resendingUserId === r.userId;
+        const resetting = resettingUserId === r.userId;
         return (
           <RowActionsMenu
             label={`Actions for ${r.displayName}`}
@@ -180,6 +200,11 @@ export default function TeamTab({ providerId }: { providerId: number }) {
                 onClick: () => void resendVerificationEmail(r),
                 hidden: r.emailVerified !== false,
                 disabled: resending,
+              },
+              {
+                label: resetting ? "Sending…" : "Reset password",
+                onClick: () => setResetPasswordTarget(r),
+                disabled: resetting,
               },
               {
                 label: "Activate",
@@ -259,6 +284,17 @@ export default function TeamTab({ providerId }: { providerId: number }) {
           loading={busy}
           onConfirm={applySuspend}
           onCancel={() => setSuspendTarget(null)}
+        />
+      )}
+
+      {resetPasswordTarget && (
+        <ConfirmModal
+          title="Reset password"
+          message={`Send a password reset link to ${resetPasswordTarget.email}?`}
+          confirmLabel="Send reset link"
+          loading={busy}
+          onConfirm={applyResetPassword}
+          onCancel={() => setResetPasswordTarget(null)}
         />
       )}
     </div>
