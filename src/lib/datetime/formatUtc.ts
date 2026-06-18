@@ -22,6 +22,36 @@ export function parseApiUtcDateTime(
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+function isTodayLocal(d: Date): boolean {
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}
+
+function timeOnlyOptions(
+  opts?: Intl.DateTimeFormatOptions,
+): Intl.DateTimeFormatOptions | undefined {
+  if (!opts) return undefined;
+  const timeOpts: Intl.DateTimeFormatOptions = {
+    hour: opts.hour,
+    minute: opts.minute,
+    second: opts.second,
+    hour12: opts.hour12,
+    hourCycle: opts.hourCycle,
+    fractionalSecondDigits: opts.fractionalSecondDigits,
+    timeStyle: opts.timeStyle,
+    timeZone: opts.timeZone,
+    timeZoneName: opts.timeZoneName,
+  };
+  const defined = Object.fromEntries(
+    Object.entries(timeOpts).filter(([, v]) => v !== undefined),
+  );
+  return Object.keys(defined).length > 0 ? defined : undefined;
+}
+
 export function formatApiUtcDateTime(
   value: string | null | undefined,
   opts?: Intl.DateTimeFormatOptions,
@@ -29,5 +59,9 @@ export function formatApiUtcDateTime(
   if (value == null || value === "") return "—";
   const d = parseApiUtcDateTime(value);
   if (!d) return String(value);
+  if (isTodayLocal(d)) {
+    const time = d.toLocaleTimeString(undefined, timeOnlyOptions(opts));
+    return `today at ${time}`;
+  }
   return d.toLocaleString(undefined, opts);
 }

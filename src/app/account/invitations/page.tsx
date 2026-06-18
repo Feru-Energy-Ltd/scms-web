@@ -23,7 +23,7 @@ import { asArray } from "@/lib/api/normalize";
 import { formatRoleValue } from "@/lib/auth/roles";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
-import { parseApiUtcDateTime } from "@/lib/datetime/formatUtc";
+import { formatApiUtcDateTime } from "@/lib/datetime/formatUtc";
 import styles from "@/components/account/ResourceList.module.css";
 
 type InvitationRow = Record<string, unknown>;
@@ -50,7 +50,7 @@ function rowId(row: InvitationRow): number {
 }
 
 function formatWhen(iso: string) {
-  const d = parseApiUtcDateTime(iso);
+  const d = formatApiUtcDateTime(iso);
   return d ? d.toLocaleString() : iso;
 }
 
