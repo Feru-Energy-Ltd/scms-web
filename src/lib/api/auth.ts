@@ -66,3 +66,10 @@ export async function requestPasswordReset(email: string) {
   });
 }
 
+export async function completePasswordReset(token: string, newPassword: string) {
+  await apiRequest<void>("/auth/password/reset", {
+    method: "POST",
+    body: { token, newPassword },
+  });
+}
+
