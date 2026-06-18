@@ -128,7 +128,7 @@ export default function LoginPage() {
         </form>
 
         <footer className={styles.footer}>
-          <Link href="/">Forgot password</Link>
+          <Link href="/auth/reset-password">Forgot password</Link>
         </footer>
         <div className={styles.signUpCta}>
           <p className={styles.signUpText}>Are you a service provider?</p>
