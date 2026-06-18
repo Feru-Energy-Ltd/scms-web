@@ -4,12 +4,18 @@ import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
   assignSystemAdminRole,
+  createSystemAdmin,
   fetchSystemAdmins,
   removeSystemAdminRole,
+  updateSystemAdmin,
+  updateSystemAdminStatus,
+  type CreateSystemAdminRequest,
   type SystemAdminUser,
+  type UpdateSystemAdminRequest,
 } from "@/lib/api/backOfficeUsers";
 import { fetchAdminRoles } from "@/lib/api/security";
 import { asArray } from "@/lib/api/normalize";
+import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { getRoleLabel } from "@/lib/auth/roles";
 import { getStoredPermissions } from "@/lib/auth/session";
 import {
@@ -17,6 +23,12 @@ import {
   showApiErrorToast,
 } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
+import ConfirmModal from "@/components/account/ConfirmModal";
+import PageHeader from "@/components/account/PageHeader";
+import RowActionsMenu from "@/components/account/RowActionsMenu";
+import CreateAdminModal from "./CreateAdminModal";
+import EditAdminModal from "./EditAdminModal";
+import modalStyles from "./back-office-users.module.css";
 
 type RoleRow = { id?: number; name?: string };
 
@@ -27,11 +39,19 @@ export default function BackOfficeUsersPage() {
   const [acting, setActing] = useState(false);
   const [assignAdminId, setAssignAdminId] = useState<number | null>(null);
   const [selectedRoleId, setSelectedRoleId] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editTarget, setEditTarget] = useState<SystemAdminUser | null>(null);
+  const [disableTarget, setDisableTarget] = useState<SystemAdminUser | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  const currentUserId = getAccessTokenContext().userId;
   const perms = new Set(getStoredPermissions());
+  const canCreate = perms.has("admin:roles:create");
+  const canEdit = perms.has("admin:roles:update");
   const canAssign = perms.has("admin:roles:update");
   const canRemove = perms.has("admin:roles:delete");
+  const canSetStatus = perms.has("admin:users:delete");
+  const showActions = canEdit || canAssign || canRemove || canSetStatus;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -96,6 +116,51 @@ export default function BackOfficeUsersPage() {
     void load();
   }, [load]);
 
+  async function handleCreate(data: CreateSystemAdminRequest) {
+    setActing(true);
+    try {
+      await createSystemAdmin(data);
+      toast.success("Back-office user created");
+      setShowCreateModal(false);
+      await load();
+    } catch (e) {
+      showApiErrorToast(e, { fallbackMessage: "Failed to create back-office user" });
+    } finally {
+      setActing(false);
+    }
+  }
+
+  async function handleUpdate(data: UpdateSystemAdminRequest) {
+    if (!editTarget) return;
+    setActing(true);
+    try {
+      await updateSystemAdmin(editTarget.id, data);
+      toast.success("Back-office user updated");
+      setEditTarget(null);
+      await load();
+    } catch (e) {
+      showApiErrorToast(e, { fallbackMessage: "Failed to update back-office user" });
+    } finally {
+      setActing(false);
+    }
+  }
+
+  async function handleSetStatus(admin: SystemAdminUser, enabled: boolean) {
+    setActing(true);
+    try {
+      await updateSystemAdminStatus(admin.id, enabled);
+      toast.success(enabled ? "User activated" : "User disabled");
+      setDisableTarget(null);
+      await load();
+    } catch (e) {
+      showApiErrorToast(e, {
+        fallbackMessage: enabled ? "Failed to activate user" : "Failed to disable user",
+      });
+    } finally {
+      setActing(false);
+    }
+  }
+
   async function handleAssign() {
     if (assignAdminId == null || !selectedRoleId) return;
     setActing(true);
@@ -125,18 +190,29 @@ export default function BackOfficeUsersPage() {
     }
   }
 
+  function canModifyStatus(admin: SystemAdminUser): boolean {
+    return admin.userId !== currentUserId;
+  }
+
   function roleIdByName(name: string): number | undefined {
     return roles.find((r) => r.name === name)?.id;
   }
 
   return (
     <div>
-      <h1 className={styles.h1}>Back-office users</h1>
-      <p className={styles.muted}>
-        {canAssign
-          ? "Assign platform roles to system admin accounts."
-          : "View back-office users and their platform roles."}
-      </p>
+      <PageHeader
+        title="Back-office users"
+        description={
+          canCreate
+            ? "Create and manage system admin accounts, roles, and access."
+            : canAssign
+              ? "Assign platform roles to system admin accounts."
+              : "View back-office users and their platform roles."
+        }
+        addLabel={canCreate ? "Create user" : undefined}
+        onAdd={canCreate ? () => setShowCreateModal(true) : undefined}
+        addDisabled={acting}
+      />
 
       {loadError && <p className={styles.error}>{loadError}</p>}
 
@@ -153,7 +229,8 @@ export default function BackOfficeUsersPage() {
                 <th className={styles.th}>Email</th>
                 <th className={styles.th}>Department</th>
                 <th className={styles.th}>Roles</th>
-                {(canAssign || canRemove) && <th className={styles.th}>Actions</th>}
+                <th className={styles.th}>Status</th>
+                {showActions && <th className={styles.th}>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -173,40 +250,59 @@ export default function BackOfficeUsersPage() {
                         ? roleNames.map((r) => getRoleLabel(r)).join(", ")
                         : "—"}
                     </td>
-                    {(canAssign || canRemove) && (
+                    <td className={styles.td}>
+                      <span className={admin.enabled ? styles.badgeOk : styles.badgeNo}>
+                        {admin.enabled ? "Active" : "Disabled"}
+                      </span>
+                    </td>
+                    {showActions && (
                       <td className={styles.td}>
-                        {canAssign && (
-                          <button
-                            type="button"
-                            className={styles.button}
-                            disabled={acting}
-                            onClick={() => {
-                              setAssignAdminId(admin.id);
-                              setSelectedRoleId("");
-                            }}
-                          >
-                            Assign role
-                          </button>
-                        )}
-                        {canRemove &&
-                          roleNames.map((roleName) => {
-                            const roleId = roleIdByName(roleName);
-                            if (roleId == null) return null;
-                            return (
-                              <button
-                                key={roleName}
-                                type="button"
-                                className={styles.button}
-                                disabled={acting}
-                                style={{ marginLeft: 6 }}
-                                onClick={() =>
-                                  void handleRemove(admin.id, roleId, roleName)
-                                }
-                              >
-                                Remove {getRoleLabel(roleName)}
-                              </button>
-                            );
-                          })}
+                        <RowActionsMenu
+                          label={`Actions for ${admin.displayName || admin.email}`}
+                          items={[
+                            {
+                              label: "Edit details",
+                              onClick: () => setEditTarget(admin),
+                              hidden: !canEdit,
+                              disabled: acting,
+                            },
+                            {
+                              label: "Assign role",
+                              onClick: () => {
+                                setAssignAdminId(admin.id);
+                                setSelectedRoleId("");
+                              },
+                              hidden: !canAssign,
+                              disabled: acting || !admin.enabled,
+                            },
+                            ...roleNames.flatMap((roleName) => {
+                              const roleId = roleIdByName(roleName);
+                              if (!canRemove || roleId == null) return [];
+                              return [
+                                {
+                                  label: `Remove ${getRoleLabel(roleName)}`,
+                                  onClick: () =>
+                                    void handleRemove(admin.id, roleId, roleName),
+                                  destructive: true,
+                                  disabled: acting || !admin.enabled,
+                                },
+                              ];
+                            }),
+                            {
+                              label: "Activate",
+                              onClick: () => void handleSetStatus(admin, true),
+                              hidden: !canSetStatus || admin.enabled || !canModifyStatus(admin),
+                              disabled: acting,
+                            },
+                            {
+                              label: "Disable",
+                              onClick: () => setDisableTarget(admin),
+                              hidden: !canSetStatus || !admin.enabled || !canModifyStatus(admin),
+                              destructive: true,
+                              disabled: acting,
+                            },
+                          ]}
+                        />
                       </td>
                     )}
                   </tr>
@@ -217,49 +313,74 @@ export default function BackOfficeUsersPage() {
         </div>
       )}
 
+      {showCreateModal && (
+        <CreateAdminModal
+          roles={roles.filter(
+            (r): r is { id: number; name: string } =>
+              typeof r.id === "number" && typeof r.name === "string",
+          )}
+          loading={acting}
+          onSave={handleCreate}
+          onCancel={() => setShowCreateModal(false)}
+        />
+      )}
+
+      {editTarget && (
+        <EditAdminModal
+          admin={editTarget}
+          loading={acting}
+          onSave={handleUpdate}
+          onCancel={() => setEditTarget(null)}
+        />
+      )}
+
+      {disableTarget && (
+        <ConfirmModal
+          title="Disable back-office user"
+          message={`Disable ${disableTarget.displayName || disableTarget.email}? They will lose access until reactivated.`}
+          confirmLabel="Disable"
+          confirmDestructive
+          loading={acting}
+          onConfirm={() => void handleSetStatus(disableTarget, false)}
+          onCancel={() => setDisableTarget(null)}
+        />
+      )}
+
       {assignAdminId != null && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "color-mix(in oklab, black 40%, transparent)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 50,
-          }}
-          onClick={() => setAssignAdminId(null)}
-        >
-          <div
-            style={{
-              background: "var(--color-surface)",
-              border: "1px solid var(--color-border)",
-              borderRadius: 12,
-              padding: 20,
-              minWidth: 320,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 style={{ margin: "0 0 12px", fontSize: "1.1rem" }}>Assign platform role</h2>
-            <select
-              value={selectedRoleId}
-              onChange={(e) => setSelectedRoleId(e.target.value)}
-              style={{ width: "100%", marginBottom: 12, padding: 8 }}
-            >
-              <option value="">Select role…</option>
-              {roles.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {getRoleLabel(r.name ?? "")}
-                </option>
-              ))}
-            </select>
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button type="button" className={styles.button} onClick={() => setAssignAdminId(null)}>
+        <div className={modalStyles.overlay} onClick={() => setAssignAdminId(null)}>
+          <div className={modalStyles.modal} onClick={(e) => e.stopPropagation()}>
+            <h2 className={modalStyles.modalTitle}>Assign platform role</h2>
+            <div className={modalStyles.formField}>
+              <label className={modalStyles.formLabel} htmlFor="assign-role-select">
+                Platform role
+              </label>
+              <select
+                id="assign-role-select"
+                className={modalStyles.formSelect}
+                value={selectedRoleId}
+                onChange={(e) => setSelectedRoleId(e.target.value)}
+                disabled={acting}
+              >
+                <option value="">Select role…</option>
+                {roles.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {getRoleLabel(r.name ?? "")}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={modalStyles.modalActions}>
+              <button
+                type="button"
+                className={modalStyles.cancelBtn}
+                onClick={() => setAssignAdminId(null)}
+                disabled={acting}
+              >
                 Cancel
               </button>
               <button
                 type="button"
-                className={styles.button}
+                className={modalStyles.primaryBtn}
                 disabled={acting || !selectedRoleId}
                 onClick={() => void handleAssign()}
               >

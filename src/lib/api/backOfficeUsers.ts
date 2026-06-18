@@ -17,6 +17,21 @@ export type AdminRoleOption = {
   name: string;
 };
 
+export type CreateSystemAdminRequest = {
+  email: string;
+  password: string;
+  displayName: string;
+  employeeId?: string;
+  department?: string;
+  roleIds?: number[];
+};
+
+export type UpdateSystemAdminRequest = {
+  displayName?: string;
+  employeeId?: string;
+  department?: string;
+};
+
 export async function fetchSystemAdmins(
   page = 0,
   size = 50,
@@ -52,6 +67,19 @@ function normalizeRoleNames(roles: unknown): string[] {
   return [];
 }
 
+export async function createSystemAdmin(
+  request: CreateSystemAdminRequest,
+): Promise<SystemAdminUser> {
+  const raw = await apiRequestAuth<SystemAdminUser>("/auth/management/system-admins", {
+    method: "POST",
+    body: request,
+  });
+  return {
+    ...raw,
+    roles: normalizeRoleNames(raw.roles),
+  };
+}
+
 export async function assignSystemAdminRole(adminId: number, roleId: number) {
   return apiRequestAuth<void>(`/auth/management/system-admins/${adminId}/roles`, {
     method: "POST",
@@ -64,4 +92,28 @@ export async function removeSystemAdminRole(adminId: number, roleId: number) {
     `/auth/management/system-admins/${adminId}/roles/${roleId}`,
     { method: "DELETE" },
   );
+}
+
+export async function updateSystemAdmin(
+  adminId: number,
+  request: UpdateSystemAdminRequest,
+): Promise<SystemAdminUser> {
+  const raw = await apiRequestAuth<SystemAdminUser>(
+    `/auth/management/system-admins/${adminId}`,
+    { method: "PUT", body: request },
+  );
+  return {
+    ...raw,
+    roles: normalizeRoleNames(raw.roles),
+  };
+}
+
+export async function updateSystemAdminStatus(
+  adminId: number,
+  enabled: boolean,
+): Promise<void> {
+  return apiRequestAuth<void>(`/auth/management/system-admins/${adminId}/status`, {
+    method: "PATCH",
+    body: { enabled },
+  });
 }
