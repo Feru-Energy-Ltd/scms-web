@@ -11,8 +11,8 @@ const fontSans = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Safaricharger Web CMS - Welcome",
-  description: "Welcome to the web CMS for Safaricharger",
+  title: "Safaricharge Web CMS - Welcome",
+  description: "Welcome to the web CMS for Safaricharge",
 };
 
 export default function RootLayout({
