@@ -1,4 +1,3 @@
-/* Modal overlay */
 .overlay {
   position: fixed;
   inset: 0;
@@ -15,44 +14,52 @@
   border-radius: 10px;
   padding: 24px;
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
 }
 
 .modalTitle {
   font-size: 1.1rem;
   font-weight: 700;
-  margin: 0 0 16px;
+  margin: 0 0 8px;
 }
 
-.modalMessage {
-  font-size: 0.9rem;
+.modalHint {
+  margin: 0 0 16px;
+  font-size: 0.875rem;
   color: var(--color-text-muted);
-  margin: 0 0 20px;
   line-height: 1.5;
 }
 
-.modalField {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--color-border);
-  font-size: 0.9rem;
+.formField {
+  margin-bottom: 14px;
 }
 
-.fieldLabel {
-  color: var(--color-text-muted);
+.formLabel {
+  display: block;
   font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 6px;
 }
 
-.roleSelect {
-  padding: 6px 10px;
+.formInput {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
   font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.12s;
+}
+
+.formInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(1, 183, 99, 0.12);
 }
 
 .modalActions {
@@ -85,22 +92,6 @@
 
 .primaryBtn:disabled,
 .cancelBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.destructiveBtn {
-  padding: 8px 18px;
-  border: none;
-  border-radius: 6px;
-  background: #dc2626;
-  color: #fff;
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.destructiveBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

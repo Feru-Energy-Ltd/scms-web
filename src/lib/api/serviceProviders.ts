@@ -17,6 +17,7 @@ export interface ProviderDetail {
   address: string | null;
   activeTeamCount: number;
   status: "PENDING" | "ACTIVE" | "SUSPENDED";
+  emailVerified?: boolean;
   createdAt: string;
 }
 
@@ -126,14 +127,24 @@ export async function resendStaffVerificationEmailAdmin(
   });
 }
 
+/** Resend the owner's email verification link for a pending provider. */
+export async function resendProviderVerificationEmail(
+  providerId: number,
+  ownerUserId: number,
+): Promise<void> {
+  return resendStaffVerificationEmailAdmin(providerId, ownerUserId);
+}
+
 export interface ProviderListItem {
   id: number;
+  userId: number;
   businessName: string;
   displayName: string;
   email: string | null;
   phone: string | null;
   registration: string | null;
   status: "PENDING" | "ACTIVE" | "SUSPENDED";
+  emailVerified?: boolean;
   createdAt: string | null;
 }
 
@@ -142,6 +153,21 @@ export interface FetchProvidersOptions {
   search?: string;
   page?: number;
   size?: number;
+}
+
+export type CreateServiceProviderRequest = {
+  ownerEmail: string;
+  ownerPassword: string;
+  displayName: string;
+  businessName: string;
+  registration: string;
+  phone?: string;
+};
+
+export async function createServiceProvider(
+  request: CreateServiceProviderRequest,
+): Promise<ProviderDetail> {
+  return apiRequestAuth<ProviderDetail>(BASE, { method: "POST", body: request });
 }
 
 export async function fetchServiceProviders(

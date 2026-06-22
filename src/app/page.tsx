@@ -61,7 +61,7 @@ export default function LoginPage() {
             <span className={styles.brandMark} aria-hidden="true">
               <Image
                 src="/assets/logo.png"
-                alt="Safaricharger"
+                alt="Safaricharge"
                 width={112}
                 height={40}
                 className={styles.brandLogo}
