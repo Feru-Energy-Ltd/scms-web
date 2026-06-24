@@ -55,3 +55,21 @@ export function authApiPath(relativePath: string): string {
   return `${pre}${rel}`;
 }
 
+/**
+ * Path segment in front of Support REST routes when using the API gateway (e.g. `/support`
+ * for `GET /support/tickets`). Set to empty string if your base URL already
+ * targets the Support service root.
+ */
+export const SUPPORT_PATH_PREFIX =
+  process.env.NEXT_PUBLIC_SUPPORT_PATH_PREFIX !== undefined
+    ? process.env.NEXT_PUBLIC_SUPPORT_PATH_PREFIX
+    : "/support";
+
+/** Build a path such as `/support/tickets` or `/tickets` when prefix is empty. */
+export function supportApiPath(relativePath: string): string {
+  const rel = relativePath.startsWith("/") ? relativePath : `/${relativePath}`;
+  const pre = SUPPORT_PATH_PREFIX.replace(/\/$/, "");
+  if (!pre) return rel;
+  return `${pre}${rel}`;
+}
+

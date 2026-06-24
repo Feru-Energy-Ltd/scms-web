@@ -60,6 +60,10 @@ const MENU_SECTIONS: { label: string; entries: MenuEntry[] }[] = [
         permissions: ["admin:users:read"],
       },
       {
+        item: { name: "Support Tickets", url: "/account/support-tickets" },
+        permissions: ["admin:support:read"],
+      },
+      {
         item: { name: "Pricing", url: "/account/pricing" },
         permissions: ["admin:providers:read"],
       },
