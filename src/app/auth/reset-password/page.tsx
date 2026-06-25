@@ -4,6 +4,7 @@ import {
   Suspense,
   useEffect,
   useState,
+  useSyncExternalStore,
   type FormEvent,
 } from "react";
 import Link from "next/link";
@@ -270,17 +271,21 @@ function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token")?.trim() ?? "";
-  const [gate, setGate] = useState<"pending" | "ready">("pending");
+  const isClient = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+  const shouldRedirectToAccount =
+    isClient && !token && hasActiveAccessSession();
 
   useEffect(() => {
-    if (!token && hasActiveAccessSession()) {
+    if (shouldRedirectToAccount) {
       router.replace("/account");
-      return;
     }
-    setGate("ready");
-  }, [router, token]);
+  }, [router, shouldRedirectToAccount]);
 
-  if (gate === "pending") {
+  if (!isClient || shouldRedirectToAccount) {
     return null;
   }
 
