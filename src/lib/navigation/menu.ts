@@ -120,7 +120,7 @@ export function getMenuForPermissions(permissions: string[]): AppMenuItem[] {
 /**
  * @deprecated Use getMenuForPermissions() instead.
  */
-export function getMenuForRoleCode(_roleCode: string): AppMenuItem[] {
+export function getMenuForRoleCode(): AppMenuItem[] {
   return getMenuForPermissions([]);
 }
 
