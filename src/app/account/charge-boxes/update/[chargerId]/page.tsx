@@ -21,7 +21,7 @@ import {
 import { getStoredPermissions } from "@/lib/auth/session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import listStyles from "@/components/account/ResourceList.module.css";
-import formStyles from "../../create/create-charge-box.module.css";
+import formStyles from "../../new/create-charge-box.module.css";
 import ConnectorsSection from "./ConnectorsSection";
 
 function canUpdateChargers(permissions: string[]): boolean {
