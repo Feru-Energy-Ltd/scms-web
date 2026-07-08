@@ -1,34 +1,37 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(8, 12, 20, 0.48);
+  backdrop-filter: blur(1px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 20px;
 }
 
 .modal {
   background: var(--color-bg);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: 14px;
   padding: 24px;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
 }
 
 .modalTitle {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 700;
-  margin: 0 0 16px;
+  margin: 0 0 12px;
+  color: var(--color-text);
 }
 
 .modalMessage {
   font-size: 0.9rem;
   color: var(--color-text-muted);
   margin: 0 0 20px;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .modalActions {

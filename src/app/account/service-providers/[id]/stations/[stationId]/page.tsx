@@ -8,7 +8,9 @@ import { useProviderBreadcrumb } from "@/components/account/useProviderBreadcrum
 import DataTable, { type DataTableColumn } from "@/components/account/DataTable";
 import MapCard from "@/components/account/MapCard";
 import { SkeletonTable } from "@/components/account/Skeleton";
-import ConfirmModal from "@/components/account/ConfirmModal";
+import ChargerStatusModal, {
+  type ChargerStatusModalTarget,
+} from "@/components/account/ChargerStatusModal";
 import {
   fetchStationDetail,
   setChargeBoxEnabled,
@@ -24,7 +26,7 @@ export default function StationDetailPage() {
   const router = useRouter();
   const [station, setStation] = useState<StationDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [toggle, setToggle] = useState<ChargeBoxSummary | null>(null);
+  const [toggle, setToggle] = useState<ChargerStatusModalTarget | null>(null);
   const [busy, setBusy] = useState(false);
   const canManage = getStoredPermissions().includes("admin:chargers:update");
   const alive = useRef(true);
@@ -55,7 +57,7 @@ export default function StationDetailPage() {
     if (!toggle) return;
     setBusy(true);
     try {
-      await setChargeBoxEnabled(toggle.chargeBoxId, !toggle.enabled);
+      await setChargeBoxEnabled(toggle.id, !toggle.enabled);
       toast.success(toggle.enabled ? "Charger disabled" : "Charger enabled");
       setToggle(null);
       void load();
@@ -107,7 +109,18 @@ export default function StationDetailPage() {
             Bookings
           </button>
           {canManage && (
-            <button className={styles.btn} onClick={() => setToggle(r)}>
+            <button
+              className={styles.btn}
+              onClick={() =>
+                setToggle({
+                  id: r.chargeBoxId,
+                  enabled: r.enabled,
+                  station: station?.stationId ?? stationId,
+                  address: station?.locationAddressName,
+                  onlineStatus: r.onlineStatus ?? undefined,
+                })
+              }
+            >
               {r.enabled ? "Disable" : "Enable"}
             </button>
           )}
@@ -141,13 +154,10 @@ export default function StationDetailPage() {
       )}
 
       {toggle && (
-        <ConfirmModal
-          title={toggle.enabled ? "Disable charger" : "Enable charger"}
-          message={`${toggle.enabled ? "Disable" : "Enable"} charger ${toggle.chargeBoxId}?`}
-          confirmLabel={toggle.enabled ? "Disable" : "Enable"}
-          confirmDestructive={toggle.enabled}
+        <ChargerStatusModal
+          charger={toggle}
           loading={busy}
-          onConfirm={applyToggle}
+          onConfirm={() => void applyToggle()}
           onCancel={() => setToggle(null)}
         />
       )}

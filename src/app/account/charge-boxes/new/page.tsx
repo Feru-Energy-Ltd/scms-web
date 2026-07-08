@@ -185,9 +185,7 @@ export default function CreateChargeBoxPage() {
     <div>
       <h1 className={listStyles.h1}>New charger</h1>
       <p className={listStyles.muted}>
-        Register a charge box. You need permission{" "}
-        <code className={styles.code}>CREATE_CHARGER</code> and a valid station
-        photo (<code className={styles.code}>data:image/…</code> upload).
+        Register a new charge box. Please take a photo of the charger as you will need to upload it.
       </p>
 
       <form className={styles.form} onSubmit={onSubmit}>
@@ -412,8 +410,7 @@ export default function CreateChargeBoxPage() {
         <fieldset className={styles.connectorFieldset}>
           <legend className={listStyles.label}>Connectors</legend>
           <p className={listStyles.muted}>
-            Each row maps to <code className={styles.code}>connectorId</code>{" "}
-            1…n. Types must exist in the system catalog.
+            If you don't know the type of connector/gun, please ask for assistance.
           </p>
           <div className={styles.connectorList}>
             {connectorSlots.map((slot, i) => (
@@ -456,7 +453,7 @@ export default function CreateChargeBoxPage() {
 
         <div className={listStyles.field}>
           <label className={listStyles.label} htmlFor="image">
-            Station image
+            Chargebox image
           </label>
           <input
             id="image"

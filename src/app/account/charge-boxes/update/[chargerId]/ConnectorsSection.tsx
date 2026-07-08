@@ -5,7 +5,7 @@ import {
   type ConnectorSlotDraft,
 } from "@/lib/api/chargeBoxes";
 import listStyles from "@/components/account/ResourceList.module.css";
-import formStyles from "../../create/create-charge-box.module.css";
+import formStyles from "../../new/create-charge-box.module.css";
 
 type ConnectorsSectionProps = {
   canEdit: boolean;
