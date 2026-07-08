@@ -57,6 +57,13 @@ export async function fetchChargeBoxById(chargerId: string) {
   return apiRequestAuth<unknown>(csmsApiPath(`/chargeboxes/${chargerId}`));
 }
 
+export async function deleteChargeBox(chargeBoxId: string) {
+  return apiRequestAuth<unknown>(
+    csmsApiPath(`/chargeboxes/${encodeURIComponent(chargeBoxId)}`),
+    { method: "DELETE" },
+  );
+}
+
 export type RegistrationStatus = "Accepted" | "Rejected";
 
 export type ChargeBoxStation = {

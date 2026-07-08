@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useId } from "react";
 import styles from "./ConfirmModal.module.css";
 
 interface Props {
@@ -21,17 +22,58 @@ export default function ConfirmModal({
   onConfirm,
   onCancel,
 }: Props) {
+  const titleId = useId();
+  const descId = useId();
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !loading) onCancel();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [loading, onCancel]);
+
   return (
-    <div className={styles.overlay} onClick={onCancel}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <h2 className={styles.modalTitle}>{title}</h2>
-        <p className={styles.modalMessage}>{message}</p>
+    <div
+      className={styles.overlay}
+      role="presentation"
+      onClick={() => {
+        if (!loading) onCancel();
+      }}
+    >
+      <div
+        className={styles.modal}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id={titleId} className={styles.modalTitle}>
+          {title}
+        </h2>
+        <p id={descId} className={styles.modalMessage}>
+          {message}
+        </p>
         <div className={styles.modalActions}>
-          <button className={styles.cancelBtn} onClick={onCancel} disabled={loading}>
+          <button
+            type="button"
+            className={styles.cancelBtn}
+            onClick={onCancel}
+            disabled={loading}
+          >
             Cancel
           </button>
           <button
-            className={confirmDestructive ? styles.destructiveBtn : styles.primaryBtn}
+            type="button"
+            className={
+              confirmDestructive ? styles.destructiveBtn : styles.primaryBtn
+            }
             onClick={onConfirm}
             disabled={loading}
           >
