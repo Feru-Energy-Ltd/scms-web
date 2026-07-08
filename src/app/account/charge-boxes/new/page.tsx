@@ -410,7 +410,7 @@ export default function CreateChargeBoxPage() {
         <fieldset className={styles.connectorFieldset}>
           <legend className={listStyles.label}>Connectors</legend>
           <p className={listStyles.muted}>
-            If you don't know the type of connector/gun, please ask for assistance.
+            If you don`&apos`t know the type of connector/gun, please ask for assistance.
           </p>
           <div className={styles.connectorList}>
             {connectorSlots.map((slot, i) => (

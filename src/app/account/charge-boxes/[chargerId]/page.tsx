@@ -24,27 +24,23 @@ export default function AccountChargeBoxViewPage() {
   const chargerId = decodeURIComponent(params?.chargerId ?? "");
   const initialTab = useSearchParams().get("tab") ?? "transactions";
   const [charger, setCharger] = useState<ChargerDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [fetchedForId, setFetchedForId] = useState<string | null>(null);
+  const loading = Boolean(chargerId) && fetchedForId !== chargerId;
 
   useEffect(() => {
-    if (!chargerId) {
-      setLoading(false);
-      return;
-    }
+    if (!chargerId) return;
     let alive = true;
-    setLoading(true);
     fetchChargerDetail(chargerId)
       .then((c) => {
-        if (alive) setCharger(c);
+        if (!alive) return;
+        setCharger(c);
+        setFetchedForId(chargerId);
       })
       .catch((e) => {
-        if (alive) {
-          showApiErrorToast(e, { fallbackMessage: "Could not load charger." });
-          setCharger(null);
-        }
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
+        if (!alive) return;
+        showApiErrorToast(e, { fallbackMessage: "Could not load charger." });
+        setCharger(null);
+        setFetchedForId(chargerId);
       });
     return () => {
       alive = false;
