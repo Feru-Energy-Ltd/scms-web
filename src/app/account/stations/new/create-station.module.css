@@ -1,0 +1,41 @@
+.form {
+  max-width: 640px;
+  margin-top: 8px;
+}
+
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+@media (max-width: 560px) {
+  .row2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fileInput {
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.previewWrap {
+  margin-top: 10px;
+}
+
+.previewImg {
+  max-width: 220px;
+  max-height: 140px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  object-fit: cover;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 8px;
+}
