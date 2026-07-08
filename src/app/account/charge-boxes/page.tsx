@@ -49,7 +49,7 @@ export default function AccountChargeBoxesPage() {
       <PageHeader
         title="Charge boxes"
         description="Charging stations linked to your account."
-        addHref="/account/charge-boxes/create"
+        addHref="/account/charge-boxes/new"
         addLabel="New charger"
       />
 
