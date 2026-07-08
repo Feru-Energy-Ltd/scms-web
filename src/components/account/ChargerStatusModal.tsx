@@ -77,7 +77,7 @@ export default function ChargerStatusModal({
             </h2>
             <p id={descId} className={styles.subtitle}>
               {disabling
-                ? "This station unit will stop accepting new charging sessions until you enable it again."
+                ? "This station unit will stop accepting new charging sessions until it's enabled again."
                 : "This station unit will become available for new charging sessions again."}
             </p>
           </div>
@@ -153,17 +153,6 @@ export default function ChargerStatusModal({
             )}
           </ul>
 
-          <div className={styles.transition}>
-            <span className={charger.enabled ? styles.pillOn : styles.pillOff}>
-              {charger.enabled ? "Enabled" : "Disabled"}
-            </span>
-            <span className={styles.arrow} aria-hidden>
-              →
-            </span>
-            <span className={disabling ? styles.pillOff : styles.pillOn}>
-              {disabling ? "Disabled" : "Enabled"}
-            </span>
-          </div>
         </section>
 
         {disabling ? (
