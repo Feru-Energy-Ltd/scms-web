@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { signup } from "@/app/actions/signup";
+import PhoneField from "../../components/PhoneField";
 import PasswordEyeIcon from "../../components/PasswordEyeIcon";
 import styles from "./sign-up.module.css";
 
@@ -159,22 +160,13 @@ export default function SignUpPage() {
             ) : null}
           </div>
 
-          <div className={styles.fieldGroup}>
-            <label className={styles.label} htmlFor="phone">
-              Phone number
-            </label>
-            <input
-              className={styles.input}
-              id="phone"
-              type="tel"
-              name="phone"
-              autoComplete="tel"
-              required
-            />
-            {fieldErrors.phone?.[0] ? (
-              <p className={styles.fieldError}>{fieldErrors.phone[0]}</p>
-            ) : null}
-          </div>
+          <PhoneField
+            id="phone"
+            labelClassName={styles.label}
+            errorClassName={styles.fieldError}
+            required
+            error={fieldErrors.phone?.[0]}
+          />
 
           <button className={styles.primaryButton} type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Creating account..." : "Sign up"}

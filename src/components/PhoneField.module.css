@@ -1,0 +1,64 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+.countrySelect {
+  flex: 0 0 auto;
+  width: min(118px, 36%);
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  padding: 8px 10px;
+  background: color-mix(in oklab, var(--color-surface) 90%, transparent);
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.localInputWrapper {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  padding: 0 10px;
+  background: color-mix(in oklab, var(--color-surface) 90%, transparent);
+  color: var(--color-text);
+}
+
+.localInputWrapper:focus-within {
+  outline: 2px solid color-mix(in oklab, var(--color-primary) 60%, transparent);
+  outline-offset: 1px;
+}
+
+.callingCode {
+  flex: 0 0 auto;
+  font-size: 14px;
+  color: var(--color-text-muted);
+  user-select: none;
+}
+
+.localInput {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  padding: 8px 0;
+  background: transparent;
+  color: var(--color-text);
+}
+
+.localInput:focus-visible {
+  outline: none;
+}
+
+.countrySelect:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--color-primary) 60%, transparent);
+  outline-offset: 1px;
+}
