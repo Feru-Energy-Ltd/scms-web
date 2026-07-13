@@ -11,7 +11,10 @@ export const signupSchema = z.object({
     .string()
     .trim()
     .min(1, "Business registration number is required"),
-  phone: z.string().trim().min(7, "Enter a valid phone number"),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+\d{8,15}$/, "Enter a valid phone number"),
 });
 
 export type SignupInput = z.infer<typeof signupSchema>;
