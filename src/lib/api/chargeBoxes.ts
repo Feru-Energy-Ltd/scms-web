@@ -45,11 +45,16 @@ export async function createChargeBox(payload: CreateChargeBoxPayload) {
   });
 }
 
-export async function fetchChargeBoxes(page = 0, size = 20) {
+export async function fetchChargeBoxes(
+  page = 0,
+  size = 20,
+  opts: { stationId?: number } = {},
+) {
   const q = new URLSearchParams({
     page: String(page),
     size: String(size),
   });
+  if (opts.stationId != null) q.set("stationId", String(opts.stationId));
   return apiRequestAuth<unknown>(csmsApiPath(`/chargeboxes?${q.toString()}`));
 }
 

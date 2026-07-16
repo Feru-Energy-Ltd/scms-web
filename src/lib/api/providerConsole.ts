@@ -2,6 +2,8 @@ import { csmsApiPath } from "../config";
 import { apiRequestAuth, type Page } from "./http";
 import type { ChargingStation } from "./stations";
 
+export { setStationEnabled } from "./stations";
+
 export type ProviderStation = ChargingStation & {
   onlineCount: number;
   enabled: boolean;
@@ -19,11 +21,4 @@ export async function fetchProviderStations(
   if (opts.enabled !== undefined) q.set("enabled", String(opts.enabled));
   if (opts.search) q.set("search", opts.search);
   return apiRequestAuth<Page<ProviderStation>>(csmsApiPath(`/stations?${q}`));
-}
-
-export async function setStationEnabled(stationId: number, enabled: boolean) {
-  return apiRequestAuth<void>(csmsApiPath(`/stations/${stationId}/status`), {
-    method: "PATCH",
-    body: { enabled },
-  });
 }

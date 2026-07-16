@@ -24,14 +24,19 @@ function buildMenuEntries(items: RowActionsMenuItem[]): MenuEntry[] {
   if (visible.length === 0) return [];
 
   const entries: MenuEntry[] = [];
-  let seenNonDestructive = false;
+  let insertedDestructiveSeparator = false;
 
   for (const item of visible) {
-    if (item.destructive && seenNonDestructive) {
-      entries.push({ type: "separator" });
+    if (item.destructive && !insertedDestructiveSeparator) {
+      const hasPriorNonDestructive = entries.some(
+        (entry) => !("type" in entry),
+      );
+      if (hasPriorNonDestructive) {
+        entries.push({ type: "separator" });
+      }
+      insertedDestructiveSeparator = true;
     }
     entries.push(item);
-    if (!item.destructive) seenNonDestructive = true;
   }
 
   return entries;

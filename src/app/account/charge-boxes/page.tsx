@@ -1,12 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import ChargerStatusModal, {
   type ChargerStatusModalTarget,
 } from "@/components/account/ChargerStatusModal";
-import ConfirmModal from "@/components/account/ConfirmModal";
+import DeleteResourceModal from "@/components/account/DeleteResourceModal";
 import PageHeader from "@/components/account/PageHeader";
 import Pagination from "@/components/account/Pagination";
 import RowActionsMenu from "@/components/account/RowActionsMenu";
@@ -21,6 +21,15 @@ import { getStoredPermissions } from "@/lib/auth/session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 
 type ChargerRow = Record<string, unknown>;
+
+type ChargerDeleteTarget = {
+  id: string;
+  station: string;
+  address: string;
+  onlineStatus: string;
+  registration: string;
+  enabled: boolean;
+};
 
 function cell(row: ChargerRow, ...keys: string[]) {
   for (const k of keys) {
@@ -39,12 +48,19 @@ function rowEnabled(row: ChargerRow): boolean {
 
 export default function AccountChargeBoxesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const stationIdParam = searchParams.get("stationId");
+  const stationId = stationIdParam ? Number(stationIdParam) : undefined;
+  const stationFilter =
+    stationId != null && Number.isFinite(stationId) ? stationId : undefined;
+
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [rows, setRows] = useState<ChargerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] =
+    useState<ChargerDeleteTarget | null>(null);
   const [toggleTarget, setToggleTarget] =
     useState<ChargerStatusModalTarget | null>(null);
 
@@ -62,10 +78,16 @@ export default function AccountChargeBoxesPage() {
     perms.has("admin:reservations:read") ||
     perms.has("provider:reservations:read");
 
+  useEffect(() => {
+    setPage(0);
+  }, [stationFilter]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const raw = (await fetchChargeBoxes(page, 5)) as { totalPages?: number };
+      const raw = (await fetchChargeBoxes(page, 5, {
+        stationId: stationFilter,
+      })) as { totalPages?: number };
       setRows(asArray<ChargerRow>(raw));
       setTotalPages(raw?.totalPages ?? 0);
     } catch (e) {
@@ -75,7 +97,7 @@ export default function AccountChargeBoxesPage() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, stationFilter]);
 
   useEffect(() => {
     void load();
@@ -102,9 +124,9 @@ export default function AccountChargeBoxesPage() {
 
   const applyDelete = async () => {
     if (!deleteTarget) return;
-    setBusyId(deleteTarget);
+    setBusyId(deleteTarget.id);
     try {
-      await deleteChargeBox(deleteTarget);
+      await deleteChargeBox(deleteTarget.id);
       toast.success("Charger deleted");
       setDeleteTarget(null);
       await load();
@@ -119,7 +141,7 @@ export default function AccountChargeBoxesPage() {
     <div>
       <PageHeader
         title="Charge boxes"
-        description="Charging stations linked to your account."
+        description="Chargers linked to your account."
         addHref="/account/charge-boxes/new"
         addLabel="New charger"
       />
@@ -217,7 +239,20 @@ export default function AccountChargeBoxesPage() {
                           },
                           {
                             label: "Delete",
-                            onClick: () => setDeleteTarget(id),
+                            onClick: () =>
+                              setDeleteTarget({
+                                id,
+                                station: cell(row, "stationId"),
+                                address: cell(row, "address"),
+                                onlineStatus: cell(
+                                  row,
+                                  "onlineStatus",
+                                  "online",
+                                  "status",
+                                ),
+                                registration: reg,
+                                enabled,
+                              }),
                             destructive: true,
                             hidden: !canDelete,
                             disabled: busy,
@@ -248,12 +283,29 @@ export default function AccountChargeBoxesPage() {
       )}
 
       {deleteTarget && (
-        <ConfirmModal
+        <DeleteResourceModal
+          eyebrow="Permanent removal"
           title="Delete charger"
-          message={`Delete charger ${deleteTarget}? This cannot be undone.`}
-          confirmLabel="Delete"
-          confirmDestructive
-          loading={busyId === deleteTarget}
+          subtitle="This charger will be permanently removed from the system. This cannot be undone."
+          resourceLabel="Charge box ID"
+          resourceId={deleteTarget.id}
+          statusBadge={
+            deleteTarget.enabled ? "Currently enabled" : "Currently disabled"
+          }
+          fields={[
+            { label: "Station", value: deleteTarget.station },
+            { label: "Online", value: deleteTarget.onlineStatus },
+            { label: "Registration", value: deleteTarget.registration },
+            { label: "Address", value: deleteTarget.address, wide: true },
+          ]}
+          impactItems={[
+            "The charger will no longer appear in lists or on the map.",
+            "Drivers will not be able to start sessions on this charge box.",
+            "Historical transaction and booking records are retained.",
+          ]}
+          acknowledgment="I understand this charger will be permanently deleted and cannot be recovered."
+          confirmLabel="Delete charger"
+          loading={busyId === deleteTarget.id}
           onConfirm={() => void applyDelete()}
           onCancel={() => setDeleteTarget(null)}
         />
