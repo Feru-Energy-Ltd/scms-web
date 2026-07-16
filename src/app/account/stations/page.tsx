@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import DeleteResourceModal from "@/components/account/DeleteResourceModal";
 import PageHeader from "@/components/account/PageHeader";
 import Pagination from "@/components/account/Pagination";
 import RowActionsMenu from "@/components/account/RowActionsMenu";
@@ -13,6 +14,7 @@ import StationStatusModal, {
 import styles from "@/components/account/ResourceList.module.css";
 import { fetchServiceProviders } from "@/lib/api/serviceProviders";
 import {
+  deleteStation,
   fetchStationsPage,
   setStationEnabled,
   type ChargingStation,
@@ -28,6 +30,16 @@ function providerLabel(
   return names.get(providerId) ?? String(providerId);
 }
 
+type StationDeleteTarget = {
+  id: number;
+  stationId: string;
+  enabled: boolean;
+  address: string;
+  provider: string;
+  chargeBoxCount: number;
+  onlineCount?: number;
+};
+
 export default function ChargingStationsPage() {
   const router = useRouter();
   const [stations, setStations] = useState<ChargingStation[]>([]);
@@ -40,6 +52,8 @@ export default function ChargingStationsPage() {
   const [busyId, setBusyId] = useState<number | null>(null);
   const [toggleTarget, setToggleTarget] =
     useState<StationStatusModalTarget | null>(null);
+  const [deleteTarget, setDeleteTarget] =
+    useState<StationDeleteTarget | null>(null);
 
   const perms = useMemo(() => new Set(getStoredPermissions()), []);
   const canRead =
@@ -47,6 +61,8 @@ export default function ChargingStationsPage() {
     perms.has("admin:chargers:read") ||
     perms.has("provider:chargers:read");
   const canToggle = perms.has("admin:stations:update");
+  const canDelete =
+    perms.has("admin:chargers:delete")
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -101,6 +117,21 @@ export default function ChargingStationsPage() {
       showApiErrorToast(e, {
         fallbackMessage: "Could not change station status.",
       });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const applyDelete = async () => {
+    if (!deleteTarget) return;
+    setBusyId(deleteTarget.id);
+    try {
+      await deleteStation(deleteTarget.id);
+      toast.success("Station deleted");
+      setDeleteTarget(null);
+      await load();
+    } catch (e) {
+      showApiErrorToast(e, { fallbackMessage: "Could not delete station." });
     } finally {
       setBusyId(null);
     }
@@ -191,7 +222,25 @@ export default function ChargingStationsPage() {
                               }),
                             hidden: !canToggle,
                             disabled: busy,
-                            destructive: enabled,
+                          },
+                          {
+                            label: "Delete",
+                            onClick: () =>
+                              setDeleteTarget({
+                                id: s.id,
+                                stationId: s.stationId,
+                                enabled,
+                                address: s.locationAddressName || "—",
+                                provider: providerLabel(
+                                  s.providerId,
+                                  providerNames,
+                                ),
+                                chargeBoxCount: s.chargeBoxCount,
+                                onlineCount: s.onlineCount,
+                              }),
+                            destructive: true,
+                            hidden: !canDelete,
+                            disabled: busy,
                           },
                         ]}
                       />
@@ -215,6 +264,45 @@ export default function ChargingStationsPage() {
           loading={busyId === toggleTarget.id}
           onConfirm={() => void applyToggle()}
           onCancel={() => setToggleTarget(null)}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteResourceModal
+          eyebrow="Permanent removal"
+          title="Delete station"
+          subtitle="This station site will be permanently removed from the system. This cannot be undone."
+          resourceLabel="Station ID"
+          resourceId={deleteTarget.stationId}
+          statusBadge={
+            deleteTarget.enabled ? "Currently enabled" : "Currently disabled"
+          }
+          fields={[
+            { label: "Provider", value: deleteTarget.provider },
+            {
+              label: "Chargers",
+              value:
+                deleteTarget.onlineCount != null
+                  ? `${deleteTarget.chargeBoxCount} · ${deleteTarget.onlineCount} online`
+                  : String(deleteTarget.chargeBoxCount),
+            },
+            { label: "Address", value: deleteTarget.address, wide: true },
+          ]}
+          impactItems={[
+            "The station will no longer appear in lists or on the map.",
+            "Drivers will not be able to discover this site.",
+            "Chargers attached to this station must be deleted first.",
+          ]}
+          acknowledgment="I understand this station will be permanently deleted and cannot be recovered."
+          confirmLabel="Delete station"
+          blockReason={
+            deleteTarget.chargeBoxCount > 0
+              ? `This station still has ${deleteTarget.chargeBoxCount} charger(s). Delete those chargers first, then try again.`
+              : null
+          }
+          loading={busyId === deleteTarget.id}
+          onConfirm={() => void applyDelete()}
+          onCancel={() => setDeleteTarget(null)}
         />
       )}
 

@@ -89,6 +89,12 @@ export async function setStationEnabled(stationId: number, enabled: boolean) {
   });
 }
 
+export async function deleteStation(stationId: number) {
+  return apiRequestAuth<void>(csmsApiPath(`/stations/${stationId}`), {
+    method: "DELETE",
+  });
+}
+
 export async function setChargeBoxEnabled(chargeBoxId: string, enabled: boolean) {
   return apiRequestAuth<void>(csmsApiPath(`/chargeboxes/${chargeBoxId}/status`), {
     method: "PATCH",
