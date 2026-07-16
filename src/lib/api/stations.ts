@@ -10,6 +10,8 @@ export type ChargingStation = {
   locationAddressName: string;
   imageUrl?: string;
   chargeBoxCount: number;
+  onlineCount?: number;
+  enabled?: boolean;
 };
 
 export type CreateChargingStationPayload = {
@@ -78,6 +80,13 @@ export type StationDetail = {
 
 export async function fetchStationDetail(id: number): Promise<StationDetail> {
   return apiRequestAuth<StationDetail>(csmsApiPath(`/stations/${id}`), { method: "GET" });
+}
+
+export async function setStationEnabled(stationId: number, enabled: boolean) {
+  return apiRequestAuth<void>(csmsApiPath(`/stations/${stationId}/status`), {
+    method: "PATCH",
+    body: { enabled },
+  });
 }
 
 export async function setChargeBoxEnabled(chargeBoxId: string, enabled: boolean) {

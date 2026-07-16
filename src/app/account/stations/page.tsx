@@ -1,16 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import PageHeader from "@/components/account/PageHeader";
+import Pagination from "@/components/account/Pagination";
+import RowActionsMenu from "@/components/account/RowActionsMenu";
+import StationStatusModal, {
+  type StationStatusModalTarget,
+} from "@/components/account/StationStatusModal";
+import styles from "@/components/account/ResourceList.module.css";
+import { fetchServiceProviders } from "@/lib/api/serviceProviders";
 import {
   fetchStationsPage,
+  setStationEnabled,
   type ChargingStation,
 } from "@/lib/api/stations";
-import { fetchServiceProviders } from "@/lib/api/serviceProviders";
+import { getStoredPermissions } from "@/lib/auth/session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
-import Pagination from "@/components/account/Pagination";
-import PageHeader from "@/components/account/PageHeader";
-import styles from "@/components/account/ResourceList.module.css";
 
 function providerLabel(
   providerId: number | null | undefined,
@@ -21,6 +29,7 @@ function providerLabel(
 }
 
 export default function ChargingStationsPage() {
+  const router = useRouter();
   const [stations, setStations] = useState<ChargingStation[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -28,6 +37,16 @@ export default function ChargingStationsPage() {
   const [providerNames, setProviderNames] = useState<Map<number, string>>(
     () => new Map(),
   );
+  const [busyId, setBusyId] = useState<number | null>(null);
+  const [toggleTarget, setToggleTarget] =
+    useState<StationStatusModalTarget | null>(null);
+
+  const perms = useMemo(() => new Set(getStoredPermissions()), []);
+  const canRead =
+    perms.has("admin:stations:read") ||
+    perms.has("admin:chargers:read") ||
+    perms.has("provider:chargers:read");
+  const canToggle = perms.has("admin:stations:update");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -68,6 +87,25 @@ export default function ChargingStationsPage() {
     };
   }, []);
 
+  const applyToggle = async () => {
+    if (!toggleTarget) return;
+    setBusyId(toggleTarget.id);
+    try {
+      await setStationEnabled(toggleTarget.id, !toggleTarget.enabled);
+      toast.success(
+        toggleTarget.enabled ? "Station disabled" : "Station enabled",
+      );
+      setToggleTarget(null);
+      await load();
+    } catch (e) {
+      showApiErrorToast(e, {
+        fallbackMessage: "Could not change station status.",
+      });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   return (
     <div>
       <PageHeader
@@ -92,38 +130,92 @@ export default function ChargingStationsPage() {
                 <th className={styles.th}>Station id</th>
                 <th className={styles.th}>Provider</th>
                 <th className={styles.th}>Address</th>
-                <th className={styles.th}>Latitude</th>
-                <th className={styles.th}>Longitude</th>
-                <th className={styles.th}>Image</th>
                 <th className={styles.th}>Chargers</th>
+                <th className={styles.th}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {stations.map((s) => (
-                <tr key={s.id}>
-                  <td className={styles.td}>{s.stationId}</td>
-                  <td className={styles.td}>
-                    {providerLabel(s.providerId, providerNames)}
-                  </td>
-                  <td className={styles.td}>{s.locationAddressName || "—"}</td>
-                  <td className={styles.td}>{s.locationLatitude || "—"}</td>
-                  <td className={styles.td}>{s.locationLongitude || "—"}</td>
-                  <td className={styles.td}>
-                    {s.imageUrl ? (
-                      <a href={s.imageUrl} target="_blank" rel="noreferrer">
-                        View
-                      </a>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td className={styles.td}>{s.chargeBoxCount}</td>
-                </tr>
-              ))}
+              {stations.map((s) => {
+                const enabled = s.enabled !== false;
+                const busy = busyId === s.id;
+                const viewHref =
+                  s.providerId != null
+                    ? `/account/service-providers/${s.providerId}/stations/${s.id}`
+                    : null;
+
+                return (
+                  <tr key={s.id}>
+                    <td className={styles.td}>{s.stationId}</td>
+                    <td className={styles.td}>
+                      {providerLabel(s.providerId, providerNames)}
+                    </td>
+                    <td className={styles.td}>
+                      {s.locationAddressName || "—"}
+                    </td>
+                    <td className={styles.td}>
+                      {s.chargeBoxCount > 0 ? (
+                        <Link
+                          href={`/account/charge-boxes?stationId=${s.id}`}
+                        >
+                          {s.chargeBoxCount}
+                        </Link>
+                      ) : (
+                        s.chargeBoxCount
+                      )}
+                    </td>
+                    <td className={styles.td}>
+                      <RowActionsMenu
+                        label={`Actions for ${s.stationId}`}
+                        items={[
+                          {
+                            label: "View",
+                            onClick: () => {
+                              if (viewHref) router.push(viewHref);
+                            },
+                            hidden: !canRead || !viewHref,
+                          },
+                          {
+                            label: enabled ? "Disable" : "Enable",
+                            onClick: () =>
+                              setToggleTarget({
+                                id: s.id,
+                                stationId: s.stationId,
+                                enabled,
+                                address: s.locationAddressName,
+                                provider: providerLabel(
+                                  s.providerId,
+                                  providerNames,
+                                ),
+                                chargeBoxCount: s.chargeBoxCount,
+                                onlineCount: s.onlineCount,
+                              }),
+                            hidden: !canToggle,
+                            disabled: busy,
+                            destructive: enabled,
+                          },
+                        ]}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </div>
+      )}
+
+      {toggleTarget && (
+        <StationStatusModal
+          station={toggleTarget}
+          loading={busyId === toggleTarget.id}
+          onConfirm={() => void applyToggle()}
+          onCancel={() => setToggleTarget(null)}
+        />
       )}
 
       <p className={styles.muted} style={{ marginTop: 16 }}>

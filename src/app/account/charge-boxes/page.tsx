@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import ChargerStatusModal, {
@@ -39,6 +39,12 @@ function rowEnabled(row: ChargerRow): boolean {
 
 export default function AccountChargeBoxesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const stationIdParam = searchParams.get("stationId");
+  const stationId = stationIdParam ? Number(stationIdParam) : undefined;
+  const stationFilter =
+    stationId != null && Number.isFinite(stationId) ? stationId : undefined;
+
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [rows, setRows] = useState<ChargerRow[]>([]);
@@ -62,10 +68,16 @@ export default function AccountChargeBoxesPage() {
     perms.has("admin:reservations:read") ||
     perms.has("provider:reservations:read");
 
+  useEffect(() => {
+    setPage(0);
+  }, [stationFilter]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const raw = (await fetchChargeBoxes(page, 5)) as { totalPages?: number };
+      const raw = (await fetchChargeBoxes(page, 5, {
+        stationId: stationFilter,
+      })) as { totalPages?: number };
       setRows(asArray<ChargerRow>(raw));
       setTotalPages(raw?.totalPages ?? 0);
     } catch (e) {
@@ -75,7 +87,7 @@ export default function AccountChargeBoxesPage() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, stationFilter]);
 
   useEffect(() => {
     void load();
@@ -119,7 +131,7 @@ export default function AccountChargeBoxesPage() {
     <div>
       <PageHeader
         title="Charge boxes"
-        description="Charging stations linked to your account."
+        description="Chargers linked to your account."
         addHref="/account/charge-boxes/new"
         addLabel="New charger"
       />
