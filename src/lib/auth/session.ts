@@ -21,7 +21,11 @@ export function setIdentityType(
 export function setSessionTokensFromResponse(res: TokenResponse) {
   if (typeof window === "undefined") return;
 
-  localStorage.setItem(KEYS.identityToken, res.identityToken);
+  if (res.identityToken) {
+    localStorage.setItem(KEYS.identityToken, res.identityToken);
+  } else {
+    localStorage.removeItem(KEYS.identityToken);
+  }
   localStorage.setItem(KEYS.accessToken, res.accessToken);
   localStorage.setItem(KEYS.refreshToken, res.refreshToken);
   localStorage.setItem(KEYS.expiresIn, String(res.expiresIn));

@@ -22,7 +22,7 @@ export type ProviderSummary = {
 
 export type TokenResponse = {
   identityType: string;
-  identityToken: string;
+  identityToken?: string;
   autoSelect?: boolean;
   accounts?: AccountSummary[];
   provider?: ProviderSummary;
