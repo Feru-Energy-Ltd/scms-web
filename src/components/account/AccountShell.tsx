@@ -30,7 +30,6 @@ import {
   clearSession,
   getStoredIdentityType,
   getStoredPermissions,
-  getStoredRoleCode,
 } from "@/lib/auth/session";
 import { getMenuSectionsForPermissions } from "@/lib/navigation/menu";
 import {
@@ -74,7 +73,6 @@ export default function AccountShell({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [identityType] = useState(() => getStoredIdentityType() || "Account");
   const [userCtx] = useState(() => getAccessTokenContext());
-  const [storedRoleCode] = useState(() => getStoredRoleCode());
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
 
   const displayName = useMemo(() => {
@@ -88,10 +86,13 @@ export default function AccountShell({
   }, [profile]);
 
   const displayRole = useMemo(() => {
+    if (userCtx.roles?.length) {
+      // return the label of the first role
+      return getRoleLabel(userCtx.roles[0]);
+    }
     if (userCtx.role) return getRoleLabel(userCtx.role);
-    if (storedRoleCode) return getRoleLabel(storedRoleCode);
     return identityType;
-  }, [userCtx.role, storedRoleCode, identityType]);
+  }, [userCtx.roles, userCtx.role, identityType]);
 
   const businessName = profile?.businessName?.trim() || null;
 
