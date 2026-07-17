@@ -95,15 +95,15 @@ export default function AccountShell({
   }, [userCtx.roles, userCtx.role, identityType]);
 
   const businessName = profile?.businessName?.trim() || null;
+  const orgLabel = businessName ?? "Back Office";
 
   const brandMark = useMemo(() => {
-    const source = businessName ?? "Admin Panel";
-    const parts = source.split(/\s+/).filter(Boolean);
+    const parts = orgLabel.split(/\s+/).filter(Boolean);
     if (parts.length >= 2) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
-    return source.slice(0, 2).toUpperCase() || "AP";
-  }, [businessName]);
+    return orgLabel.slice(0, 2).toUpperCase() || "BO";
+  }, [orgLabel]);
 
   const userInitials = useMemo(() => {
     const local = displayName.split("@")[0] ?? "";
@@ -288,16 +288,14 @@ export default function AccountShell({
             <div className={styles.brandRow}>
               <div className={styles.brandBlock}>
                 <div className={styles.brand}>Admin Panel</div>
-                {businessName ? (
-                  <div className={styles.brandBusiness} title={businessName}>
-                    <Building2
-                      size={13}
-                      className={styles.brandBusinessIcon}
-                      aria-hidden
-                    />
-                    <span className={styles.brandBusinessText}>{businessName}</span>
-                  </div>
-                ) : null}
+                <div className={styles.brandBusiness} title={orgLabel}>
+                  <Building2
+                    size={13}
+                    className={styles.brandBusinessIcon}
+                    aria-hidden
+                  />
+                  <span className={styles.brandBusinessText}>{orgLabel}</span>
+                </div>
               </div>
               <div className={styles.brandMark} aria-hidden>
                 {brandMark}
