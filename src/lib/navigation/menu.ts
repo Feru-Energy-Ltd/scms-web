@@ -116,12 +116,3 @@ export function getMenuSectionsForPermissions(
 export function getMenuForPermissions(permissions: string[]): AppMenuItem[] {
   return getMenuSectionsForPermissions(permissions).flatMap((s) => s.items);
 }
-
-/**
- * @deprecated Use getMenuForPermissions() instead.
- */
-export function getMenuForRoleCode(): AppMenuItem[] {
-  return getMenuForPermissions([]);
-}
-
-export const getMenuForIdentityType = getMenuForRoleCode;
