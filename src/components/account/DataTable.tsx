@@ -12,7 +12,8 @@ export type DataTableFilter<Row> = {
   id: string;
   label?: string;
   options: { value: string; label: string }[];
-  predicate: (row: Row, value: string) => boolean;
+  /** Client-side predicate. Ignored in manual (server-side) mode. */
+  predicate?: (row: Row, value: string) => boolean;
   defaultValue?: string;
 };
 
@@ -20,19 +21,37 @@ type DataTableProps<Row> = {
   columns: DataTableColumn<Row>[];
   rows: Row[];
   getRowKey: (row: Row, rowIndex: number) => React.Key;
-  /** Show a search bar above the table. Requires `searchAccessor` to know what text to match. */
+  /** Show a search bar above the table. */
   searchable?: boolean;
   searchPlaceholder?: string;
-  /** Returns the searchable text for a row. Defaults to matching everything. */
+  /** Client-side: returns the searchable text for a row. */
   searchAccessor?: (row: Row) => string;
+  /** Controlled search value (server-side mode). */
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
   /** Dropdown filters rendered next to the search bar. */
   filters?: DataTableFilter<Row>[];
+  /** Controlled filter values keyed by filter id (server-side mode). */
+  filterValues?: Record<string, string>;
+  onFilterChange?: (id: string, value: string) => void;
   /** Extra controls rendered on the right of the toolbar (e.g. an "Add" button). */
   toolbarActions?: ReactNode;
-  /** Message shown when there are no rows to display after search/filter. */
+  /** Message shown when there are no rows to display. */
   emptyMessage?: ReactNode;
-  /** When set, paginate the (searched/filtered) rows client-side at this page size. */
+  /** Client-side page size. Ignored when pagination is controlled. */
   pageSize?: number;
+  /** Controlled pagination (server-side mode). */
+  page?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  /**
+   * When true, the component does not filter or paginate rows itself; it renders
+   * exactly the `rows` given and delegates search/filter/paging to the parent via
+   * the controlled props above. Use for server-side data.
+   */
+  manual?: boolean;
+  /** Show a loading state inside the table body (keeps the toolbar mounted). */
+  loading?: boolean;
 };
 
 export default function DataTable<Row>({
@@ -42,56 +61,95 @@ export default function DataTable<Row>({
   searchable = false,
   searchPlaceholder = "Search…",
   searchAccessor,
+  searchValue,
+  onSearchChange,
   filters,
+  filterValues,
+  onFilterChange,
   toolbarActions,
   emptyMessage = "No results found.",
   pageSize,
+  page,
+  totalPages,
+  onPageChange,
+  manual = false,
+  loading = false,
 }: DataTableProps<Row>) {
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(0);
-  const [filterValues, setFilterValues] = useState<Record<string, string>>(
+  const controlledSearch = onSearchChange != null;
+  const controlledFilters = onFilterChange != null;
+  const controlledPage = onPageChange != null;
+
+  const [internalSearch, setInternalSearch] = useState("");
+  const [internalPage, setInternalPage] = useState(0);
+  const [internalFilterValues, setInternalFilterValues] = useState<Record<string, string>>(
     () =>
       Object.fromEntries(
         (filters ?? []).map((f) => [f.id, f.defaultValue ?? f.options[0]?.value ?? ""]),
       ),
   );
 
+  const searchVal = controlledSearch ? (searchValue ?? "") : internalSearch;
+  const setSearchVal = (v: string) =>
+    controlledSearch ? onSearchChange!(v) : setInternalSearch(v);
+
+  const activeFilterValues = controlledFilters
+    ? (filterValues ?? {})
+    : internalFilterValues;
+  const setFilterVal = (id: string, v: string) =>
+    controlledFilters
+      ? onFilterChange!(id, v)
+      : setInternalFilterValues((prev) => ({ ...prev, [id]: v }));
+
   const hasToolbar = searchable || (filters?.length ?? 0) > 0 || toolbarActions != null;
 
   const visibleRows = useMemo(() => {
+    if (manual) return rows;
     let result = rows;
 
-    if (searchable && search.trim()) {
-      const q = search.trim().toLowerCase();
+    if (searchable && searchVal.trim()) {
+      const q = searchVal.trim().toLowerCase();
       result = result.filter((row) =>
         (searchAccessor ? searchAccessor(row) : "").toLowerCase().includes(q),
       );
     }
 
     for (const filter of filters ?? []) {
-      const value = filterValues[filter.id];
-      if (value == null || value === "") continue;
-      result = result.filter((row) => filter.predicate(row, value));
+      const value = activeFilterValues[filter.id];
+      if (value == null || value === "" || !filter.predicate) continue;
+      result = result.filter((row) => filter.predicate!(row, value));
     }
 
     return result;
-  }, [rows, searchable, search, searchAccessor, filters, filterValues]);
+  }, [manual, rows, searchable, searchVal, searchAccessor, filters, activeFilterValues]);
 
-  const totalPages =
-    pageSize && pageSize > 0 ? Math.max(1, Math.ceil(visibleRows.length / pageSize)) : 1;
+  const clientPaged = !manual && pageSize != null && pageSize > 0;
+
+  const computedTotalPages = manual
+    ? Math.max(1, totalPages ?? 1)
+    : clientPaged
+      ? Math.max(1, Math.ceil(visibleRows.length / pageSize!))
+      : 1;
+
+  const currentPage = controlledPage ? (page ?? 0) : internalPage;
 
   useEffect(() => {
-    setPage(0);
-  }, [search, filterValues]);
+    if (!controlledPage) setInternalPage(0);
+  }, [controlledPage, searchVal, internalFilterValues]);
 
   useEffect(() => {
-    if (page > totalPages - 1) setPage(0);
-  }, [page, totalPages]);
+    if (!controlledPage && currentPage > computedTotalPages - 1) setInternalPage(0);
+  }, [controlledPage, currentPage, computedTotalPages]);
 
-  const pagedRows =
-    pageSize && pageSize > 0
-      ? visibleRows.slice(page * pageSize, page * pageSize + pageSize)
-      : visibleRows;
+  const pagedRows = clientPaged
+    ? visibleRows.slice(currentPage * pageSize!, currentPage * pageSize! + pageSize!)
+    : visibleRows;
+
+  const showPagination = manual
+    ? controlledPage && totalPages != null
+    : clientPaged && visibleRows.length > 0;
+
+  const handlePageChange = (p: number) =>
+    controlledPage ? onPageChange!(p) : setInternalPage(p);
 
   return (
     <div>
@@ -103,8 +161,8 @@ export default function DataTable<Row>({
                 className={styles.searchInput}
                 type="search"
                 placeholder={searchPlaceholder}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={searchVal}
+                onChange={(e) => setSearchVal(e.target.value)}
                 aria-label="Search"
               />
             )}
@@ -112,10 +170,8 @@ export default function DataTable<Row>({
               <select
                 key={filter.id}
                 className={styles.filterSelect}
-                value={filterValues[filter.id] ?? ""}
-                onChange={(e) =>
-                  setFilterValues((prev) => ({ ...prev, [filter.id]: e.target.value }))
-                }
+                value={activeFilterValues[filter.id] ?? ""}
+                onChange={(e) => setFilterVal(filter.id, e.target.value)}
                 aria-label={filter.label ?? "Filter"}
               >
                 {filter.options.map((opt) => (
@@ -144,7 +200,13 @@ export default function DataTable<Row>({
             </tr>
           </thead>
           <tbody>
-            {pagedRows.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td className={styles.td} colSpan={columns.length}>
+                  <span className={styles.muted}>Loading…</span>
+                </td>
+              </tr>
+            ) : pagedRows.length === 0 ? (
               <tr>
                 <td className={styles.td} colSpan={columns.length}>
                   <span className={styles.muted}>{emptyMessage}</span>
@@ -164,8 +226,12 @@ export default function DataTable<Row>({
           </tbody>
         </table>
       </div>
-      {pageSize && pageSize > 0 && visibleRows.length > 0 && (
-        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      {showPagination && (
+        <Pagination
+          page={currentPage}
+          totalPages={computedTotalPages}
+          onPageChange={handlePageChange}
+        />
       )}
     </div>
   );

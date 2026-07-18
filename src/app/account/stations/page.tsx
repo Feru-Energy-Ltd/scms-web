@@ -41,7 +41,6 @@ type StationDeleteTarget = {
 };
 
 const PAGE_SIZE = 5;
-const FETCH_SIZE = 500;
 
 export default function ChargingStationsPage() {
   const router = useRouter();
@@ -56,6 +55,13 @@ export default function ChargingStationsPage() {
   const [deleteTarget, setDeleteTarget] =
     useState<StationDeleteTarget | null>(null);
 
+  // Server-side search / filter / pagination state.
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   const perms = useMemo(() => new Set(getStoredPermissions()), []);
   const canRead =
     perms.has("admin:stations:read") ||
@@ -68,19 +74,37 @@ export default function ChargingStationsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetchStationsPage(0, FETCH_SIZE);
+      const enabled =
+        statusFilter === "" ? undefined : statusFilter === "enabled";
+      const res = await fetchStationsPage({
+        page,
+        size: PAGE_SIZE,
+        search: search || undefined,
+        enabled,
+      });
       setStations(res.content ?? []);
+      setTotalPages(res.totalPages ?? 0);
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load stations." });
       setStations([]);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, search, statusFilter]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Debounce search input into the query that triggers a fetch.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   useEffect(() => {
     let alive = true;
@@ -231,40 +255,41 @@ export default function ChargingStationsPage() {
         addHref="/account/stations/new"
       />
 
-      {loading ? (
-        <p className={styles.muted}>Loading…</p>
-      ) : stations.length === 0 ? (
-        <p className={styles.muted}>
-          No charging stations yet. Create one above, or add a charger (a station
-          is created automatically).
-        </p>
-      ) : (
-        <DataTable
-          columns={columns}
-          rows={stations}
-          getRowKey={(s) => s.id}
-          searchable
-          searchPlaceholder="Search by station id, provider, or address"
-          searchAccessor={(s) =>
-            `${s.stationId} ${providerLabel(s.providerId, providerNames)} ${s.locationAddressName ?? ""}`
-          }
-          filters={[
-            {
-              id: "status",
-              label: "Status",
-              options: [
-                { value: "", label: "All statuses" },
-                { value: "enabled", label: "Enabled" },
-                { value: "disabled", label: "Disabled" },
-              ],
-              predicate: (s, value) =>
-                value === "enabled" ? s.enabled !== false : s.enabled === false,
-            },
-          ]}
-          pageSize={PAGE_SIZE}
-          emptyMessage="No stations match your search."
-        />
-      )}
+      <DataTable
+        columns={columns}
+        rows={stations}
+        getRowKey={(s) => s.id}
+        manual
+        loading={loading}
+        searchable
+        searchPlaceholder="Search by station id or address"
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        filters={[
+          {
+            id: "status",
+            label: "Status",
+            options: [
+              { value: "", label: "All statuses" },
+              { value: "enabled", label: "Enabled" },
+              { value: "disabled", label: "Disabled" },
+            ],
+          },
+        ]}
+        filterValues={{ status: statusFilter }}
+        onFilterChange={(_id, value) => {
+          setStatusFilter(value);
+          setPage(0);
+        }}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        emptyMessage={
+          search || statusFilter
+            ? "No stations match your search."
+            : "No charging stations yet. Create one above, or add a charger (a station is created automatically)."
+        }
+      />
 
       {toggleTarget && (
         <StationStatusModal

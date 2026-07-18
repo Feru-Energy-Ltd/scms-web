@@ -31,12 +31,33 @@ export type StationGeoLocation = {
   chargerCount: number;
 };
 
-/** Paged station list. `GET /stations` now returns a Spring `Page`. */
+export type StationListParams = {
+  page?: number;
+  size?: number;
+  search?: string;
+  enabled?: boolean;
+  providerId?: number;
+};
+
+/** Paged station list. `GET /stations` returns a Spring `Page` and supports
+ * server-side `search`, `enabled`, and `providerId` filtering. */
 export async function fetchStationsPage(
-  page = 0,
+  pageOrParams: number | StationListParams = 0,
   size = 20,
 ): Promise<Page<ChargingStation>> {
-  const q = new URLSearchParams({ page: String(page), size: String(size) });
+  const params: StationListParams =
+    typeof pageOrParams === "number"
+      ? { page: pageOrParams, size }
+      : pageOrParams;
+
+  const q = new URLSearchParams({
+    page: String(params.page ?? 0),
+    size: String(params.size ?? size),
+  });
+  if (params.search && params.search.trim()) q.set("search", params.search.trim());
+  if (params.enabled != null) q.set("enabled", String(params.enabled));
+  if (params.providerId != null) q.set("providerId", String(params.providerId));
+
   return apiRequestAuth<Page<ChargingStation>>(csmsApiPath(`/stations?${q}`), {
     method: "GET",
   });

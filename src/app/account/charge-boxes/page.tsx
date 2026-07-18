@@ -47,15 +47,9 @@ function rowEnabled(row: ChargerRow): boolean {
 }
 
 const PAGE_SIZE = 5;
-const FETCH_SIZE = 500;
 
 function isAccepted(reg: string): boolean {
   return reg.toLowerCase() === "accepted";
-}
-
-function isOnline(row: ChargerRow): boolean {
-  const v = cell(row, "onlineStatus", "ON", "status");
-  return v === "ON" || v === "true" || v === "1" || v === "connected";
 }
 
 export default function AccountChargeBoxesPage() {
@@ -74,6 +68,15 @@ export default function AccountChargeBoxesPage() {
   const [toggleTarget, setToggleTarget] =
     useState<ChargerStatusModalTarget | null>(null);
 
+  // Server-side search / filter / pagination state.
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [registrationFilter, setRegistrationFilter] = useState("");
+  const [onlineFilter, setOnlineFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   const perms = useMemo(() => new Set(getStoredPermissions()), []);
   const canRead =
     perms.has("admin:chargers:read") || perms.has("provider:chargers:read");
@@ -91,21 +94,47 @@ export default function AccountChargeBoxesPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const raw = await fetchChargeBoxes(0, FETCH_SIZE, {
+      const enabled =
+        statusFilter === "" ? undefined : statusFilter === "enabled";
+      const raw = (await fetchChargeBoxes(page, PAGE_SIZE, {
         stationId: stationFilter,
-      });
+        search: search || undefined,
+        registrationStatus:
+          registrationFilter === ""
+            ? undefined
+            : (registrationFilter as "Accepted" | "Rejected"),
+        onlineStatus:
+          onlineFilter === "" ? undefined : (onlineFilter as "ON" | "OFF"),
+        enabled,
+      })) as { totalPages?: number };
       setRows(asArray<ChargerRow>(raw));
+      setTotalPages(raw?.totalPages ?? 0);
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load charge boxes." });
       setRows([]);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
-  }, [stationFilter]);
+  }, [page, search, registrationFilter, onlineFilter, statusFilter, stationFilter]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Debounce search input into the query that triggers a fetch.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  // Reset to first page when the station scope (URL param) changes.
+  useEffect(() => {
+    setPage(0);
+  }, [stationFilter]);
 
   const applyToggle = async () => {
     if (!toggleTarget) return;
@@ -257,63 +286,67 @@ export default function AccountChargeBoxesPage() {
         addLabel="New charger"
       />
 
-      {loading ? (
-        <p className={styles.muted}>Loading…</p>
-      ) : rows.length === 0 ? (
-        <p className={styles.muted}>No charge boxes.</p>
-      ) : (
-        <DataTable
-          columns={columns}
-          rows={rows}
-          getRowKey={(row, i) =>
-            `${cell(row, "chargeBoxId", "id", "chargerId") || i}-${i}`
-          }
-          searchable
-          searchPlaceholder="Search by charge box id, station, or address"
-          searchAccessor={(row) =>
-            `${cell(row, "chargeBoxId", "id")} ${cell(row, "stationId")} ${cell(row, "address")}`
-          }
-          filters={[
-            {
-              id: "registration",
-              label: "Registration",
-              options: [
-                { value: "", label: "All registrations" },
-                { value: "accepted", label: "Accepted" },
-                { value: "other", label: "Not accepted" },
-              ],
-              predicate: (row, value) => {
-                const reg = cell(row, "registrationStatus", "registration");
-                return value === "accepted" ? isAccepted(reg) : !isAccepted(reg);
-              },
-            },
-            {
-              id: "online",
-              label: "Online",
-              options: [
-                { value: "", label: "All connectivity" },
-                { value: "ON", label: "Online" },
-                { value: "OFF", label: "Offline" },
-              ],
-              predicate: (row, value) =>
-                value === "ON" ? isOnline(row) : !isOnline(row),
-            },
-            {
-              id: "status",
-              label: "Status",
-              options: [
-                { value: "", label: "All statuses" },
-                { value: "enabled", label: "Enabled" },
-                { value: "disabled", label: "Disabled" },
-              ],
-              predicate: (row, value) =>
-                value === "enabled" ? rowEnabled(row) : !rowEnabled(row),
-            },
-          ]}
-          pageSize={PAGE_SIZE}
-          emptyMessage="No charge boxes match your search."
-        />
-      )}
+      <DataTable
+        columns={columns}
+        rows={rows}
+        getRowKey={(row, i) =>
+          `${cell(row, "chargeBoxId", "id", "chargerId") || i}-${i}`
+        }
+        manual
+        loading={loading}
+        searchable
+        searchPlaceholder="Search by charge box id, station, or address"
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        filters={[
+          {
+            id: "registration",
+            label: "Registration",
+            options: [
+              { value: "", label: "All registrations" },
+              { value: "Accepted", label: "Accepted" },
+              { value: "Rejected", label: "Rejected" },
+            ],
+          },
+          {
+            id: "online",
+            label: "Online",
+            options: [
+              { value: "", label: "All connectivity" },
+              { value: "ON", label: "Online" },
+              { value: "OFF", label: "Offline" },
+            ],
+          },
+          {
+            id: "status",
+            label: "Status",
+            options: [
+              { value: "", label: "All statuses" },
+              { value: "enabled", label: "Enabled" },
+              { value: "disabled", label: "Disabled" },
+            ],
+          },
+        ]}
+        filterValues={{
+          registration: registrationFilter,
+          online: onlineFilter,
+          status: statusFilter,
+        }}
+        onFilterChange={(id, value) => {
+          if (id === "registration") setRegistrationFilter(value);
+          else if (id === "online") setOnlineFilter(value);
+          else if (id === "status") setStatusFilter(value);
+          setPage(0);
+        }}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        emptyMessage={
+          search || registrationFilter || onlineFilter || statusFilter
+            ? "No charge boxes match your search."
+            : "No charge boxes."
+        }
+      />
 
       {toggleTarget && (
         <ChargerStatusModal
