@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { SystemAdminUser, UpdateSystemAdminRequest } from "@/lib/api/backOfficeUsers";
-import styles from "./back-office-users.module.css";
+import styles from "./adminUsers.module.css";
 
 interface Props {
   admin: SystemAdminUser;

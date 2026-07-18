@@ -100,7 +100,7 @@ export default function AccountPermissionsPage() {
           {viewMode === "provider" ? (
             <li>Assign team roles via <strong>Assign team roles</strong> in the sidebar (owners).</li>
           ) : (
-            <li>Assign platform roles via <strong>Back-office users</strong> in the sidebar.</li>
+            <li>Assign platform roles via <strong>by clicking on Staff</strong> in the sidebar.</li>
           )}
         </ul>
       </div>
