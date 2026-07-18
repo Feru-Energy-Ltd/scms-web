@@ -77,7 +77,13 @@ export default function AccountDashboardPage() {
         <div>
           <h1 className={styles.pageTitle}>Dashboard</h1>
           <p className={styles.pageSubtitle}>
-            {`Viewing dashboard as  ${ctx.role ? getRoleLabel(ctx.role) : "your account"}`}
+            {`Viewing dashboard as  ${
+              ctx.roles?.length
+                ? getRoleLabel(ctx.roles[0])
+                : ctx.role
+                  ? getRoleLabel(ctx.role)
+                  : "your account"
+            }`}
           </p>
         </div>
       </div>
