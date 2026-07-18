@@ -151,6 +151,9 @@ export default function ReportsPage() {
     if (value === "platform" || value === "") {
       setShowPlatform(true);
       setProviderId(undefined);
+    } else if (value === "all") {
+      setShowPlatform(false);
+      setProviderId(undefined);
     } else {
       setShowPlatform(false);
       setProviderId(Number(value));
@@ -194,11 +197,11 @@ export default function ReportsPage() {
         {isAdmin && (
           <select
             className={styles.providerSelect}
-            value={showPlatform ? "platform" : (providerId ?? "")}
+            value={showPlatform ? "platform" : (providerId != null ? String(providerId) : "all")}
             onChange={(e) => handleProviderChange(e.target.value)}
           >
-            <option value="">— Select provider —</option>
             <option value="platform">Platform Overview</option>
+            <option value="all">All providers</option>
             {providers.map((p) => (
               <option key={p.id} value={p.id}>{p.businessName || p.displayName}</option>
             ))}

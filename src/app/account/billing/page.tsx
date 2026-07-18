@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
-import { fetchOperatorDashboardStats, type OperatorDashboardStats } from "@/lib/api/dashboard";
+import { fetchAggregateOperatorDashboardStats, fetchOperatorDashboardStats, type OperatorDashboardStats } from "@/lib/api/dashboard";
 import {
   fetchProviderTransactions,
   fetchSettlements,
+  fetchAggregateSettlements,
   type ProviderTransaction,
   type SettlementHistory,
   type PageResponse,
@@ -28,9 +29,12 @@ export default function BillingPage() {
   const [balance, setBalance] = useState<OperatorDashboardStats | null>(null);
 
   useEffect(() => {
-    if (ctx.providerId == null) return;
-    fetchOperatorDashboardStats(ctx.providerId).then((d) => setBalance(d ?? null)).catch(() => {});
-  }, [ctx.providerId]);
+    if (ctx.providerId != null) {
+      fetchOperatorDashboardStats(ctx.providerId).then((d) => setBalance(d ?? null)).catch(() => {});
+    } else if (ctx.identityType === "SYSTEM_ADMIN") {
+      fetchAggregateOperatorDashboardStats().then((d) => setBalance(d ?? null)).catch(() => {});
+    }
+  }, [ctx.providerId, ctx.identityType]);
 
   /* ── Transactions tab state ── */
   const [txPage, setTxPage] = useState(0);
@@ -66,20 +70,19 @@ export default function BillingPage() {
   const [stStatus, setStStatus] = useState("");
 
   const loadSettlements = useCallback(async () => {
-    if (ctx.providerId == null) return;
+    if (ctx.providerId == null && ctx.identityType !== "SYSTEM_ADMIN") return;
     setStLoading(true);
     try {
-      const data = await fetchSettlements(
-        ctx.providerId, stPage, 20,
-        stStatus || undefined,
-      );
+      const data = ctx.providerId != null
+        ? await fetchSettlements(ctx.providerId, stPage, 20, stStatus || undefined)
+        : await fetchAggregateSettlements(stPage, 20, stStatus || undefined);
       setStData(data);
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load settlements." });
     } finally {
       setStLoading(false);
     }
-  }, [ctx.providerId, stPage, stStatus]);
+  }, [ctx.providerId, ctx.identityType, stPage, stStatus]);
 
   useEffect(() => {
     if (tab === "settlements") void loadSettlements();

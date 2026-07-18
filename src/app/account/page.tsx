@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import {
+  fetchAggregateOperatorDashboardStats,
   fetchOperatorDashboardStats,
   fetchProviderDashboardStats,
   type OperatorDashboardStats,
@@ -35,11 +36,16 @@ export default function AccountDashboardPage() {
 
   async function loadStats() {
     try {
-      const [csmsStats, paymentStats] = await Promise.all([
-        fetchProviderDashboardStats().catch(() => null),
+      const operatorStatsPromise =
         ctx.providerId != null
           ? fetchOperatorDashboardStats(ctx.providerId).catch(() => null)
-          : Promise.resolve(null),
+          : ctx.identityType === "SYSTEM_ADMIN"
+            ? fetchAggregateOperatorDashboardStats().catch(() => null)
+            : Promise.resolve(null);
+
+      const [csmsStats, paymentStats] = await Promise.all([
+        fetchProviderDashboardStats().catch(() => null),
+        operatorStatsPromise,
       ]);
 
       if (csmsStats) setProviderStats(csmsStats);
@@ -71,7 +77,13 @@ export default function AccountDashboardPage() {
         <div>
           <h1 className={styles.pageTitle}>Dashboard</h1>
           <p className={styles.pageSubtitle}>
-            {`Viewing dashboard as  ${ctx.role ? getRoleLabel(ctx.role) : "your account"}`}
+            {`Viewing dashboard as  ${
+              ctx.roles?.length
+                ? getRoleLabel(ctx.roles[0])
+                : ctx.role
+                  ? getRoleLabel(ctx.role)
+                  : "your account"
+            }`}
           </p>
         </div>
       </div>

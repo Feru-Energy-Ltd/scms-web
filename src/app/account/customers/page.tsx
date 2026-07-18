@@ -75,7 +75,7 @@ export default function AccountCustomersPage() {
                 <th className={styles.th}>Name</th>
                 <th className={styles.th}>Email</th>
                 <th className={styles.th}>Phone</th>
-                <th className={styles.th}>Sex</th>
+                <th className={styles.th}>Gender</th>
                 <th className={styles.th}>Status</th>
               </tr>
             </thead>
@@ -97,7 +97,9 @@ export default function AccountCustomersPage() {
                     <td className={styles.td}>
                       {cell(row, "phoneNumber", "phone")}
                     </td>
-                    <td className={styles.td}>{cell(row, "sex")}</td>
+                    <td className={styles.td}>
+                      {cell(row, "gender", "sex")}
+                    </td>
                     <td className={styles.td}>
                       <span
                         className={activeBool ? styles.badgeOk : styles.badgeNo}

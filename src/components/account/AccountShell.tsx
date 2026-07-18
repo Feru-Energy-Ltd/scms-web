@@ -30,7 +30,6 @@ import {
   clearSession,
   getStoredIdentityType,
   getStoredPermissions,
-  getStoredRoleCode,
 } from "@/lib/auth/session";
 import { getMenuSectionsForPermissions } from "@/lib/navigation/menu";
 import {
@@ -39,6 +38,7 @@ import {
 } from "@/components/account/BreadcrumbContext";
 import ThemeToggleButton from "../theme/ThemeToggleButton";
 import { fetchProfile, type ProfileResponse } from "@/lib/api/profile";
+import { fetchProvider } from "@/lib/api/serviceProviders";
 import styles from "./AccountShell.module.css";
 
 const NAV_ICONS: Record<string, LucideIcon> = {
@@ -74,8 +74,10 @@ export default function AccountShell({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [identityType] = useState(() => getStoredIdentityType() || "Account");
   const [userCtx] = useState(() => getAccessTokenContext());
-  const [storedRoleCode] = useState(() => getStoredRoleCode());
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
+  const [providerBusinessName, setProviderBusinessName] = useState<string | null>(
+    null,
+  );
 
   const displayName = useMemo(() => {
     if (!profile) return "User";
@@ -88,21 +90,31 @@ export default function AccountShell({
   }, [profile]);
 
   const displayRole = useMemo(() => {
+    if (userCtx.roles?.length) {
+      // return the label of the first role
+      return getRoleLabel(userCtx.roles[0]);
+    }
     if (userCtx.role) return getRoleLabel(userCtx.role);
-    if (storedRoleCode) return getRoleLabel(storedRoleCode);
     return identityType;
-  }, [userCtx.role, storedRoleCode, identityType]);
+  }, [userCtx.roles, userCtx.role, identityType]);
 
+  const isServiceProvider = userCtx.identityType === "SERVICE_PROVIDER";
   const businessName = profile?.businessName?.trim() || null;
 
+  const orgLabel = useMemo(() => {
+    if (businessName) return businessName;
+    if (isServiceProvider) return providerBusinessName;
+    return "Back Office";
+  }, [businessName, isServiceProvider, providerBusinessName]);
+
   const brandMark = useMemo(() => {
-    const source = businessName ?? "Admin Panel";
+    const source = orgLabel ?? "Admin Panel";
     const parts = source.split(/\s+/).filter(Boolean);
     if (parts.length >= 2) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
     return source.slice(0, 2).toUpperCase() || "AP";
-  }, [businessName]);
+  }, [orgLabel]);
 
   const userInitials = useMemo(() => {
     const local = displayName.split("@")[0] ?? "";
@@ -142,6 +154,28 @@ export default function AccountShell({
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!isServiceProvider || businessName || userCtx.providerId == null) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void fetchProvider(userCtx.providerId)
+      .then((provider) => {
+        if (!cancelled) {
+          setProviderBusinessName(provider.businessName?.trim() || null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setProviderBusinessName(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isServiceProvider, businessName, userCtx.providerId]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
@@ -287,14 +321,14 @@ export default function AccountShell({
             <div className={styles.brandRow}>
               <div className={styles.brandBlock}>
                 <div className={styles.brand}>Admin Panel</div>
-                {businessName ? (
-                  <div className={styles.brandBusiness} title={businessName}>
+                {orgLabel ? (
+                  <div className={styles.brandBusiness} title={orgLabel}>
                     <Building2
                       size={13}
                       className={styles.brandBusinessIcon}
                       aria-hidden
                     />
-                    <span className={styles.brandBusinessText}>{businessName}</span>
+                    <span className={styles.brandBusinessText}>{orgLabel}</span>
                   </div>
                 ) : null}
               </div>

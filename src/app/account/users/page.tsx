@@ -17,6 +17,7 @@ import styles from "@/components/account/ResourceList.module.css";
 import RowActionsMenu from "@/components/account/RowActionsMenu";
 import EditRoleModal from "./EditRoleModal";
 import ConfirmModal from "@/components/account/ConfirmModal";
+import BackOfficeUsersManager from "../back-office-users/BackOfficeUsersManager";
 
 const ROLE_LABELS: Record<string, string> = {
   SERVICE_PROVIDER_OWNER: "Owner",
@@ -29,6 +30,14 @@ function formatRole(role: string): string {
 }
 
 export default function UsersPage() {
+  const ctx = getAccessTokenContext();
+  if (ctx.identityType === "SYSTEM_ADMIN" && ctx.providerId == null) {
+    return <BackOfficeUsersManager title="Staff" />;
+  }
+  return <ProviderStaffView />;
+}
+
+function ProviderStaffView() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -50,7 +59,7 @@ export default function UsersPage() {
     if (!providerId) {
       setStaff([]);
       setLoading(false);
-      setError("No provider context found. Staff list requires a provider-scoped session.");
+      setError("No provider context found. Staff list requires the user to be a staff member of a provider.");
       return;
     }
     setLoading(true);

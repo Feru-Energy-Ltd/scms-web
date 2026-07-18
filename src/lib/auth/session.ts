@@ -9,7 +9,6 @@ const KEYS = {
   tokenType: "scms_token_type",
   expiresIn: "scms_expires_in",
   identityType: "scms_identity_type",
-  roleCode: "scms_role_code",
 };
 
 export function setIdentityType(
@@ -22,7 +21,11 @@ export function setIdentityType(
 export function setSessionTokensFromResponse(res: TokenResponse) {
   if (typeof window === "undefined") return;
 
-  localStorage.setItem(KEYS.identityToken, res.identityToken);
+  if (res.identityToken) {
+    localStorage.setItem(KEYS.identityToken, res.identityToken);
+  } else {
+    localStorage.removeItem(KEYS.identityToken);
+  }
   localStorage.setItem(KEYS.accessToken, res.accessToken);
   localStorage.setItem(KEYS.refreshToken, res.refreshToken);
   localStorage.setItem(KEYS.expiresIn, String(res.expiresIn));
@@ -48,11 +51,6 @@ export function getRefreshToken() {
 export function getStoredIdentityType() {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(KEYS.identityType);
-}
-
-export function getStoredRoleCode() {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(KEYS.roleCode);
 }
 
 /**
