@@ -6,9 +6,9 @@ import toast from "react-hot-toast";
 import ChargerStatusModal, {
   type ChargerStatusModalTarget,
 } from "@/components/account/ChargerStatusModal";
+import DataTable, { type DataTableColumn } from "@/components/account/DataTable";
 import DeleteResourceModal from "@/components/account/DeleteResourceModal";
 import PageHeader from "@/components/account/PageHeader";
-import Pagination from "@/components/account/Pagination";
 import RowActionsMenu from "@/components/account/RowActionsMenu";
 import styles from "@/components/account/ResourceList.module.css";
 import {
@@ -46,6 +46,18 @@ function rowEnabled(row: ChargerRow): boolean {
   return true;
 }
 
+const PAGE_SIZE = 5;
+const FETCH_SIZE = 500;
+
+function isAccepted(reg: string): boolean {
+  return reg.toLowerCase() === "accepted";
+}
+
+function isOnline(row: ChargerRow): boolean {
+  const v = cell(row, "onlineStatus", "ON", "status");
+  return v === "ON" || v === "true" || v === "1" || v === "connected";
+}
+
 export default function AccountChargeBoxesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,8 +66,6 @@ export default function AccountChargeBoxesPage() {
   const stationFilter =
     stationId != null && Number.isFinite(stationId) ? stationId : undefined;
 
-  const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
   const [rows, setRows] = useState<ChargerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -78,26 +88,20 @@ export default function AccountChargeBoxesPage() {
     perms.has("admin:reservations:read") ||
     perms.has("provider:reservations:read");
 
-  useEffect(() => {
-    setPage(0);
-  }, [stationFilter]);
-
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const raw = (await fetchChargeBoxes(page, 5, {
+      const raw = await fetchChargeBoxes(0, FETCH_SIZE, {
         stationId: stationFilter,
-      })) as { totalPages?: number };
+      });
       setRows(asArray<ChargerRow>(raw));
-      setTotalPages(raw?.totalPages ?? 0);
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load charge boxes." });
       setRows([]);
-      setTotalPages(0);
     } finally {
       setLoading(false);
     }
-  }, [page, stationFilter]);
+  }, [stationFilter]);
 
   useEffect(() => {
     void load();
@@ -137,6 +141,113 @@ export default function AccountChargeBoxesPage() {
     }
   };
 
+  const columns = useMemo<DataTableColumn<ChargerRow>[]>(
+    () => [
+      {
+        id: "chargeBoxId",
+        header: "Charge box id",
+        cell: (row) => cell(row, "chargeBoxId", "id"),
+      },
+      { id: "station", header: "Station", cell: (row) => cell(row, "stationId") },
+      { id: "address", header: "Address", cell: (row) => cell(row, "address") },
+      {
+        id: "registration",
+        header: "Registration",
+        cell: (row) => {
+          const reg = cell(row, "registrationStatus", "registration");
+          return (
+            <span className={isAccepted(reg) ? styles.badgeOk : styles.badgeNo}>
+              {reg}
+            </span>
+          );
+        },
+      },
+      {
+        id: "online",
+        header: "Online",
+        cell: (row) => cell(row, "onlineStatus", "online", "status"),
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: (row, i) => {
+          const id = cell(row, "chargeBoxId", "id", "chargerId") || String(i);
+          const reg = cell(row, "registrationStatus", "registration");
+          const enabled = rowEnabled(row);
+          const busy = busyId === id;
+          const viewHref = `/account/charge-boxes/${encodeURIComponent(id)}`;
+          const editHref = `/account/charge-boxes/update/${encodeURIComponent(id)}`;
+          return (
+            <RowActionsMenu
+              label={`Actions for ${id}`}
+              items={[
+                {
+                  label: "View",
+                  onClick: () => router.push(viewHref),
+                  hidden: !canRead,
+                },
+                {
+                  label: "Edit",
+                  onClick: () => router.push(editHref),
+                  hidden: !canUpdate,
+                },
+                {
+                  label: "Transactions",
+                  onClick: () => router.push(`${viewHref}?tab=transactions`),
+                  hidden: !canReadTransactions,
+                },
+                {
+                  label: "Bookings",
+                  onClick: () => router.push(`${viewHref}?tab=bookings`),
+                  hidden: !canReadReservations,
+                },
+                {
+                  label: enabled ? "Disable" : "Enable",
+                  onClick: () =>
+                    setToggleTarget({
+                      id,
+                      enabled,
+                      station: cell(row, "stationId"),
+                      address: cell(row, "address"),
+                      onlineStatus: cell(row, "onlineStatus", "online", "status"),
+                      registration: reg,
+                    }),
+                  hidden: !canToggle,
+                  disabled: busy,
+                },
+                {
+                  label: "Delete",
+                  onClick: () =>
+                    setDeleteTarget({
+                      id,
+                      station: cell(row, "stationId"),
+                      address: cell(row, "address"),
+                      onlineStatus: cell(row, "onlineStatus", "online", "status"),
+                      registration: reg,
+                      enabled,
+                    }),
+                  destructive: true,
+                  hidden: !canDelete,
+                  disabled: busy,
+                },
+              ]}
+            />
+          );
+        },
+      },
+    ],
+    [
+      busyId,
+      canDelete,
+      canRead,
+      canReadReservations,
+      canReadTransactions,
+      canToggle,
+      canUpdate,
+      router,
+    ],
+  );
+
   return (
     <div>
       <PageHeader
@@ -151,126 +262,57 @@ export default function AccountChargeBoxesPage() {
       ) : rows.length === 0 ? (
         <p className={styles.muted}>No charge boxes.</p>
       ) : (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th className={styles.th}>Charge box id</th>
-                <th className={styles.th}>Station</th>
-                <th className={styles.th}>Address</th>
-                <th className={styles.th}>Registration</th>
-                <th className={styles.th}>Online</th>
-                <th className={styles.th}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, i) => {
-                const id =
-                  cell(row, "chargeBoxId", "id", "chargerId") || String(i);
+        <DataTable
+          columns={columns}
+          rows={rows}
+          getRowKey={(row, i) =>
+            `${cell(row, "chargeBoxId", "id", "chargerId") || i}-${i}`
+          }
+          searchable
+          searchPlaceholder="Search by charge box id, station, or address"
+          searchAccessor={(row) =>
+            `${cell(row, "chargeBoxId", "id")} ${cell(row, "stationId")} ${cell(row, "address")}`
+          }
+          filters={[
+            {
+              id: "registration",
+              label: "Registration",
+              options: [
+                { value: "", label: "All registrations" },
+                { value: "accepted", label: "Accepted" },
+                { value: "other", label: "Not accepted" },
+              ],
+              predicate: (row, value) => {
                 const reg = cell(row, "registrationStatus", "registration");
-                const accepted =
-                  reg.toLowerCase() === "accepted" || reg === "ACCEPTED";
-                const enabled = rowEnabled(row);
-                const busy = busyId === id;
-                const viewHref = `/account/charge-boxes/${encodeURIComponent(id)}`;
-                const editHref = `/account/charge-boxes/update/${encodeURIComponent(id)}`;
-
-                return (
-                  <tr key={`${id}-${i}`}>
-                    <td className={styles.td}>
-                      {cell(row, "chargeBoxId", "id")}
-                    </td>
-                    <td className={styles.td}>{cell(row, "stationId")}</td>
-                    <td className={styles.td}>{cell(row, "address")}</td>
-                    <td className={styles.td}>
-                      <span
-                        className={accepted ? styles.badgeOk : styles.badgeNo}
-                      >
-                        {reg}
-                      </span>
-                    </td>
-                    <td className={styles.td}>
-                      {cell(row, "onlineStatus", "online", "status")}
-                    </td>
-                    <td className={styles.td}>
-                      <RowActionsMenu
-                        label={`Actions for ${id}`}
-                        items={[
-                          {
-                            label: "View",
-                            onClick: () => router.push(viewHref),
-                            hidden: !canRead,
-                          },
-                          {
-                            label: "Edit",
-                            onClick: () => router.push(editHref),
-                            hidden: !canUpdate,
-                          },
-                          {
-                            label: "Transactions",
-                            onClick: () =>
-                              router.push(`${viewHref}?tab=transactions`),
-                            hidden: !canReadTransactions,
-                          },
-                          {
-                            label: "Bookings",
-                            onClick: () =>
-                              router.push(`${viewHref}?tab=bookings`),
-                            hidden: !canReadReservations,
-                          },
-                          {
-                            label: enabled ? "Disable" : "Enable",
-                            onClick: () =>
-                              setToggleTarget({
-                                id,
-                                enabled,
-                                station: cell(row, "stationId"),
-                                address: cell(row, "address"),
-                                onlineStatus: cell(
-                                  row,
-                                  "onlineStatus",
-                                  "online",
-                                  "status",
-                                ),
-                                registration: reg,
-                              }),
-                            hidden: !canToggle,
-                            disabled: busy,
-                          },
-                          {
-                            label: "Delete",
-                            onClick: () =>
-                              setDeleteTarget({
-                                id,
-                                station: cell(row, "stationId"),
-                                address: cell(row, "address"),
-                                onlineStatus: cell(
-                                  row,
-                                  "onlineStatus",
-                                  "online",
-                                  "status",
-                                ),
-                                registration: reg,
-                                enabled,
-                              }),
-                            destructive: true,
-                            hidden: !canDelete,
-                            disabled: busy,
-                          },
-                        ]}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-          />
-        </div>
+                return value === "accepted" ? isAccepted(reg) : !isAccepted(reg);
+              },
+            },
+            {
+              id: "online",
+              label: "Online",
+              options: [
+                { value: "", label: "All connectivity" },
+                { value: "ON", label: "Online" },
+                { value: "OFF", label: "Offline" },
+              ],
+              predicate: (row, value) =>
+                value === "ON" ? isOnline(row) : !isOnline(row),
+            },
+            {
+              id: "status",
+              label: "Status",
+              options: [
+                { value: "", label: "All statuses" },
+                { value: "enabled", label: "Enabled" },
+                { value: "disabled", label: "Disabled" },
+              ],
+              predicate: (row, value) =>
+                value === "enabled" ? rowEnabled(row) : !rowEnabled(row),
+            },
+          ]}
+          pageSize={PAGE_SIZE}
+          emptyMessage="No charge boxes match your search."
+        />
       )}
 
       {toggleTarget && (

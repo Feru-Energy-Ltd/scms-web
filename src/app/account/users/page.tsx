@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
   fetchProviderStaff,
@@ -14,6 +14,7 @@ import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { getStoredPermissions } from "@/lib/auth/session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
+import DataTable, { type DataTableColumn } from "@/components/account/DataTable";
 import RowActionsMenu from "@/components/account/RowActionsMenu";
 import EditRoleModal from "./EditRoleModal";
 import ConfirmModal from "@/components/account/ConfirmModal";
@@ -40,7 +41,6 @@ export default function UsersPage() {
 function ProviderStaffView() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
   const [acting, setActing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -132,87 +132,103 @@ function ProviderStaffView() {
     }
   }
 
-  const filtered = search
-    ? staff.filter(
-        (s) =>
-          s.displayName?.toLowerCase().includes(search.toLowerCase()) ||
-          s.email?.toLowerCase().includes(search.toLowerCase()),
-      )
-    : staff;
+  const showActions = canEditRole || canDeactivate;
+
+  const columns = useMemo<DataTableColumn<StaffMember>[]>(
+    () => [
+      { id: "name", header: "Name", cell: (m) => m.displayName || "—" },
+      { id: "email", header: "Email", cell: (m) => m.email },
+      { id: "role", header: "Role", cell: (m) => formatRole(m.role) },
+      {
+        id: "status",
+        header: "Status",
+        cell: (m) => (
+          <span className={m.status === "ACTIVE" ? styles.badgeOk : styles.badgeNo}>
+            {m.status === "ACTIVE" ? "Active" : "Suspended"}
+          </span>
+        ),
+      },
+      ...(showActions
+        ? [
+            {
+              id: "actions",
+              header: "Actions",
+              cell: (m: StaffMember) => (
+                <RowActionsMenu
+                  label={`Actions for ${m.displayName}`}
+                  items={[
+                    {
+                      label: "Edit Role",
+                      onClick: () => setEditTarget(m),
+                      hidden: !canEditRole || m.status !== "ACTIVE" || !canModify(m),
+                    },
+                    {
+                      label: "Deactivate",
+                      onClick: () => setDeactivateTarget(m),
+                      destructive: true,
+                      hidden: !canDeactivate || m.status !== "ACTIVE" || !canModify(m),
+                    },
+                    {
+                      label: acting ? "Activating…" : "Activate",
+                      onClick: () => void handleActivate(m),
+                      hidden: !canEditRole || m.status !== "SUSPENDED",
+                      disabled: acting,
+                    },
+                  ]}
+                />
+              ),
+            } satisfies DataTableColumn<StaffMember>,
+          ]
+        : []),
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [acting, canDeactivate, canEditRole, showActions, staff],
+  );
 
   return (
     <div>
       <h1 className={styles.h1}>Staff</h1>
 
-      <div className={styles.toolbar}>
-        <input
-          className={styles.searchInput}
-          placeholder="Search by name or email"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-
       {error && <p className={styles.error}>{error}</p>}
 
       {loading ? (
         <p className={styles.muted}>Loading staff…</p>
-      ) : filtered.length === 0 ? (
+      ) : staff.length === 0 ? (
         <p className={styles.muted}>No staff members found.</p>
       ) : (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th className={styles.th}>Name</th>
-                <th className={styles.th}>Email</th>
-                <th className={styles.th}>Role</th>
-                <th className={styles.th}>Status</th>
-                {(canEditRole || canDeactivate) && <th className={styles.th}>Actions</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((m) => (
-                <tr key={m.userId}>
-                  <td className={styles.td}>{m.displayName || "—"}</td>
-                  <td className={styles.td}>{m.email}</td>
-                  <td className={styles.td}>{formatRole(m.role)}</td>
-                  <td className={styles.td}>
-                    <span className={m.status === "ACTIVE" ? styles.badgeOk : styles.badgeNo}>
-                      {m.status === "ACTIVE" ? "Active" : "Suspended"}
-                    </span>
-                  </td>
-                  {(canEditRole || canDeactivate) && (
-                    <td className={styles.td}>
-                      <RowActionsMenu
-                        label={`Actions for ${m.displayName}`}
-                        items={[
-                          {
-                            label: "Edit Role",
-                            onClick: () => setEditTarget(m),
-                            hidden: !canEditRole || m.status !== "ACTIVE" || !canModify(m),
-                          },
-                          {
-                            label: "Deactivate",
-                            onClick: () => setDeactivateTarget(m),
-                            destructive: true,
-                            hidden: !canDeactivate || m.status !== "ACTIVE" || !canModify(m),
-                          },
-                          {
-                            label: acting ? "Activating…" : "Activate",
-                            onClick: () => void handleActivate(m),
-                            hidden: !canEditRole || m.status !== "SUSPENDED",
-                            disabled: acting,
-                          },
-                        ]}
-                      />
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={columns}
+          rows={staff}
+          getRowKey={(m) => m.userId}
+          searchable
+          searchPlaceholder="Search by name or email"
+          searchAccessor={(m) => `${m.displayName ?? ""} ${m.email ?? ""}`}
+          filters={[
+            {
+              id: "role",
+              label: "Role",
+              options: [
+                { value: "", label: "All roles" },
+                { value: "SERVICE_PROVIDER_OWNER", label: "Owner" },
+                { value: "SERVICE_PROVIDER_MANAGER", label: "Manager" },
+                { value: "SERVICE_PROVIDER_STAFF", label: "Staff" },
+              ],
+              predicate: (m, value) => m.role === value,
+            },
+            {
+              id: "status",
+              label: "Status",
+              options: [
+                { value: "", label: "All statuses" },
+                { value: "ACTIVE", label: "Active" },
+                { value: "SUSPENDED", label: "Suspended" },
+              ],
+              predicate: (m, value) => m.status === value,
+            },
+          ]}
+          pageSize={10}
+          emptyMessage="No staff members match your search."
+        />
       )}
 
       {editTarget && (
