@@ -97,7 +97,9 @@ export default function AccountCustomersPage() {
                     <td className={styles.td}>
                       {cell(row, "phoneNumber", "phone")}
                     </td>
-                    <td className={styles.td}>{cell(row, "gender")}</td>
+                    <td className={styles.td}>
+                      {cell(row, "gender", "sex")}
+                    </td>
                     <td className={styles.td}>
                       <span
                         className={activeBool ? styles.badgeOk : styles.badgeNo}
