@@ -38,6 +38,7 @@ import {
 } from "@/components/account/BreadcrumbContext";
 import ThemeToggleButton from "../theme/ThemeToggleButton";
 import { fetchProfile, type ProfileResponse } from "@/lib/api/profile";
+import { fetchProvider } from "@/lib/api/serviceProviders";
 import styles from "./AccountShell.module.css";
 
 const NAV_ICONS: Record<string, LucideIcon> = {
@@ -74,6 +75,9 @@ export default function AccountShell({
   const [identityType] = useState(() => getStoredIdentityType() || "Account");
   const [userCtx] = useState(() => getAccessTokenContext());
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
+  const [providerBusinessName, setProviderBusinessName] = useState<string | null>(
+    null,
+  );
 
   const displayName = useMemo(() => {
     if (!profile) return "User";
@@ -94,15 +98,22 @@ export default function AccountShell({
     return identityType;
   }, [userCtx.roles, userCtx.role, identityType]);
 
+  const isServiceProvider = userCtx.identityType === "SERVICE_PROVIDER";
   const businessName = profile?.businessName?.trim() || null;
-  const orgLabel = businessName ?? "Back Office";
+
+  const orgLabel = useMemo(() => {
+    if (businessName) return businessName;
+    if (isServiceProvider) return providerBusinessName;
+    return "Back Office";
+  }, [businessName, isServiceProvider, providerBusinessName]);
 
   const brandMark = useMemo(() => {
-    const parts = orgLabel.split(/\s+/).filter(Boolean);
+    const source = orgLabel ?? "Admin Panel";
+    const parts = source.split(/\s+/).filter(Boolean);
     if (parts.length >= 2) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
-    return orgLabel.slice(0, 2).toUpperCase() || "BO";
+    return source.slice(0, 2).toUpperCase() || "AP";
   }, [orgLabel]);
 
   const userInitials = useMemo(() => {
@@ -143,6 +154,28 @@ export default function AccountShell({
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!isServiceProvider || businessName || userCtx.providerId == null) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void fetchProvider(userCtx.providerId)
+      .then((provider) => {
+        if (!cancelled) {
+          setProviderBusinessName(provider.businessName?.trim() || null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setProviderBusinessName(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isServiceProvider, businessName, userCtx.providerId]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
@@ -288,14 +321,16 @@ export default function AccountShell({
             <div className={styles.brandRow}>
               <div className={styles.brandBlock}>
                 <div className={styles.brand}>Admin Panel</div>
-                <div className={styles.brandBusiness} title={orgLabel}>
-                  <Building2
-                    size={13}
-                    className={styles.brandBusinessIcon}
-                    aria-hidden
-                  />
-                  <span className={styles.brandBusinessText}>{orgLabel}</span>
-                </div>
+                {orgLabel ? (
+                  <div className={styles.brandBusiness} title={orgLabel}>
+                    <Building2
+                      size={13}
+                      className={styles.brandBusinessIcon}
+                      aria-hidden
+                    />
+                    <span className={styles.brandBusinessText}>{orgLabel}</span>
+                  </div>
+                ) : null}
               </div>
               <div className={styles.brandMark} aria-hidden>
                 {brandMark}
