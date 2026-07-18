@@ -8,6 +8,35 @@
   box-shadow: var(--shadow-xs);
 }
 
+.linkCard {
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+}
+
+.linkCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.linkCard:hover .iconChip,
+.linkCard:hover .delta {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.linkCard:hover .value {
+  color: #fff;
+}
+
+.linkCard:hover .label,
+.linkCard:hover .subtitle {
+  color: rgba(255, 255, 255, 0.7);
+}
+
 .top {
   display: flex;
   align-items: center;

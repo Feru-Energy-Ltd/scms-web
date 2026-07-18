@@ -95,7 +95,7 @@ export default function AccountDashboardPage() {
           icon={BatteryCharging}
           label="Total Chargers"
           value={fmt(providerStats?.totalChargers)}
-          accent
+          href="/account/charge-boxes"
         />
         <KpiCard
           icon={Wifi}
@@ -105,37 +105,44 @@ export default function AccountDashboardPage() {
               ? `${providerStats.onlineChargers} / ${providerStats.offlineChargers}`
               : "—"
           }
+          href="/account/charge-boxes"
         />
         <KpiCard
           icon={Zap}
           label="Active Sessions"
           value={fmt(providerStats?.activeSessions)}
+          href="/account/reports"
         />
         <KpiCard
           icon={Wallet}
           label="Earned Balance"
           value={fmtMoney(operatorStats?.earnedBalance)}
+          href="/account/billing"
         />
         <KpiCard
           icon={Hourglass}
           label="Pending Settlement"
           value={fmtMoney(operatorStats?.pendingSettlement)}
+          href="/account/billing"
         />
         <KpiCard
           icon={Activity}
           label="Sessions Today"
           value={fmt(providerStats?.totalSessionsToday)}
+          href="/account/reports"
         />
         <KpiCard
           icon={Gauge}
           label="Energy Delivered"
           value={fmtKwh(providerStats?.energyDeliveredTodayKwh)}
           subtitle="Today"
+          href="/account/reports"
         />
         <KpiCard
           icon={CalendarClock}
           label="Active Reservations"
           value={fmt(providerStats?.activeReservations)}
+          href="/account/charge-boxes"
         />
       </div>
 
