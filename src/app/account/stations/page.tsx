@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import DataTable, { type DataTableColumn } from "@/components/account/DataTable";
 import DeleteResourceModal from "@/components/account/DeleteResourceModal";
@@ -71,7 +71,10 @@ export default function ChargingStationsPage() {
   const canDelete =
     perms.has("admin:chargers:delete")
 
+  const requestIdRef = useRef(0);
+
   const load = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
       const enabled =
@@ -82,14 +85,17 @@ export default function ChargingStationsPage() {
         search: search || undefined,
         enabled,
       });
+      // Ignore responses superseded by a newer request.
+      if (requestId !== requestIdRef.current) return;
       setStations(res.content ?? []);
       setTotalPages(res.totalPages ?? 0);
     } catch (e) {
+      if (requestId !== requestIdRef.current) return;
       showApiErrorToast(e, { fallbackMessage: "Could not load stations." });
       setStations([]);
       setTotalPages(0);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   }, [page, search, statusFilter]);
 

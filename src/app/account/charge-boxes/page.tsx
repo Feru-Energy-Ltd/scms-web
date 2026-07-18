@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import ChargerStatusModal, {
   type ChargerStatusModalTarget,
@@ -91,7 +91,10 @@ export default function AccountChargeBoxesPage() {
     perms.has("admin:reservations:read") ||
     perms.has("provider:reservations:read");
 
+  const requestIdRef = useRef(0);
+
   const load = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
       const enabled =
@@ -107,14 +110,17 @@ export default function AccountChargeBoxesPage() {
           onlineFilter === "" ? undefined : (onlineFilter as "ON" | "OFF"),
         enabled,
       })) as { totalPages?: number };
+      // Ignore responses superseded by a newer request.
+      if (requestId !== requestIdRef.current) return;
       setRows(asArray<ChargerRow>(raw));
       setTotalPages(raw?.totalPages ?? 0);
     } catch (e) {
+      if (requestId !== requestIdRef.current) return;
       showApiErrorToast(e, { fallbackMessage: "Could not load charge boxes." });
       setRows([]);
       setTotalPages(0);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   }, [page, search, registrationFilter, onlineFilter, statusFilter, stationFilter]);
 

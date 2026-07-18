@@ -231,6 +231,7 @@ export default function DataTable<Row>({
           page={currentPage}
           totalPages={computedTotalPages}
           onPageChange={handlePageChange}
+          disabled={loading}
         />
       )}
     </div>
