@@ -17,7 +17,7 @@ import styles from "@/components/account/ResourceList.module.css";
 import RowActionsMenu from "@/components/account/RowActionsMenu";
 import EditRoleModal from "./EditRoleModal";
 import ConfirmModal from "@/components/account/ConfirmModal";
-import BackOfficeUsersManager from "../back-office-users/BackOfficeUsersManager";
+import BackOfficeUsersManager from "./BackOfficeUsersManager";
 
 const ROLE_LABELS: Record<string, string> = {
   SERVICE_PROVIDER_OWNER: "Owner",

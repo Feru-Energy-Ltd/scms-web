@@ -45,7 +45,6 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   "/account": LayoutDashboard,
   "/account/service-providers": Building2,
   "/account/permissions": Lock,
-  "/account/back-office-users": Users,
   "/account/customers": Users,
   "/account/support-tickets": LifeBuoy,
   "/account/pricing": Tags,

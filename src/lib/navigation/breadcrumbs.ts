@@ -8,7 +8,6 @@ const STATIC_SEGMENTS: Record<string, string> = {
   update: "Update",
   "service-providers": "Service Providers",
   permissions: "Roles & Permissions",
-  "back-office-users": "Back-office users",
   customers: "Customers",
   "support-tickets": "Support Tickets",
   pricing: "Pricing",

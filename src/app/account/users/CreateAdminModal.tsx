@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { CreateSystemAdminRequest } from "@/lib/api/backOfficeUsers";
 import { getRoleLabel } from "@/lib/auth/roles";
-import styles from "./back-office-users.module.css";
+import styles from "./adminUsers.module.css";
 
 type RoleOption = { id: number; name: string };
 

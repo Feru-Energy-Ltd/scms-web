@@ -28,7 +28,7 @@ import PageHeader from "@/components/account/PageHeader";
 import RowActionsMenu from "@/components/account/RowActionsMenu";
 import CreateAdminModal from "./CreateAdminModal";
 import EditAdminModal from "./EditAdminModal";
-import modalStyles from "./back-office-users.module.css";
+import modalStyles from "./adminUsers.module.css";
 
 type RoleRow = { id?: number; name?: string };
 
