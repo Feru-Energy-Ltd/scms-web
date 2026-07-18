@@ -59,7 +59,7 @@ function ProviderStaffView() {
     if (!providerId) {
       setStaff([]);
       setLoading(false);
-      setError("No provider context found. Staff list requires a provider-scoped session.");
+      setError("No provider context found. Staff list requires the user to be a staff member of a provider.");
       return;
     }
     setLoading(true);
