@@ -6,6 +6,7 @@ import { fetchOperatorDashboardStats, type OperatorDashboardStats } from "@/lib/
 import {
   fetchProviderTransactions,
   fetchSettlements,
+  fetchAggregateSettlements,
   type ProviderTransaction,
   type SettlementHistory,
   type PageResponse,
@@ -66,20 +67,19 @@ export default function BillingPage() {
   const [stStatus, setStStatus] = useState("");
 
   const loadSettlements = useCallback(async () => {
-    if (ctx.providerId == null) return;
+    if (ctx.providerId == null && ctx.identityType !== "SYSTEM_ADMIN") return;
     setStLoading(true);
     try {
-      const data = await fetchSettlements(
-        ctx.providerId, stPage, 20,
-        stStatus || undefined,
-      );
+      const data = ctx.providerId != null
+        ? await fetchSettlements(ctx.providerId, stPage, 20, stStatus || undefined)
+        : await fetchAggregateSettlements(stPage, 20, stStatus || undefined);
       setStData(data);
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load settlements." });
     } finally {
       setStLoading(false);
     }
-  }, [ctx.providerId, stPage, stStatus]);
+  }, [ctx.providerId, ctx.identityType, stPage, stStatus]);
 
   useEffect(() => {
     if (tab === "settlements") void loadSettlements();
