@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
 import styles from "./KpiCard.module.css";
 
 interface KpiCardProps {
@@ -9,6 +10,7 @@ interface KpiCardProps {
   delta?: string;
   deltaDir?: "up" | "down";
   accent?: boolean;
+  href?: string;
 }
 
 export default function KpiCard({
@@ -19,9 +21,10 @@ export default function KpiCard({
   delta,
   deltaDir = "up",
   accent,
+  href,
 }: KpiCardProps) {
-  return (
-    <div className={`${styles.card} ${accent ? styles.accent : ""}`}>
+  const content = (
+    <>
       {(Icon || delta) && (
         <div className={styles.top}>
           {Icon ? (
@@ -45,6 +48,20 @@ export default function KpiCard({
       <span className={styles.value}>{value}</span>
       <span className={styles.label}>{label}</span>
       {subtitle && <span className={styles.subtitle}>{subtitle}</span>}
-    </div>
+    </>
   );
+
+  const className = `${styles.card} ${accent ? styles.accent : ""} ${
+    href ? styles.linkCard : ""
+  }`;
+
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className={className}>{content}</div>;
 }

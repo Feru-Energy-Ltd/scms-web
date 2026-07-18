@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import DataTable, { type DataTableColumn } from "@/components/account/DataTable";
 import DeleteResourceModal from "@/components/account/DeleteResourceModal";
 import PageHeader from "@/components/account/PageHeader";
-import Pagination from "@/components/account/Pagination";
 import RowActionsMenu from "@/components/account/RowActionsMenu";
 import StationStatusModal, {
   type StationStatusModalTarget,
@@ -40,12 +40,12 @@ type StationDeleteTarget = {
   onlineCount?: number;
 };
 
+const PAGE_SIZE = 5;
+
 export default function ChargingStationsPage() {
   const router = useRouter();
   const [stations, setStations] = useState<ChargingStation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
   const [providerNames, setProviderNames] = useState<Map<number, string>>(
     () => new Map(),
   );
@@ -54,6 +54,13 @@ export default function ChargingStationsPage() {
     useState<StationStatusModalTarget | null>(null);
   const [deleteTarget, setDeleteTarget] =
     useState<StationDeleteTarget | null>(null);
+
+  // Server-side search / filter / pagination state.
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const perms = useMemo(() => new Set(getStoredPermissions()), []);
   const canRead =
@@ -64,24 +71,46 @@ export default function ChargingStationsPage() {
   const canDelete =
     perms.has("admin:chargers:delete")
 
+  const requestIdRef = useRef(0);
+
   const load = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
-      const res = await fetchStationsPage(page, 5);
+      const enabled =
+        statusFilter === "" ? undefined : statusFilter === "enabled";
+      const res = await fetchStationsPage({
+        page,
+        size: PAGE_SIZE,
+        search: search || undefined,
+        enabled,
+      });
+      // Ignore responses superseded by a newer request.
+      if (requestId !== requestIdRef.current) return;
       setStations(res.content ?? []);
       setTotalPages(res.totalPages ?? 0);
     } catch (e) {
+      if (requestId !== requestIdRef.current) return;
       showApiErrorToast(e, { fallbackMessage: "Could not load stations." });
       setStations([]);
       setTotalPages(0);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
-  }, [page]);
+  }, [page, search, statusFilter]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Debounce search input into the query that triggers a fetch.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   useEffect(() => {
     let alive = true;
@@ -137,6 +166,92 @@ export default function ChargingStationsPage() {
     }
   };
 
+  const columns = useMemo<DataTableColumn<ChargingStation>[]>(
+    () => [
+      { id: "stationId", header: "Station id", cell: (s) => s.stationId },
+      {
+        id: "provider",
+        header: "Provider",
+        cell: (s) => providerLabel(s.providerId, providerNames),
+      },
+      {
+        id: "address",
+        header: "Address",
+        cell: (s) => s.locationAddressName || "—",
+      },
+      {
+        id: "chargers",
+        header: "Chargers",
+        cell: (s) =>
+          s.chargeBoxCount > 0 ? (
+            <Link href={`/account/charge-boxes?stationId=${s.id}`}>
+              {s.chargeBoxCount}
+            </Link>
+          ) : (
+            s.chargeBoxCount
+          ),
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: (s) => {
+          const enabled = s.enabled !== false;
+          const busy = busyId === s.id;
+          const viewHref =
+            s.providerId != null
+              ? `/account/service-providers/${s.providerId}/stations/${s.id}`
+              : null;
+          return (
+            <RowActionsMenu
+              label={`Actions for ${s.stationId}`}
+              items={[
+                {
+                  label: "View",
+                  onClick: () => {
+                    if (viewHref) router.push(viewHref);
+                  },
+                  hidden: !canRead || !viewHref,
+                },
+                {
+                  label: enabled ? "Disable" : "Enable",
+                  onClick: () =>
+                    setToggleTarget({
+                      id: s.id,
+                      stationId: s.stationId,
+                      enabled,
+                      address: s.locationAddressName,
+                      provider: providerLabel(s.providerId, providerNames),
+                      chargeBoxCount: s.chargeBoxCount,
+                      onlineCount: s.onlineCount,
+                    }),
+                  hidden: !canToggle,
+                  disabled: busy,
+                },
+                {
+                  label: "Delete",
+                  onClick: () =>
+                    setDeleteTarget({
+                      id: s.id,
+                      stationId: s.stationId,
+                      enabled,
+                      address: s.locationAddressName || "—",
+                      provider: providerLabel(s.providerId, providerNames),
+                      chargeBoxCount: s.chargeBoxCount,
+                      onlineCount: s.onlineCount,
+                    }),
+                  destructive: true,
+                  hidden: !canDelete,
+                  disabled: busy,
+                },
+              ]}
+            />
+          );
+        },
+      },
+    ],
+    [busyId, canDelete, canRead, canToggle, providerNames, router],
+  );
+
   return (
     <div>
       <PageHeader
@@ -146,117 +261,41 @@ export default function ChargingStationsPage() {
         addHref="/account/stations/new"
       />
 
-      {loading ? (
-        <p className={styles.muted}>Loading…</p>
-      ) : stations.length === 0 ? (
-        <p className={styles.muted}>
-          No charging stations yet. Create one above, or add a charger (a station
-          is created automatically).
-        </p>
-      ) : (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th className={styles.th}>Station id</th>
-                <th className={styles.th}>Provider</th>
-                <th className={styles.th}>Address</th>
-                <th className={styles.th}>Chargers</th>
-                <th className={styles.th}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stations.map((s) => {
-                const enabled = s.enabled !== false;
-                const busy = busyId === s.id;
-                const viewHref =
-                  s.providerId != null
-                    ? `/account/service-providers/${s.providerId}/stations/${s.id}`
-                    : null;
-
-                return (
-                  <tr key={s.id}>
-                    <td className={styles.td}>{s.stationId}</td>
-                    <td className={styles.td}>
-                      {providerLabel(s.providerId, providerNames)}
-                    </td>
-                    <td className={styles.td}>
-                      {s.locationAddressName || "—"}
-                    </td>
-                    <td className={styles.td}>
-                      {s.chargeBoxCount > 0 ? (
-                        <Link
-                          href={`/account/charge-boxes?stationId=${s.id}`}
-                        >
-                          {s.chargeBoxCount}
-                        </Link>
-                      ) : (
-                        s.chargeBoxCount
-                      )}
-                    </td>
-                    <td className={styles.td}>
-                      <RowActionsMenu
-                        label={`Actions for ${s.stationId}`}
-                        items={[
-                          {
-                            label: "View",
-                            onClick: () => {
-                              if (viewHref) router.push(viewHref);
-                            },
-                            hidden: !canRead || !viewHref,
-                          },
-                          {
-                            label: enabled ? "Disable" : "Enable",
-                            onClick: () =>
-                              setToggleTarget({
-                                id: s.id,
-                                stationId: s.stationId,
-                                enabled,
-                                address: s.locationAddressName,
-                                provider: providerLabel(
-                                  s.providerId,
-                                  providerNames,
-                                ),
-                                chargeBoxCount: s.chargeBoxCount,
-                                onlineCount: s.onlineCount,
-                              }),
-                            hidden: !canToggle,
-                            disabled: busy,
-                          },
-                          {
-                            label: "Delete",
-                            onClick: () =>
-                              setDeleteTarget({
-                                id: s.id,
-                                stationId: s.stationId,
-                                enabled,
-                                address: s.locationAddressName || "—",
-                                provider: providerLabel(
-                                  s.providerId,
-                                  providerNames,
-                                ),
-                                chargeBoxCount: s.chargeBoxCount,
-                                onlineCount: s.onlineCount,
-                              }),
-                            destructive: true,
-                            hidden: !canDelete,
-                            disabled: busy,
-                          },
-                        ]}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-          />
-        </div>
-      )}
+      <DataTable
+        columns={columns}
+        rows={stations}
+        getRowKey={(s) => s.id}
+        manual
+        loading={loading}
+        searchable
+        searchPlaceholder="Search by station id or address"
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        filters={[
+          {
+            id: "status",
+            label: "Status",
+            options: [
+              { value: "", label: "All statuses" },
+              { value: "enabled", label: "Enabled" },
+              { value: "disabled", label: "Disabled" },
+            ],
+          },
+        ]}
+        filterValues={{ status: statusFilter }}
+        onFilterChange={(_id, value) => {
+          setStatusFilter(value);
+          setPage(0);
+        }}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        emptyMessage={
+          search || statusFilter
+            ? "No stations match your search."
+            : "No charging stations yet. Create one above, or add a charger (a station is created automatically)."
+        }
+      />
 
       {toggleTarget && (
         <StationStatusModal

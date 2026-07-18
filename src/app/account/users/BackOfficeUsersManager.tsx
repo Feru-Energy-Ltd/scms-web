@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
   assignSystemAdminRole,
@@ -23,6 +23,7 @@ import {
   showApiErrorToast,
 } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
+import DataTable, { type DataTableColumn } from "@/components/account/DataTable";
 import ConfirmModal from "@/components/account/ConfirmModal";
 import PageHeader from "@/components/account/PageHeader";
 import RowActionsMenu from "@/components/account/RowActionsMenu";
@@ -31,6 +32,10 @@ import EditAdminModal from "./EditAdminModal";
 import modalStyles from "./adminUsers.module.css";
 
 type RoleRow = { id?: number; name?: string };
+
+function roleNamesOf(admin: SystemAdminUser): string[] {
+  return Array.isArray(admin.roles) ? [...admin.roles] : admin.roles ? [...admin.roles] : [];
+}
 
 type BackOfficeUsersManagerProps = {
   title?: string;
@@ -204,6 +209,104 @@ export default function BackOfficeUsersManager({
     return roles.find((r) => r.name === name)?.id;
   }
 
+  const columns = useMemo<DataTableColumn<SystemAdminUser>[]>(
+    () => [
+      { id: "name", header: "Name", cell: (a) => a.displayName || "—" },
+      { id: "email", header: "Email", cell: (a) => a.email },
+      { id: "department", header: "Department", cell: (a) => a.department || "—" },
+      {
+        id: "roles",
+        header: "Roles",
+        cell: (a) => {
+          const names = roleNamesOf(a);
+          return names.length ? names.map((r) => getRoleLabel(r)).join(", ") : "—";
+        },
+      },
+      {
+        id: "status",
+        header: "Status",
+        cell: (a) => (
+          <span className={a.enabled ? styles.badgeOk : styles.badgeNo}>
+            {a.enabled ? "Active" : "Disabled"}
+          </span>
+        ),
+      },
+      ...(showActions
+        ? [
+            {
+              id: "actions",
+              header: "Actions",
+              cell: (admin: SystemAdminUser) => {
+                const roleNames = roleNamesOf(admin);
+                return (
+                  <RowActionsMenu
+                    label={`Actions for ${admin.displayName || admin.email}`}
+                    items={[
+                      {
+                        label: "Edit details",
+                        onClick: () => setEditTarget(admin),
+                        hidden: !canEdit,
+                        disabled: acting,
+                      },
+                      {
+                        label: "Assign role",
+                        onClick: () => {
+                          setAssignAdminId(admin.id);
+                          setSelectedRoleId("");
+                        },
+                        hidden: !canAssign,
+                        disabled: acting || !admin.enabled,
+                      },
+                      ...roleNames.flatMap((roleName) => {
+                        const roleId = roleIdByName(roleName);
+                        if (!canRemove || roleId == null) return [];
+                        return [
+                          {
+                            label: `Remove ${getRoleLabel(roleName)}`,
+                            onClick: () =>
+                              void handleRemove(admin.id, roleId, roleName),
+                            destructive: true,
+                            disabled: acting || !admin.enabled,
+                          },
+                        ];
+                      }),
+                      {
+                        label: "Activate",
+                        onClick: () => void handleSetStatus(admin, true),
+                        hidden:
+                          !canSetStatus || admin.enabled || !canModifyStatus(admin),
+                        disabled: acting,
+                      },
+                      {
+                        label: "Disable",
+                        onClick: () => setDisableTarget(admin),
+                        hidden:
+                          !canSetStatus || !admin.enabled || !canModifyStatus(admin),
+                        destructive: true,
+                        disabled: acting,
+                      },
+                    ]}
+                  />
+                );
+              },
+            } satisfies DataTableColumn<SystemAdminUser>,
+          ]
+        : []),
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [acting, canAssign, canEdit, canRemove, canSetStatus, roles, showActions],
+  );
+
+  const roleFilterOptions = useMemo(
+    () => [
+      { value: "", label: "All roles" },
+      ...roles
+        .filter((r): r is { id: number; name: string } => typeof r.name === "string")
+        .map((r) => ({ value: r.name, label: getRoleLabel(r.name) })),
+    ],
+    [roles],
+  );
+
   return (
     <div>
       <PageHeader
@@ -227,96 +330,39 @@ export default function BackOfficeUsersManager({
       ) : admins.length === 0 ? (
         <p className={styles.muted}>No back-office users found.</p>
       ) : (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th className={styles.th}>Name</th>
-                <th className={styles.th}>Email</th>
-                <th className={styles.th}>Department</th>
-                <th className={styles.th}>Roles</th>
-                <th className={styles.th}>Status</th>
-                {showActions && <th className={styles.th}>Actions</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {admins.map((admin) => {
-                const roleNames = Array.isArray(admin.roles)
-                  ? [...admin.roles]
-                  : admin.roles
-                    ? [...admin.roles]
-                    : [];
-                return (
-                  <tr key={admin.id}>
-                    <td className={styles.td}>{admin.displayName || "—"}</td>
-                    <td className={styles.td}>{admin.email}</td>
-                    <td className={styles.td}>{admin.department || "—"}</td>
-                    <td className={styles.td}>
-                      {roleNames.length
-                        ? roleNames.map((r) => getRoleLabel(r)).join(", ")
-                        : "—"}
-                    </td>
-                    <td className={styles.td}>
-                      <span className={admin.enabled ? styles.badgeOk : styles.badgeNo}>
-                        {admin.enabled ? "Active" : "Disabled"}
-                      </span>
-                    </td>
-                    {showActions && (
-                      <td className={styles.td}>
-                        <RowActionsMenu
-                          label={`Actions for ${admin.displayName || admin.email}`}
-                          items={[
-                            {
-                              label: "Edit details",
-                              onClick: () => setEditTarget(admin),
-                              hidden: !canEdit,
-                              disabled: acting,
-                            },
-                            {
-                              label: "Assign role",
-                              onClick: () => {
-                                setAssignAdminId(admin.id);
-                                setSelectedRoleId("");
-                              },
-                              hidden: !canAssign,
-                              disabled: acting || !admin.enabled,
-                            },
-                            ...roleNames.flatMap((roleName) => {
-                              const roleId = roleIdByName(roleName);
-                              if (!canRemove || roleId == null) return [];
-                              return [
-                                {
-                                  label: `Remove ${getRoleLabel(roleName)}`,
-                                  onClick: () =>
-                                    void handleRemove(admin.id, roleId, roleName),
-                                  destructive: true,
-                                  disabled: acting || !admin.enabled,
-                                },
-                              ];
-                            }),
-                            {
-                              label: "Activate",
-                              onClick: () => void handleSetStatus(admin, true),
-                              hidden: !canSetStatus || admin.enabled || !canModifyStatus(admin),
-                              disabled: acting,
-                            },
-                            {
-                              label: "Disable",
-                              onClick: () => setDisableTarget(admin),
-                              hidden: !canSetStatus || !admin.enabled || !canModifyStatus(admin),
-                              destructive: true,
-                              disabled: acting,
-                            },
-                          ]}
-                        />
-                      </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={columns}
+          rows={admins}
+          getRowKey={(a) => a.id}
+          searchable
+          searchPlaceholder="Search by name, email, or department"
+          searchAccessor={(a) =>
+            `${a.displayName ?? ""} ${a.email ?? ""} ${a.department ?? ""} ${roleNamesOf(a)
+              .map((r) => getRoleLabel(r))
+              .join(" ")}`
+          }
+          filters={[
+            {
+              id: "role",
+              label: "Role",
+              options: roleFilterOptions,
+              predicate: (a, value) => roleNamesOf(a).includes(value),
+            },
+            {
+              id: "status",
+              label: "Status",
+              options: [
+                { value: "", label: "All statuses" },
+                { value: "active", label: "Active" },
+                { value: "disabled", label: "Disabled" },
+              ],
+              predicate: (a, value) =>
+                value === "active" ? !!a.enabled : !a.enabled,
+            },
+          ]}
+          pageSize={10}
+          emptyMessage="No back-office users match your search."
+        />
       )}
 
       {showCreateModal && (

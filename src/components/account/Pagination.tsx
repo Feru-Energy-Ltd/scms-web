@@ -6,10 +6,12 @@ export default function Pagination({
   page,
   totalPages,
   onPageChange,
+  disabled = false,
 }: {
   page: number;
   totalPages: number;
   onPageChange: (p: number) => void;
+  disabled?: boolean;
 }) {
   const pages = Math.max(totalPages, 1);
   return (
@@ -17,7 +19,7 @@ export default function Pagination({
       <button
         type="button"
         className={styles.btn}
-        disabled={page <= 0}
+        disabled={disabled || page <= 0}
         onClick={() => onPageChange(page - 1)}
       >
         Previous
@@ -28,7 +30,7 @@ export default function Pagination({
       <button
         type="button"
         className={styles.btn}
-        disabled={page >= pages - 1}
+        disabled={disabled || page >= pages - 1}
         onClick={() => onPageChange(page + 1)}
       >
         Next

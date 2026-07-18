@@ -45,16 +45,30 @@ export async function createChargeBox(payload: CreateChargeBoxPayload) {
   });
 }
 
+export type ChargeBoxListOpts = {
+  stationId?: number;
+  enabled?: boolean;
+  /** Backend enum name: "Accepted" | "Rejected". */
+  registrationStatus?: RegistrationStatus;
+  /** Backend enum name: "ON" | "OFF". */
+  onlineStatus?: "ON" | "OFF";
+  search?: string;
+};
+
 export async function fetchChargeBoxes(
   page = 0,
   size = 20,
-  opts: { stationId?: number } = {},
+  opts: ChargeBoxListOpts = {},
 ) {
   const q = new URLSearchParams({
     page: String(page),
     size: String(size),
   });
   if (opts.stationId != null) q.set("stationId", String(opts.stationId));
+  if (opts.enabled != null) q.set("enabled", String(opts.enabled));
+  if (opts.registrationStatus) q.set("registrationStatus", opts.registrationStatus);
+  if (opts.onlineStatus) q.set("onlineStatus", opts.onlineStatus);
+  if (opts.search && opts.search.trim()) q.set("search", opts.search.trim());
   return apiRequestAuth<unknown>(csmsApiPath(`/chargeboxes?${q.toString()}`));
 }
 

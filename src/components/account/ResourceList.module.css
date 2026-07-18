@@ -117,6 +117,24 @@
   box-shadow: 0 0 0 3px rgba(1, 183, 99, 0.12);
 }
 
+.filterSelect {
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: inherit;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.12s;
+}
+
+.filterSelect:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(1, 183, 99, 0.12);
+}
+
 .button {
   display: inline-flex;
   align-items: center;

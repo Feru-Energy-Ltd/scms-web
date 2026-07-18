@@ -1,14 +1,14 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import ChargerStatusModal, {
   type ChargerStatusModalTarget,
 } from "@/components/account/ChargerStatusModal";
+import DataTable, { type DataTableColumn } from "@/components/account/DataTable";
 import DeleteResourceModal from "@/components/account/DeleteResourceModal";
 import PageHeader from "@/components/account/PageHeader";
-import Pagination from "@/components/account/Pagination";
 import RowActionsMenu from "@/components/account/RowActionsMenu";
 import styles from "@/components/account/ResourceList.module.css";
 import {
@@ -46,6 +46,12 @@ function rowEnabled(row: ChargerRow): boolean {
   return true;
 }
 
+const PAGE_SIZE = 5;
+
+function isAccepted(reg: string): boolean {
+  return reg.toLowerCase() === "accepted";
+}
+
 export default function AccountChargeBoxesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,8 +60,6 @@ export default function AccountChargeBoxesPage() {
   const stationFilter =
     stationId != null && Number.isFinite(stationId) ? stationId : undefined;
 
-  const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
   const [rows, setRows] = useState<ChargerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -63,6 +67,15 @@ export default function AccountChargeBoxesPage() {
     useState<ChargerDeleteTarget | null>(null);
   const [toggleTarget, setToggleTarget] =
     useState<ChargerStatusModalTarget | null>(null);
+
+  // Server-side search / filter / pagination state.
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [registrationFilter, setRegistrationFilter] = useState("");
+  const [onlineFilter, setOnlineFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const perms = useMemo(() => new Set(getStoredPermissions()), []);
   const canRead =
@@ -78,30 +91,56 @@ export default function AccountChargeBoxesPage() {
     perms.has("admin:reservations:read") ||
     perms.has("provider:reservations:read");
 
-  useEffect(() => {
-    setPage(0);
-  }, [stationFilter]);
+  const requestIdRef = useRef(0);
 
   const load = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
-      const raw = (await fetchChargeBoxes(page, 5, {
+      const enabled =
+        statusFilter === "" ? undefined : statusFilter === "enabled";
+      const raw = (await fetchChargeBoxes(page, PAGE_SIZE, {
         stationId: stationFilter,
+        search: search || undefined,
+        registrationStatus:
+          registrationFilter === ""
+            ? undefined
+            : (registrationFilter as "Accepted" | "Rejected"),
+        onlineStatus:
+          onlineFilter === "" ? undefined : (onlineFilter as "ON" | "OFF"),
+        enabled,
       })) as { totalPages?: number };
+      // Ignore responses superseded by a newer request.
+      if (requestId !== requestIdRef.current) return;
       setRows(asArray<ChargerRow>(raw));
       setTotalPages(raw?.totalPages ?? 0);
     } catch (e) {
+      if (requestId !== requestIdRef.current) return;
       showApiErrorToast(e, { fallbackMessage: "Could not load charge boxes." });
       setRows([]);
       setTotalPages(0);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
-  }, [page, stationFilter]);
+  }, [page, search, registrationFilter, onlineFilter, statusFilter, stationFilter]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Debounce search input into the query that triggers a fetch.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  // Reset to first page when the station scope (URL param) changes.
+  useEffect(() => {
+    setPage(0);
+  }, [stationFilter]);
 
   const applyToggle = async () => {
     if (!toggleTarget) return;
@@ -137,6 +176,113 @@ export default function AccountChargeBoxesPage() {
     }
   };
 
+  const columns = useMemo<DataTableColumn<ChargerRow>[]>(
+    () => [
+      {
+        id: "chargeBoxId",
+        header: "Charge box id",
+        cell: (row) => cell(row, "chargeBoxId", "id"),
+      },
+      { id: "station", header: "Station", cell: (row) => cell(row, "stationId") },
+      { id: "address", header: "Address", cell: (row) => cell(row, "address") },
+      {
+        id: "registration",
+        header: "Registration",
+        cell: (row) => {
+          const reg = cell(row, "registrationStatus", "registration");
+          return (
+            <span className={isAccepted(reg) ? styles.badgeOk : styles.badgeNo}>
+              {reg}
+            </span>
+          );
+        },
+      },
+      {
+        id: "online",
+        header: "Online",
+        cell: (row) => cell(row, "onlineStatus", "online", "status"),
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: (row, i) => {
+          const id = cell(row, "chargeBoxId", "id", "chargerId") || String(i);
+          const reg = cell(row, "registrationStatus", "registration");
+          const enabled = rowEnabled(row);
+          const busy = busyId === id;
+          const viewHref = `/account/charge-boxes/${encodeURIComponent(id)}`;
+          const editHref = `/account/charge-boxes/update/${encodeURIComponent(id)}`;
+          return (
+            <RowActionsMenu
+              label={`Actions for ${id}`}
+              items={[
+                {
+                  label: "View",
+                  onClick: () => router.push(viewHref),
+                  hidden: !canRead,
+                },
+                {
+                  label: "Edit",
+                  onClick: () => router.push(editHref),
+                  hidden: !canUpdate,
+                },
+                {
+                  label: "Transactions",
+                  onClick: () => router.push(`${viewHref}?tab=transactions`),
+                  hidden: !canReadTransactions,
+                },
+                {
+                  label: "Bookings",
+                  onClick: () => router.push(`${viewHref}?tab=bookings`),
+                  hidden: !canReadReservations,
+                },
+                {
+                  label: enabled ? "Disable" : "Enable",
+                  onClick: () =>
+                    setToggleTarget({
+                      id,
+                      enabled,
+                      station: cell(row, "stationId"),
+                      address: cell(row, "address"),
+                      onlineStatus: cell(row, "onlineStatus", "online", "status"),
+                      registration: reg,
+                    }),
+                  hidden: !canToggle,
+                  disabled: busy,
+                },
+                {
+                  label: "Delete",
+                  onClick: () =>
+                    setDeleteTarget({
+                      id,
+                      station: cell(row, "stationId"),
+                      address: cell(row, "address"),
+                      onlineStatus: cell(row, "onlineStatus", "online", "status"),
+                      registration: reg,
+                      enabled,
+                    }),
+                  destructive: true,
+                  hidden: !canDelete,
+                  disabled: busy,
+                },
+              ]}
+            />
+          );
+        },
+      },
+    ],
+    [
+      busyId,
+      canDelete,
+      canRead,
+      canReadReservations,
+      canReadTransactions,
+      canToggle,
+      canUpdate,
+      router,
+    ],
+  );
+
   return (
     <div>
       <PageHeader
@@ -146,132 +292,67 @@ export default function AccountChargeBoxesPage() {
         addLabel="New charger"
       />
 
-      {loading ? (
-        <p className={styles.muted}>Loading…</p>
-      ) : rows.length === 0 ? (
-        <p className={styles.muted}>No charge boxes.</p>
-      ) : (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th className={styles.th}>Charge box id</th>
-                <th className={styles.th}>Station</th>
-                <th className={styles.th}>Address</th>
-                <th className={styles.th}>Registration</th>
-                <th className={styles.th}>Online</th>
-                <th className={styles.th}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, i) => {
-                const id =
-                  cell(row, "chargeBoxId", "id", "chargerId") || String(i);
-                const reg = cell(row, "registrationStatus", "registration");
-                const accepted =
-                  reg.toLowerCase() === "accepted" || reg === "ACCEPTED";
-                const enabled = rowEnabled(row);
-                const busy = busyId === id;
-                const viewHref = `/account/charge-boxes/${encodeURIComponent(id)}`;
-                const editHref = `/account/charge-boxes/update/${encodeURIComponent(id)}`;
-
-                return (
-                  <tr key={`${id}-${i}`}>
-                    <td className={styles.td}>
-                      {cell(row, "chargeBoxId", "id")}
-                    </td>
-                    <td className={styles.td}>{cell(row, "stationId")}</td>
-                    <td className={styles.td}>{cell(row, "address")}</td>
-                    <td className={styles.td}>
-                      <span
-                        className={accepted ? styles.badgeOk : styles.badgeNo}
-                      >
-                        {reg}
-                      </span>
-                    </td>
-                    <td className={styles.td}>
-                      {cell(row, "onlineStatus", "online", "status")}
-                    </td>
-                    <td className={styles.td}>
-                      <RowActionsMenu
-                        label={`Actions for ${id}`}
-                        items={[
-                          {
-                            label: "View",
-                            onClick: () => router.push(viewHref),
-                            hidden: !canRead,
-                          },
-                          {
-                            label: "Edit",
-                            onClick: () => router.push(editHref),
-                            hidden: !canUpdate,
-                          },
-                          {
-                            label: "Transactions",
-                            onClick: () =>
-                              router.push(`${viewHref}?tab=transactions`),
-                            hidden: !canReadTransactions,
-                          },
-                          {
-                            label: "Bookings",
-                            onClick: () =>
-                              router.push(`${viewHref}?tab=bookings`),
-                            hidden: !canReadReservations,
-                          },
-                          {
-                            label: enabled ? "Disable" : "Enable",
-                            onClick: () =>
-                              setToggleTarget({
-                                id,
-                                enabled,
-                                station: cell(row, "stationId"),
-                                address: cell(row, "address"),
-                                onlineStatus: cell(
-                                  row,
-                                  "onlineStatus",
-                                  "online",
-                                  "status",
-                                ),
-                                registration: reg,
-                              }),
-                            hidden: !canToggle,
-                            disabled: busy,
-                          },
-                          {
-                            label: "Delete",
-                            onClick: () =>
-                              setDeleteTarget({
-                                id,
-                                station: cell(row, "stationId"),
-                                address: cell(row, "address"),
-                                onlineStatus: cell(
-                                  row,
-                                  "onlineStatus",
-                                  "online",
-                                  "status",
-                                ),
-                                registration: reg,
-                                enabled,
-                              }),
-                            destructive: true,
-                            hidden: !canDelete,
-                            disabled: busy,
-                          },
-                        ]}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-          />
-        </div>
-      )}
+      <DataTable
+        columns={columns}
+        rows={rows}
+        getRowKey={(row, i) =>
+          `${cell(row, "chargeBoxId", "id", "chargerId") || i}-${i}`
+        }
+        manual
+        loading={loading}
+        searchable
+        searchPlaceholder="Search by charge box id, station, or address"
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        filters={[
+          {
+            id: "registration",
+            label: "Registration",
+            options: [
+              { value: "", label: "All registrations" },
+              { value: "Accepted", label: "Accepted" },
+              { value: "Rejected", label: "Rejected" },
+            ],
+          },
+          {
+            id: "online",
+            label: "Online",
+            options: [
+              { value: "", label: "All connectivity" },
+              { value: "ON", label: "Online" },
+              { value: "OFF", label: "Offline" },
+            ],
+          },
+          {
+            id: "status",
+            label: "Status",
+            options: [
+              { value: "", label: "All statuses" },
+              { value: "enabled", label: "Enabled" },
+              { value: "disabled", label: "Disabled" },
+            ],
+          },
+        ]}
+        filterValues={{
+          registration: registrationFilter,
+          online: onlineFilter,
+          status: statusFilter,
+        }}
+        onFilterChange={(id, value) => {
+          if (id === "registration") setRegistrationFilter(value);
+          else if (id === "online") setOnlineFilter(value);
+          else if (id === "status") setStatusFilter(value);
+          setPage(0);
+        }}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        emptyMessage={
+          search || registrationFilter || onlineFilter || statusFilter
+            ? "No charge boxes match your search."
+            : "No charge boxes."
+        }
+      />
 
       {toggleTarget && (
         <ChargerStatusModal
