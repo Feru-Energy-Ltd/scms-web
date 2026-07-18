@@ -71,3 +71,15 @@ export async function fetchSettlements(
     paymentApiPath(`/operators/${operatorId}/settlements?${q.toString()}`),
   );
 }
+
+export async function fetchAggregateSettlements(
+  page = 0,
+  size = 20,
+  status?: string,
+): Promise<PageResponse<SettlementHistory>> {
+  const q = new URLSearchParams({ page: String(page), size: String(size) });
+  if (status) q.set("status", status);
+  return apiRequestAuth<PageResponse<SettlementHistory>>(
+    paymentApiPath(`/operators/settlements?${q.toString()}`),
+  );
+}

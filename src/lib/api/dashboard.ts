@@ -27,3 +27,7 @@ export async function fetchProviderDashboardStats(): Promise<ProviderDashboardSt
 export async function fetchOperatorDashboardStats(operatorId: number): Promise<OperatorDashboardStats | undefined> {
   return apiRequestAuth<OperatorDashboardStats>(paymentApiPath(`/operators/${operatorId}/dashboard`));
 }
+
+export async function fetchAggregateOperatorDashboardStats(): Promise<OperatorDashboardStats | undefined> {
+  return apiRequestAuth<OperatorDashboardStats>(paymentApiPath("/operators/dashboard"));
+}
