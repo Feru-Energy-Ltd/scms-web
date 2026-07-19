@@ -11,6 +11,7 @@ import {
 } from "@/lib/api/serviceProviders";
 import { asArray } from "@/lib/api/normalize";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
+import { formatApiUtcDateTime } from "@/lib/datetime/formatUtc";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 
 type ReservationRow = Partial<ReservationSummary> & Record<string, unknown>;
@@ -19,6 +20,7 @@ const PAGE_SIZE = 10;
 
 /** Statuses the backend treats as "active" (Accepted / Occupied / Pending). */
 const ACTIVE_STATUSES = new Set(["Accepted", "Occupied", "Pending"]);
+const SUCCESS_STATUSES = new Set(["Completed"]);
 const FAILED_STATUSES = new Set([
   "Cancelled",
   "Expired",
@@ -34,25 +36,11 @@ function text(value: unknown): string {
 
 function fmtDateTime(value: unknown): string {
   if (value == null || value === "") return "—";
-  const d = new Date(String(value));
-  if (Number.isNaN(d.getTime())) return String(value);
-  return d.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function fmtMoney(value: unknown): string {
-  if (value == null || value === "") return "—";
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-  return `RWF ${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+  return formatApiUtcDateTime(String(value));
 }
 
 function StatusBadge({ status }: { status: string }) {
-  if (ACTIVE_STATUSES.has(status)) {
+  if (ACTIVE_STATUSES.has(status) || SUCCESS_STATUSES.has(status)) {
     return <span className={styles.badgeOk}>{status}</span>;
   }
   if (FAILED_STATUSES.has(status)) {
@@ -145,11 +133,6 @@ export default function AccountReservationsPage() {
         id: "scheduledEnd",
         header: "Expiry",
         cell: (row) => fmtDateTime(row.scheduledEnd),
-      },
-      {
-        id: "reservationAmount",
-        header: "Amount",
-        cell: (row) => fmtMoney(row.reservationAmount),
       },
       {
         id: "locationAddress",

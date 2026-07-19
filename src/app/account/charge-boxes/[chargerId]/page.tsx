@@ -15,6 +15,7 @@ import {
   type ChargerTransaction,
   type ChargerBooking,
 } from "@/lib/api/chargeBoxes";
+import { formatApiUtcDateTime } from "@/lib/datetime/formatUtc";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import listStyles from "@/components/account/ResourceList.module.css";
 import styles from "./view.module.css";
@@ -111,11 +112,7 @@ export default function AccountChargeBoxViewPage() {
           </div>
           <div>
             <dt>Last heartbeat</dt>
-            <dd>
-              {charger.lastHeartbeatTimestamp
-                ? new Date(charger.lastHeartbeatTimestamp).toLocaleString()
-                : "—"}
-            </dd>
+            <dd>{formatApiUtcDateTime(charger.lastHeartbeatTimestamp)}</dd>
           </div>
         </dl>
         <ConnectorStatusDot status={charger.onlineStatus ?? "OFFLINE"} />
@@ -176,12 +173,12 @@ function TransactionsTab({ chargerId }: { chargerId: string }) {
     {
       id: "start",
       header: "Start",
-      cell: (r) => (r.startedAt ? new Date(r.startedAt).toLocaleString() : "—"),
+      cell: (r) => formatApiUtcDateTime(r.startedAt),
     },
     {
       id: "end",
       header: "End",
-      cell: (r) => (r.stoppedAt ? new Date(r.stoppedAt).toLocaleString() : "—"),
+      cell: (r) => formatApiUtcDateTime(r.stoppedAt),
     },
   ];
 
@@ -221,12 +218,12 @@ function BookingsTab({ chargerId }: { chargerId: string }) {
     {
       id: "start",
       header: "Scheduled Start",
-      cell: (r) => new Date(r.scheduledStart).toLocaleString(),
+      cell: (r) => formatApiUtcDateTime(r.scheduledStart),
     },
     {
       id: "end",
       header: "Scheduled End",
-      cell: (r) => new Date(r.scheduledEnd).toLocaleString(),
+      cell: (r) => formatApiUtcDateTime(r.scheduledEnd),
     },
     { id: "status", header: "Status", cell: (r) => r.status },
   ];
