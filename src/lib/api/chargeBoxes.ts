@@ -379,6 +379,7 @@ export type ReservationSummary = {
   reservationAmount?: number;
   providerId?: number | null;
   locationAddress?: string | null;
+  plateNumber?: string | null;
 };
 
 export type ReservationListOpts = {

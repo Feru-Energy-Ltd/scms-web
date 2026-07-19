@@ -126,7 +126,11 @@ export default function AccountReservationsPage() {
         header: "Connector",
         cell: (row) => text(row.connectorId),
       },
-      { id: "username", header: "User", cell: (row) => text(row.username) },
+      {
+        id: "plateNumber",
+        header: "Plate number",
+        cell: (row) => text(row.plateNumber),
+      },
       {
         id: "status",
         header: "Status",
