@@ -14,6 +14,7 @@ import {
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 import billingStyles from "./billing.module.css";
+import DateRangeFilters, { DateRangeHint, toIsoDayBounds } from "./DateRangeFilters";
 
 type Tab = "transactions" | "settlements";
 
@@ -42,12 +43,17 @@ export default function BillingPage() {
   const [txLoading, setTxLoading] = useState(false);
   const [txStatus, setTxStatus] = useState("");
   const [txCharger, setTxCharger] = useState("");
+  const [txFrom, setTxFrom] = useState("");
+  const [txTo, setTxTo] = useState("");
 
   const loadTransactions = useCallback(async () => {
     setTxLoading(true);
     try {
+      const { from, to } = toIsoDayBounds(txFrom, txTo);
       const data = await fetchProviderTransactions(
-        txPage, 20, undefined, undefined,
+        txPage, 20,
+        from,
+        to,
         txStatus || undefined,
         txCharger || undefined,
       );
@@ -57,7 +63,7 @@ export default function BillingPage() {
     } finally {
       setTxLoading(false);
     }
-  }, [txPage, txStatus, txCharger]);
+  }, [txPage, txStatus, txCharger, txFrom, txTo]);
 
   useEffect(() => {
     if (tab === "transactions") void loadTransactions();
@@ -68,21 +74,24 @@ export default function BillingPage() {
   const [stData, setStData] = useState<PageResponse<SettlementHistory> | null>(null);
   const [stLoading, setStLoading] = useState(false);
   const [stStatus, setStStatus] = useState("");
+  const [stFrom, setStFrom] = useState("");
+  const [stTo, setStTo] = useState("");
 
   const loadSettlements = useCallback(async () => {
     if (ctx.providerId == null && ctx.identityType !== "SYSTEM_ADMIN") return;
     setStLoading(true);
+    const { from, to } = toIsoDayBounds(stFrom, stTo);
     try {
       const data = ctx.providerId != null
-        ? await fetchSettlements(ctx.providerId, stPage, 20, stStatus || undefined)
-        : await fetchAggregateSettlements(stPage, 20, stStatus || undefined);
+        ? await fetchSettlements(ctx.providerId, stPage, 20, stStatus || undefined, from, to)
+        : await fetchAggregateSettlements(stPage, 20, stStatus || undefined, from, to);
       setStData(data);
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load settlements." });
     } finally {
       setStLoading(false);
     }
-  }, [ctx.providerId, ctx.identityType, stPage, stStatus]);
+  }, [ctx.providerId, ctx.identityType, stPage, stStatus, stFrom, stTo]);
 
   useEffect(() => {
     if (tab === "settlements") void loadSettlements();
@@ -194,6 +203,13 @@ export default function BillingPage() {
               onChange={(e) => { setTxCharger(e.target.value); setTxPage(0); }}
               style={{ minWidth: "140px" }}
             />
+            <DateRangeFilters
+              from={txFrom}
+              to={txTo}
+              onFromChange={(v) => { setTxFrom(v); setTxPage(0); }}
+              onToChange={(v) => { setTxTo(v); setTxPage(0); }}
+              onClear={() => { setTxFrom(""); setTxTo(""); setTxPage(0); }}
+            />
             <button type="button" className={styles.button} onClick={() => void loadTransactions()}>
               Refresh
             </button>
@@ -215,6 +231,12 @@ export default function BillingPage() {
               Page {txPage + 1}{txData ? ` of ${txData.totalPages}` : ""}
             </span>
           </div>
+
+          <DateRangeHint
+            from={txFrom}
+            to={txTo}
+            selectedHint="Showing transactions for the selected date range."
+          />
 
           {txLoading ? (
             <p className={styles.muted}>Loading...</p>
@@ -353,6 +375,13 @@ export default function BillingPage() {
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
+            <DateRangeFilters
+              from={stFrom}
+              to={stTo}
+              onFromChange={(v) => { setStFrom(v); setStPage(0); }}
+              onToChange={(v) => { setStTo(v); setStPage(0); }}
+              onClear={() => { setStFrom(""); setStTo(""); setStPage(0); }}
+            />
             <button type="button" className={styles.button} onClick={() => void loadSettlements()}>
               Refresh
             </button>
@@ -374,6 +403,12 @@ export default function BillingPage() {
               Page {stPage + 1}{stData ? ` of ${stData.totalPages}` : ""}
             </span>
           </div>
+
+          <DateRangeHint
+            from={stFrom}
+            to={stTo}
+            selectedHint="Showing settlements for the selected date range."
+          />
 
           {stLoading ? (
             <p className={styles.muted}>Loading...</p>

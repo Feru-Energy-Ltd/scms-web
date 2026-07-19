@@ -31,10 +31,7 @@ const MENU_SECTIONS: { label: string; entries: MenuEntry[] }[] = [
       },
       {
         item: { name: "Reservations", url: "/account/reservations" },
-        permissions: [
-          "admin:chargers:read",
-          "provider:chargers:read",
-        ],
+        permissions: ["admin:reservations:read", "provider:reservations:read"],
       },
     ],
   },
@@ -55,7 +52,7 @@ const MENU_SECTIONS: { label: string; entries: MenuEntry[] }[] = [
       },
       {
         item: { name: "Billing", url: "/account/billing" },
-        permissions: ["provider:reports:read"],
+        permissions: ["provider:reports:read", "admin:reports:read"],
       },
       {
         item: { name: "Reports", url: "/account/reports" },
