@@ -2,22 +2,27 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import DataTable, { type DataTableColumn } from "@/components/account/DataTable";
 import { SkeletonTable } from "@/components/account/Skeleton";
 import Pagination from "@/components/account/Pagination";
 import PageHeader from "@/components/account/PageHeader";
 import RowActionsMenu from "@/components/account/RowActionsMenu";
 import {
+  createSupportTicket,
   fetchSupportTickets,
   TICKET_STATUS_LABELS,
   type SupportTicket,
   type TicketStatus,
 } from "@/lib/api/supportTickets";
+import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { getStoredPermissions } from "@/lib/auth/session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import { formatApiUtcDateTime } from "@/lib/datetime/formatUtc";
 import styles from "@/components/account/ResourceList.module.css";
 import tabStyles from "@/components/account/Tabs.module.css";
+import ticketStyles from "./support-tickets.module.css";
+import CreateTicketDrawer from "./CreateTicketDrawer";
 
 const PAGE_SIZE = 20;
 
@@ -26,7 +31,7 @@ type StatusFilter = "ALL" | TicketStatus;
 const FILTERS: { key: StatusFilter; label: string }[] = [
   { key: "ALL", label: "All" },
   { key: "AWAITING_SUPPORT", label: "Awaiting support" },
-  { key: "AWAITING_CUSTOMER", label: "Awaiting customer" },
+  { key: "AWAITING_CUSTOMER", label: "Awaiting reply" },
   { key: "OPEN", label: "Open" },
   { key: "RESOLVED", label: "Resolved" },
   { key: "CLOSED", label: "Closed" },
@@ -45,9 +50,14 @@ export default function SupportTicketsPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [rows, setRows] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
 
-  const perms = new Set(getStoredPermissions());
-  const canRead = perms.has("admin:support:read") || perms.has("provider:support:read");
+  const perms = useMemo(() => new Set(getStoredPermissions()), []);
+  const identityType = getAccessTokenContext().identityType;
+  const isProvider = identityType === "SERVICE_PROVIDER";
+  const isAdmin = perms.has("admin:support:read");
+  const canRead = isAdmin || perms.has("provider:support:read");
+  const canCreate = isProvider && perms.has("provider:support:create");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,19 +86,54 @@ export default function SupportTicketsPage() {
     void load();
   }, [canRead, load]);
 
-  const columns = useMemo<DataTableColumn<SupportTicket>[]>(
-    () => [
+  async function handleCreate(input: { subject: string; message: string }) {
+    try {
+      const ticket = await createSupportTicket(input);
+      toast.success("Support ticket created.");
+      setCreateOpen(false);
+      router.push(`/account/support-tickets/${ticket.id}`);
+    } catch (e) {
+      showApiErrorToast(e, { fallbackMessage: "Could not create the ticket." });
+    }
+  }
+
+  const columns = useMemo<DataTableColumn<SupportTicket>[]>(() => {
+    const cols: DataTableColumn<SupportTicket>[] = [
       {
         id: "ticketNumber",
         header: "Ticket",
         cell: (r) => <span className={styles.muted}>{r.ticketNumber}</span>,
       },
-      { id: "subject", header: "Subject", cell: (r) => r.subject || "—" },
       {
-        id: "customer",
-        header: "Customer",
-        cell: (r) => r.customerName?.trim() || r.customerEmail || "—",
+        id: "origin",
+        header: "Origin",
+        cell: (r) => {
+          const label = r.originLabel?.trim() || (r.providerId != null ? "Provider" : "Customer");
+          const isCustomer = r.providerId == null;
+          return (
+            <span
+              className={
+                isCustomer
+                  ? `${ticketStyles.originFlare} ${ticketStyles.originFlareCustomer}`
+                  : `${ticketStyles.originFlare} ${ticketStyles.originFlareProvider}`
+              }
+              title={label}
+            >
+              {label}
+            </span>
+          );
+        },
       },
+      { id: "subject", header: "Subject", cell: (r) => r.subject || "—" },
+    ];
+    if (isAdmin) {
+      cols.push({
+        id: "customer",
+        header: "Requester",
+        cell: (r) => r.customerName?.trim() || r.customerEmail || "—",
+      });
+    }
+    cols.push(
       {
         id: "status",
         header: "Status",
@@ -118,16 +163,16 @@ export default function SupportTicketsPage() {
           />
         ),
       },
-    ],
-    [router],
-  );
+    );
+    return cols;
+  }, [isAdmin, router]);
 
   if (!canRead) {
     return (
       <div>
         <PageHeader
           title="Support Tickets"
-          description="Customer support requests and conversations."
+          description="Support requests and conversations."
         />
         <p className={styles.muted}>
           You do not have permission to view support tickets.
@@ -140,7 +185,13 @@ export default function SupportTicketsPage() {
     <div>
       <PageHeader
         title="Support Tickets"
-        description="Review customer requests, reply, and resolve issues."
+        description={
+          isProvider
+            ? "Tickets your organization opened with platform support."
+            : "Review customer and provider requests, reply, and resolve issues."
+        }
+        addLabel={canCreate ? "New ticket" : undefined}
+        onAdd={canCreate ? () => setCreateOpen(true) : undefined}
       />
 
       <div className={tabStyles.tabList} role="tablist">
@@ -162,7 +213,7 @@ export default function SupportTicketsPage() {
       </div>
 
       {loading ? (
-        <SkeletonTable cols={6} />
+        <SkeletonTable cols={isAdmin ? 7 : 6} />
       ) : rows.length === 0 ? (
         <p className={styles.muted}>No tickets found.</p>
       ) : (
@@ -171,6 +222,13 @@ export default function SupportTicketsPage() {
           <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </>
       )}
+
+      {createOpen ? (
+        <CreateTicketDrawer
+          onClose={() => setCreateOpen(false)}
+          onSubmit={handleCreate}
+        />
+      ) : null}
     </div>
   );
 }

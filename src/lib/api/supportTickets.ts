@@ -12,7 +12,7 @@ export type TicketStatus =
 
 export type TicketSource = "MOBILE" | "WEB";
 
-export type AuthorType = "CUSTOMER" | "ADMIN" | "SYSTEM";
+export type AuthorType = "CUSTOMER" | "PROVIDER" | "ADMIN" | "SYSTEM";
 
 export type MessageChannel = "APP" | "EMAIL" | "ADMIN_PORTAL";
 
@@ -31,6 +31,10 @@ export interface SupportTicket {
   subject: string;
   status: TicketStatus;
   source: TicketSource;
+  /** Present when opened by a service provider. */
+  providerId: number | null;
+  /** "Customer" or the provider business name at ticket creation. */
+  originLabel: string;
   customerEmail: string;
   customerName: string | null;
   createdAt: string;
@@ -57,6 +61,20 @@ export async function fetchSupportTickets(
 
 export async function fetchSupportTicket(id: number): Promise<SupportTicket> {
   return apiRequestAuth<SupportTicket>(`${BASE}/${id}`);
+}
+
+export async function createSupportTicket(input: {
+  subject: string;
+  message: string;
+}): Promise<SupportTicket> {
+  return apiRequestAuth<SupportTicket>(BASE, {
+    method: "POST",
+    body: {
+      subject: input.subject,
+      message: input.message,
+      source: "WEB",
+    },
+  });
 }
 
 export async function replyToTicket(

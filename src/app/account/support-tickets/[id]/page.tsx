@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { ArrowLeft, CheckCircle2, RotateCcw, Send } from "lucide-react";
@@ -14,6 +14,7 @@ import {
   type SupportTicket,
   type TicketMessage,
 } from "@/lib/api/supportTickets";
+import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { getStoredPermissions } from "@/lib/auth/session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import { formatApiUtcDateTime } from "@/lib/datetime/formatUtc";
@@ -48,9 +49,13 @@ export default function SupportTicketDetailPage() {
   const [sending, setSending] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
 
-  const perms = new Set(getStoredPermissions());
-  const canRead = perms.has("admin:support:read") || perms.has("provider:support:read");
-  const canUpdate = perms.has("admin:support:update") || perms.has("provider:support:update");
+  const perms = useMemo(() => new Set(getStoredPermissions()), []);
+  const isProvider = getAccessTokenContext().identityType === "SERVICE_PROVIDER";
+  const canRead =
+    perms.has("admin:support:read") || perms.has("provider:support:read");
+  const canReply =
+    perms.has("admin:support:update") || perms.has("provider:support:update");
+  const canManageStatus = perms.has("admin:support:update");
 
   useTicketBreadcrumb(params?.id, ticket?.ticketNumber);
 
@@ -87,7 +92,7 @@ export default function SupportTicketDetailPage() {
       const updated = await replyToTicket(ticket.id, body);
       setTicket(updated);
       setReply("");
-      toast.success("Reply sent to the customer.");
+      toast.success(isProvider ? "Message sent." : "Reply sent to the requester.");
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not send your reply." });
     } finally {
@@ -151,19 +156,35 @@ export default function SupportTicketDetailPage() {
           <div className={styles.metaRow}>
             <span>{ticket.ticketNumber}</span>
             <span>·</span>
-            <span>
-              {ticket.customerName?.trim() || ticket.customerEmail}
-              {ticket.customerName?.trim() ? (
-                <>
-                  {" "}
-                  &lt;
-                  <a href={`mailto:${ticket.customerEmail}`}>
-                    {ticket.customerEmail}
-                  </a>
-                  &gt;
-                </>
-              ) : null}
+            <span
+              className={
+                ticket.providerId == null
+                  ? `${styles.originFlare} ${styles.originFlareCustomer}`
+                  : `${styles.originFlare} ${styles.originFlareProvider}`
+              }
+              title={ticket.originLabel}
+            >
+              {ticket.originLabel?.trim() ||
+                (ticket.providerId != null ? "Provider" : "Customer")}
             </span>
+            {!isProvider ? (
+              <>
+                <span>·</span>
+                <span>
+                  {ticket.customerName?.trim() || ticket.customerEmail}
+                  {ticket.customerName?.trim() ? (
+                    <>
+                      {" "}
+                      &lt;
+                      <a href={`mailto:${ticket.customerEmail}`}>
+                        {ticket.customerEmail}
+                      </a>
+                      &gt;
+                    </>
+                  ) : null}
+                </span>
+              </>
+            ) : null}
             <span>·</span>
             <span>via {ticket.source === "MOBILE" ? "Mobile app" : "Web"}</span>
             <span>·</span>
@@ -175,7 +196,7 @@ export default function SupportTicketDetailPage() {
           <span className={statusClass(ticket.status)}>
             {TICKET_STATUS_LABELS[ticket.status]}
           </span>
-          {canUpdate && ticket.status !== "CLOSED" ? (
+          {canManageStatus && ticket.status !== "CLOSED" ? (
             ticket.status === "RESOLVED" ? (
               <button
                 type="button"
@@ -220,21 +241,23 @@ export default function SupportTicketDetailPage() {
         ))}
       </div>
 
-      {!canUpdate ? null : isTerminal ? (
+      {!canReply ? null : isTerminal ? (
         <p className={styles.note}>
           {ticket.status === "RESOLVED"
-            ? "This ticket is resolved. Reopen it to continue the conversation."
+            ? isProvider
+              ? "This ticket is resolved. Contact support if you need to reopen it."
+              : "This ticket is resolved. Reopen it to continue the conversation."
             : "This ticket is closed and can no longer receive replies."}
         </p>
       ) : (
         <div className={styles.replyCard}>
           <label className={styles.replyLabel} htmlFor="ticket-reply">
-            Reply to customer
+            {isProvider ? "Add a message" : "Reply to requester"}
           </label>
           <textarea
             id="ticket-reply"
             className={styles.replyTextarea}
-            placeholder="Write your reply…"
+            placeholder="Write your message…"
             value={reply}
             onChange={(e) => setReply(e.target.value)}
             disabled={sending}
@@ -247,7 +270,7 @@ export default function SupportTicketDetailPage() {
               onClick={handleReply}
             >
               <Send size={16} aria-hidden />
-              {sending ? "Sending…" : "Send reply"}
+              {sending ? "Sending…" : "Send"}
             </button>
           </div>
         </div>
