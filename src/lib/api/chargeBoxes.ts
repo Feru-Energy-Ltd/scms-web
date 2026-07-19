@@ -366,7 +366,34 @@ export type ChargerBooking = {
   reservationAmount?: number;
 };
 
-type Page<T> = { content: T[]; totalElements: number; number: number };
+// Mirrors csms-service ReservationSummaryDto (estate-wide reservation listing).
+export type ReservationSummary = {
+  id: number;
+  chargeBoxId: string;
+  connectorId: number;
+  username: string;
+  idTag: string;
+  scheduledStart: string;
+  scheduledEnd: string;
+  status: string;
+  reservationAmount?: number;
+  providerId?: number | null;
+  locationAddress?: string | null;
+};
+
+export type ReservationListOpts = {
+  /** Only return currently-active reservations (Accepted/Occupied/Pending). */
+  active?: boolean;
+  /** Admins only: drill down into a single provider's reservations. */
+  providerId?: number;
+};
+
+type Page<T> = {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+};
 
 export async function fetchChargerDetail(chargeBoxId: string): Promise<ChargerDetail> {
   // GET /chargeboxes/{id} returns ResponseObject<ChargeBox> = { status, data, code, message }.
@@ -388,4 +415,21 @@ export async function fetchChargerBookings(chargeBoxId: string, page = 0, size =
   return apiRequestAuth<Page<ChargerBooking>>(
     csmsApiPath(`/chargeboxes/${chargeBoxId}/reservations?${q}`),
   );
+}
+
+/**
+ * Estate-wide reservation listing. Admins see all reservations; providers are automatically
+ * scoped to their own chargers by the backend. Set `opts.active` for only live reservations.
+ */
+export async function fetchReservations(
+  page = 0,
+  size = 20,
+  opts: ReservationListOpts = {},
+) {
+  const q = new URLSearchParams({ page: String(page), size: String(size) });
+  if (opts.providerId != null) q.set("providerId", String(opts.providerId));
+  const path = opts.active
+    ? "/chargeboxes/reservations/active"
+    : "/chargeboxes/reservations";
+  return apiRequestAuth<Page<ReservationSummary>>(csmsApiPath(`${path}?${q}`));
 }
