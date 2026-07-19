@@ -134,6 +134,17 @@ export default function DataTable<Row>({
       ? Math.max(1, Math.ceil(visibleRows.length / pageSize!))
       : 1;
 
+  // When client-side pagination shrinks below the stored page index (e.g. the
+  // parent passes fewer rows, or a filter reduces the result set), reset the
+  // stored page during render instead of in an effect. This keeps internalPage
+  // from going stale — otherwise a later, larger dataset would reopen on the old
+  // high page index rather than the first page. Adjusting state during render is
+  // the React-recommended pattern for this and re-renders immediately without a
+  // visible intermediate frame.
+  if (!controlledPage && internalPage > computedTotalPages - 1 && internalPage !== 0) {
+    setInternalPage(0);
+  }
+
   const rawCurrentPage = controlledPage ? (page ?? 0) : internalPage;
   const currentPage = Math.max(0, Math.min(rawCurrentPage, computedTotalPages - 1));
 
