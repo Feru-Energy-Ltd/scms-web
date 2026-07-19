@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Pagination from "./Pagination";
 import styles from "./ResourceList.module.css";
 
@@ -89,16 +89,20 @@ export default function DataTable<Row>({
   );
 
   const searchVal = controlledSearch ? (searchValue ?? "") : internalSearch;
-  const setSearchVal = (v: string) =>
-    controlledSearch ? onSearchChange!(v) : setInternalSearch(v);
+  const setSearchVal = (v: string) => {
+    if (!controlledPage) setInternalPage(0);
+    if (controlledSearch) onSearchChange!(v);
+    else setInternalSearch(v);
+  };
 
   const activeFilterValues = controlledFilters
     ? (filterValues ?? {})
     : internalFilterValues;
-  const setFilterVal = (id: string, v: string) =>
-    controlledFilters
-      ? onFilterChange!(id, v)
-      : setInternalFilterValues((prev) => ({ ...prev, [id]: v }));
+  const setFilterVal = (id: string, v: string) => {
+    if (!controlledPage) setInternalPage(0);
+    if (controlledFilters) onFilterChange!(id, v);
+    else setInternalFilterValues((prev) => ({ ...prev, [id]: v }));
+  };
 
   const hasToolbar = searchable || (filters?.length ?? 0) > 0 || toolbarActions != null;
 
@@ -130,15 +134,19 @@ export default function DataTable<Row>({
       ? Math.max(1, Math.ceil(visibleRows.length / pageSize!))
       : 1;
 
-  const currentPage = controlledPage ? (page ?? 0) : internalPage;
+  // When client-side pagination shrinks below the stored page index (e.g. the
+  // parent passes fewer rows, or a filter reduces the result set), reset the
+  // stored page during render instead of in an effect. This keeps internalPage
+  // from going stale — otherwise a later, larger dataset would reopen on the old
+  // high page index rather than the first page. Adjusting state during render is
+  // the React-recommended pattern for this and re-renders immediately without a
+  // visible intermediate frame.
+  if (!controlledPage && internalPage > computedTotalPages - 1 && internalPage !== 0) {
+    setInternalPage(0);
+  }
 
-  useEffect(() => {
-    if (!controlledPage) setInternalPage(0);
-  }, [controlledPage, searchVal, internalFilterValues]);
-
-  useEffect(() => {
-    if (!controlledPage && currentPage > computedTotalPages - 1) setInternalPage(0);
-  }, [controlledPage, currentPage, computedTotalPages]);
+  const rawCurrentPage = controlledPage ? (page ?? 0) : internalPage;
+  const currentPage = Math.max(0, Math.min(rawCurrentPage, computedTotalPages - 1));
 
   const pagedRows = clientPaged
     ? visibleRows.slice(currentPage * pageSize!, currentPage * pageSize! + pageSize!)
