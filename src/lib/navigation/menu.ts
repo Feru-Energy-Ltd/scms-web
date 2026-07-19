@@ -29,6 +29,13 @@ const MENU_SECTIONS: { label: string; entries: MenuEntry[] }[] = [
         item: { name: "Charge Boxes", url: "/account/charge-boxes" },
         permissions: ["admin:chargers:read", "provider:chargers:read"],
       },
+      {
+        item: { name: "Reservations", url: "/account/reservations" },
+        permissions: [
+          "admin:chargers:read",
+          "provider:chargers:read",
+        ],
+      },
     ],
   },
   {

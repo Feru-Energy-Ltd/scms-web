@@ -142,7 +142,7 @@ export default function AccountDashboardPage() {
           icon={CalendarClock}
           label="Active Reservations"
           value={fmt(providerStats?.activeReservations)}
-          href="/account/charge-boxes"
+          href="/account/reservations"
         />
       </div>
 
