@@ -42,12 +42,16 @@ export default function BillingPage() {
   const [txLoading, setTxLoading] = useState(false);
   const [txStatus, setTxStatus] = useState("");
   const [txCharger, setTxCharger] = useState("");
+  const [txFrom, setTxFrom] = useState("");
+  const [txTo, setTxTo] = useState("");
 
   const loadTransactions = useCallback(async () => {
     setTxLoading(true);
     try {
       const data = await fetchProviderTransactions(
-        txPage, 20, undefined, undefined,
+        txPage, 20,
+        txFrom ? `${txFrom}T00:00:00.000Z` : undefined,
+        txTo ? `${txTo}T23:59:59.999Z` : undefined,
         txStatus || undefined,
         txCharger || undefined,
       );
@@ -57,7 +61,7 @@ export default function BillingPage() {
     } finally {
       setTxLoading(false);
     }
-  }, [txPage, txStatus, txCharger]);
+  }, [txPage, txStatus, txCharger, txFrom, txTo]);
 
   useEffect(() => {
     if (tab === "transactions") void loadTransactions();
@@ -68,21 +72,25 @@ export default function BillingPage() {
   const [stData, setStData] = useState<PageResponse<SettlementHistory> | null>(null);
   const [stLoading, setStLoading] = useState(false);
   const [stStatus, setStStatus] = useState("");
+  const [stFrom, setStFrom] = useState("");
+  const [stTo, setStTo] = useState("");
 
   const loadSettlements = useCallback(async () => {
     if (ctx.providerId == null && ctx.identityType !== "SYSTEM_ADMIN") return;
     setStLoading(true);
+    const from = stFrom ? `${stFrom}T00:00:00.000Z` : undefined;
+    const to = stTo ? `${stTo}T23:59:59.999Z` : undefined;
     try {
       const data = ctx.providerId != null
-        ? await fetchSettlements(ctx.providerId, stPage, 20, stStatus || undefined)
-        : await fetchAggregateSettlements(stPage, 20, stStatus || undefined);
+        ? await fetchSettlements(ctx.providerId, stPage, 20, stStatus || undefined, from, to)
+        : await fetchAggregateSettlements(stPage, 20, stStatus || undefined, from, to);
       setStData(data);
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load settlements." });
     } finally {
       setStLoading(false);
     }
-  }, [ctx.providerId, ctx.identityType, stPage, stStatus]);
+  }, [ctx.providerId, ctx.identityType, stPage, stStatus, stFrom, stTo]);
 
   useEffect(() => {
     if (tab === "settlements") void loadSettlements();
@@ -194,6 +202,35 @@ export default function BillingPage() {
               onChange={(e) => { setTxCharger(e.target.value); setTxPage(0); }}
               style={{ minWidth: "140px" }}
             />
+            <label className={styles.muted} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              From
+              <input
+                type="date"
+                className={styles.searchInput}
+                value={txFrom}
+                max={txTo || undefined}
+                onChange={(e) => { setTxFrom(e.target.value); setTxPage(0); }}
+              />
+            </label>
+            <label className={styles.muted} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              To
+              <input
+                type="date"
+                className={styles.searchInput}
+                value={txTo}
+                min={txFrom || undefined}
+                onChange={(e) => { setTxTo(e.target.value); setTxPage(0); }}
+              />
+            </label>
+            {(txFrom || txTo) && (
+              <button
+                type="button"
+                className={styles.button}
+                onClick={() => { setTxFrom(""); setTxTo(""); setTxPage(0); }}
+              >
+                Clear dates
+              </button>
+            )}
             <button type="button" className={styles.button} onClick={() => void loadTransactions()}>
               Refresh
             </button>
@@ -215,6 +252,12 @@ export default function BillingPage() {
               Page {txPage + 1}{txData ? ` of ${txData.totalPages}` : ""}
             </span>
           </div>
+
+          <p className={styles.muted} style={{ fontSize: "0.8rem", marginTop: "-0.25rem" }}>
+            {txFrom || txTo
+              ? "Showing transactions for the selected date range."
+              : "Showing the last 90 days by default. Use the date filters to change the range."}
+          </p>
 
           {txLoading ? (
             <p className={styles.muted}>Loading...</p>
@@ -353,6 +396,35 @@ export default function BillingPage() {
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
+            <label className={styles.muted} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              From
+              <input
+                type="date"
+                className={styles.searchInput}
+                value={stFrom}
+                max={stTo || undefined}
+                onChange={(e) => { setStFrom(e.target.value); setStPage(0); }}
+              />
+            </label>
+            <label className={styles.muted} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              To
+              <input
+                type="date"
+                className={styles.searchInput}
+                value={stTo}
+                min={stFrom || undefined}
+                onChange={(e) => { setStTo(e.target.value); setStPage(0); }}
+              />
+            </label>
+            {(stFrom || stTo) && (
+              <button
+                type="button"
+                className={styles.button}
+                onClick={() => { setStFrom(""); setStTo(""); setStPage(0); }}
+              >
+                Clear dates
+              </button>
+            )}
             <button type="button" className={styles.button} onClick={() => void loadSettlements()}>
               Refresh
             </button>
@@ -374,6 +446,12 @@ export default function BillingPage() {
               Page {stPage + 1}{stData ? ` of ${stData.totalPages}` : ""}
             </span>
           </div>
+
+          <p className={styles.muted} style={{ fontSize: "0.8rem", marginTop: "-0.25rem" }}>
+            {stFrom || stTo
+              ? "Showing settlements for the selected date range."
+              : "Showing the last 90 days by default. Use the date filters to change the range."}
+          </p>
 
           {stLoading ? (
             <p className={styles.muted}>Loading...</p>
