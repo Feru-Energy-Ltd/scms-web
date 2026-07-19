@@ -68,7 +68,7 @@ const MENU_SECTIONS: { label: string; entries: MenuEntry[] }[] = [
       },
       {
         item: { name: "Support Tickets", url: "/account/support-tickets" },
-        permissions: ["admin:support:read"],
+        permissions: ["admin:support:read", "provider:support:read"],
       },
       {
         item: { name: "Pricing", url: "/account/pricing" },

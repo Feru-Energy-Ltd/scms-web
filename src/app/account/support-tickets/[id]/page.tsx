@@ -49,8 +49,8 @@ export default function SupportTicketDetailPage() {
   const [statusUpdating, setStatusUpdating] = useState(false);
 
   const perms = new Set(getStoredPermissions());
-  const canRead = perms.has("admin:support:read");
-  const canUpdate = perms.has("admin:support:update");
+  const canRead = perms.has("admin:support:read") || perms.has("provider:support:read");
+  const canUpdate = perms.has("admin:support:update") || perms.has("provider:support:update");
 
   useTicketBreadcrumb(params?.id, ticket?.ticketNumber);
 
