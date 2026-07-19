@@ -47,7 +47,7 @@ export default function SupportTicketsPage() {
   const [loading, setLoading] = useState(true);
 
   const perms = new Set(getStoredPermissions());
-  const canRead = perms.has("admin:support:read");
+  const canRead = perms.has("admin:support:read") || perms.has("provider:support:read");
 
   const load = useCallback(async () => {
     setLoading(true);
