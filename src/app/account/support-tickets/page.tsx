@@ -51,7 +51,6 @@ export default function SupportTicketsPage() {
   const [rows, setRows] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
-  const [creating, setCreating] = useState(false);
 
   const perms = useMemo(() => new Set(getStoredPermissions()), []);
   const identityType = getAccessTokenContext().identityType;
@@ -88,7 +87,6 @@ export default function SupportTicketsPage() {
   }, [canRead, load]);
 
   async function handleCreate(input: { subject: string; message: string }) {
-    setCreating(true);
     try {
       const ticket = await createSupportTicket(input);
       toast.success("Support ticket created.");
@@ -96,8 +94,6 @@ export default function SupportTicketsPage() {
       router.push(`/account/support-tickets/${ticket.id}`);
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not create the ticket." });
-    } finally {
-      setCreating(false);
     }
   }
 
@@ -227,12 +223,12 @@ export default function SupportTicketsPage() {
         </>
       )}
 
-      <CreateTicketDrawer
-        open={createOpen}
-        submitting={creating}
-        onClose={() => setCreateOpen(false)}
-        onSubmit={handleCreate}
-      />
+      {createOpen ? (
+        <CreateTicketDrawer
+          onClose={() => setCreateOpen(false)}
+          onSubmit={handleCreate}
+        />
+      ) : null}
     </div>
   );
 }

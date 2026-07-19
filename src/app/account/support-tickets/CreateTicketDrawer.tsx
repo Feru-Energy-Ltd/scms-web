@@ -1,48 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import Drawer from "@/components/account/Drawer";
 import styles from "./support-tickets.module.css";
 
 type Props = {
-  open: boolean;
-  submitting: boolean;
   onClose: () => void;
-  onSubmit: (input: { subject: string; message: string }) => void;
+  onSubmit: (input: {
+    subject: string;
+    message: string;
+  }) => void | Promise<void>;
 };
 
-export default function CreateTicketDrawer({
-  open,
-  submitting,
-  onClose,
-  onSubmit,
-}: Props) {
+export default function CreateTicketDrawer({ onClose, onSubmit }: Props) {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   const inFlightRef = useRef(false);
 
-  const busy = submitting || pending;
-
-  useEffect(() => {
-    if (!open) {
-      setSubject("");
-      setMessage("");
-      setPending(false);
-      inFlightRef.current = false;
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (!submitting) {
-      setPending(false);
-      inFlightRef.current = false;
-    }
-  }, [submitting]);
-
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (inFlightRef.current || submitting) return;
+    if (inFlightRef.current || pending) return;
 
     const trimmedSubject = subject.trim();
     const trimmedMessage = message.trim();
@@ -50,18 +28,23 @@ export default function CreateTicketDrawer({
 
     inFlightRef.current = true;
     setPending(true);
-    onSubmit({ subject: trimmedSubject, message: trimmedMessage });
+    try {
+      await onSubmit({ subject: trimmedSubject, message: trimmedMessage });
+    } finally {
+      inFlightRef.current = false;
+      setPending(false);
+    }
   }
 
   function handleClose() {
-    if (busy) return;
+    if (pending) return;
     onClose();
   }
 
   const valid = subject.trim().length > 0 && message.trim().length > 0;
 
   return (
-    <Drawer open={open} title="New support ticket" onClose={handleClose}>
+    <Drawer open title="New support ticket" onClose={handleClose}>
       <form onSubmit={handleSubmit}>
         <p className={styles.note} style={{ marginBottom: 16 }}>
           Describe the issue and our support team will follow up on this ticket.
@@ -76,7 +59,7 @@ export default function CreateTicketDrawer({
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             maxLength={500}
-            disabled={busy}
+            disabled={pending}
             required
           />
         </div>
@@ -90,7 +73,7 @@ export default function CreateTicketDrawer({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             maxLength={10000}
-            disabled={busy}
+            disabled={pending}
             required
           />
         </div>
@@ -99,16 +82,16 @@ export default function CreateTicketDrawer({
             type="button"
             className={styles.btnGhost}
             onClick={handleClose}
-            disabled={busy}
+            disabled={pending}
           >
             Cancel
           </button>
           <button
             type="submit"
             className={styles.btnPrimary}
-            disabled={busy || !valid}
+            disabled={pending || !valid}
           >
-            {busy ? "Submitting…" : "Create ticket"}
+            {pending ? "Submitting…" : "Create ticket"}
           </button>
         </div>
       </form>
