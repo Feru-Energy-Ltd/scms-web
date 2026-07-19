@@ -14,6 +14,7 @@ import {
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 import billingStyles from "./billing.module.css";
+import DateRangeFilters, { DateRangeHint, toIsoDayBounds } from "./DateRangeFilters";
 
 type Tab = "transactions" | "settlements";
 
@@ -48,10 +49,11 @@ export default function BillingPage() {
   const loadTransactions = useCallback(async () => {
     setTxLoading(true);
     try {
+      const { from, to } = toIsoDayBounds(txFrom, txTo);
       const data = await fetchProviderTransactions(
         txPage, 20,
-        txFrom ? `${txFrom}T00:00:00.000Z` : undefined,
-        txTo ? `${txTo}T23:59:59.999Z` : undefined,
+        from,
+        to,
         txStatus || undefined,
         txCharger || undefined,
       );
@@ -78,8 +80,7 @@ export default function BillingPage() {
   const loadSettlements = useCallback(async () => {
     if (ctx.providerId == null && ctx.identityType !== "SYSTEM_ADMIN") return;
     setStLoading(true);
-    const from = stFrom ? `${stFrom}T00:00:00.000Z` : undefined;
-    const to = stTo ? `${stTo}T23:59:59.999Z` : undefined;
+    const { from, to } = toIsoDayBounds(stFrom, stTo);
     try {
       const data = ctx.providerId != null
         ? await fetchSettlements(ctx.providerId, stPage, 20, stStatus || undefined, from, to)
@@ -202,35 +203,13 @@ export default function BillingPage() {
               onChange={(e) => { setTxCharger(e.target.value); setTxPage(0); }}
               style={{ minWidth: "140px" }}
             />
-            <label className={styles.muted} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              From
-              <input
-                type="date"
-                className={styles.searchInput}
-                value={txFrom}
-                max={txTo || undefined}
-                onChange={(e) => { setTxFrom(e.target.value); setTxPage(0); }}
-              />
-            </label>
-            <label className={styles.muted} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              To
-              <input
-                type="date"
-                className={styles.searchInput}
-                value={txTo}
-                min={txFrom || undefined}
-                onChange={(e) => { setTxTo(e.target.value); setTxPage(0); }}
-              />
-            </label>
-            {(txFrom || txTo) && (
-              <button
-                type="button"
-                className={styles.button}
-                onClick={() => { setTxFrom(""); setTxTo(""); setTxPage(0); }}
-              >
-                Clear dates
-              </button>
-            )}
+            <DateRangeFilters
+              from={txFrom}
+              to={txTo}
+              onFromChange={(v) => { setTxFrom(v); setTxPage(0); }}
+              onToChange={(v) => { setTxTo(v); setTxPage(0); }}
+              onClear={() => { setTxFrom(""); setTxTo(""); setTxPage(0); }}
+            />
             <button type="button" className={styles.button} onClick={() => void loadTransactions()}>
               Refresh
             </button>
@@ -253,11 +232,11 @@ export default function BillingPage() {
             </span>
           </div>
 
-          <p className={styles.muted} style={{ fontSize: "0.8rem", marginTop: "-0.25rem" }}>
-            {txFrom || txTo
-              ? "Showing transactions for the selected date range."
-              : "Showing the last 90 days by default. Use the date filters to change the range."}
-          </p>
+          <DateRangeHint
+            from={txFrom}
+            to={txTo}
+            selectedHint="Showing transactions for the selected date range."
+          />
 
           {txLoading ? (
             <p className={styles.muted}>Loading...</p>
@@ -396,35 +375,13 @@ export default function BillingPage() {
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
-            <label className={styles.muted} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              From
-              <input
-                type="date"
-                className={styles.searchInput}
-                value={stFrom}
-                max={stTo || undefined}
-                onChange={(e) => { setStFrom(e.target.value); setStPage(0); }}
-              />
-            </label>
-            <label className={styles.muted} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              To
-              <input
-                type="date"
-                className={styles.searchInput}
-                value={stTo}
-                min={stFrom || undefined}
-                onChange={(e) => { setStTo(e.target.value); setStPage(0); }}
-              />
-            </label>
-            {(stFrom || stTo) && (
-              <button
-                type="button"
-                className={styles.button}
-                onClick={() => { setStFrom(""); setStTo(""); setStPage(0); }}
-              >
-                Clear dates
-              </button>
-            )}
+            <DateRangeFilters
+              from={stFrom}
+              to={stTo}
+              onFromChange={(v) => { setStFrom(v); setStPage(0); }}
+              onToChange={(v) => { setStTo(v); setStPage(0); }}
+              onClear={() => { setStFrom(""); setStTo(""); setStPage(0); }}
+            />
             <button type="button" className={styles.button} onClick={() => void loadSettlements()}>
               Refresh
             </button>
@@ -447,11 +404,11 @@ export default function BillingPage() {
             </span>
           </div>
 
-          <p className={styles.muted} style={{ fontSize: "0.8rem", marginTop: "-0.25rem" }}>
-            {stFrom || stTo
-              ? "Showing settlements for the selected date range."
-              : "Showing the last 90 days by default. Use the date filters to change the range."}
-          </p>
+          <DateRangeHint
+            from={stFrom}
+            to={stTo}
+            selectedHint="Showing settlements for the selected date range."
+          />
 
           {stLoading ? (
             <p className={styles.muted}>Loading...</p>

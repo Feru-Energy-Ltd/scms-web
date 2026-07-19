@@ -59,6 +59,20 @@ export interface SettlementHistory {
   completedAt: string | null;
 }
 
+function buildSettlementQuery(
+  page: number,
+  size: number,
+  status?: string,
+  from?: string,
+  to?: string,
+): URLSearchParams {
+  const q = new URLSearchParams({ page: String(page), size: String(size) });
+  if (status) q.set("status", status);
+  if (from) q.set("from", from);
+  if (to) q.set("to", to);
+  return q;
+}
+
 export async function fetchSettlements(
   operatorId: number,
   page = 0,
@@ -67,10 +81,7 @@ export async function fetchSettlements(
   from?: string,
   to?: string,
 ): Promise<PageResponse<SettlementHistory>> {
-  const q = new URLSearchParams({ page: String(page), size: String(size) });
-  if (status) q.set("status", status);
-  if (from) q.set("from", from);
-  if (to) q.set("to", to);
+  const q = buildSettlementQuery(page, size, status, from, to);
   return apiRequestAuth<PageResponse<SettlementHistory>>(
     paymentApiPath(`/operators/${operatorId}/settlements?${q.toString()}`),
   );
@@ -83,10 +94,7 @@ export async function fetchAggregateSettlements(
   from?: string,
   to?: string,
 ): Promise<PageResponse<SettlementHistory>> {
-  const q = new URLSearchParams({ page: String(page), size: String(size) });
-  if (status) q.set("status", status);
-  if (from) q.set("from", from);
-  if (to) q.set("to", to);
+  const q = buildSettlementQuery(page, size, status, from, to);
   return apiRequestAuth<PageResponse<SettlementHistory>>(
     paymentApiPath(`/operators/settlements?${q.toString()}`),
   );
