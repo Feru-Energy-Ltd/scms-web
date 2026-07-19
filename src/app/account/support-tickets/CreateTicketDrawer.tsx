@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Drawer from "@/components/account/Drawer";
 import styles from "./support-tickets.module.css";
 
@@ -20,6 +20,13 @@ export default function CreateTicketDrawer({
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
 
+  useEffect(() => {
+    if (!open) {
+      setSubject("");
+      setMessage("");
+    }
+  }, [open]);
+
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const trimmedSubject = subject.trim();
@@ -30,8 +37,6 @@ export default function CreateTicketDrawer({
 
   function handleClose() {
     if (submitting) return;
-    setSubject("");
-    setMessage("");
     onClose();
   }
 

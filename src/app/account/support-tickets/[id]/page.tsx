@@ -19,7 +19,7 @@ import { getStoredPermissions } from "@/lib/auth/session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import { formatApiUtcDateTime } from "@/lib/datetime/formatUtc";
 import { useTicketBreadcrumb } from "./useTicketBreadcrumb";
-import styles from "./support-tickets.module.css";
+import styles from "../support-tickets.module.css";
 
 const CHANNEL_LABELS: Record<TicketMessage["channel"], string> = {
   APP: "App",
