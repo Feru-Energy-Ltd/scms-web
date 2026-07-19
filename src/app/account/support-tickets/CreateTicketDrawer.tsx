@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Drawer from "@/components/account/Drawer";
 import styles from "./support-tickets.module.css";
 
@@ -19,24 +19,42 @@ export default function CreateTicketDrawer({
 }: Props) {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [pending, setPending] = useState(false);
+  const inFlightRef = useRef(false);
+
+  const busy = submitting || pending;
 
   useEffect(() => {
     if (!open) {
       setSubject("");
       setMessage("");
+      setPending(false);
+      inFlightRef.current = false;
     }
   }, [open]);
 
+  useEffect(() => {
+    if (!submitting) {
+      setPending(false);
+      inFlightRef.current = false;
+    }
+  }, [submitting]);
+
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (inFlightRef.current || submitting) return;
+
     const trimmedSubject = subject.trim();
     const trimmedMessage = message.trim();
     if (!trimmedSubject || !trimmedMessage) return;
+
+    inFlightRef.current = true;
+    setPending(true);
     onSubmit({ subject: trimmedSubject, message: trimmedMessage });
   }
 
   function handleClose() {
-    if (submitting) return;
+    if (busy) return;
     onClose();
   }
 
@@ -58,7 +76,7 @@ export default function CreateTicketDrawer({
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             maxLength={500}
-            disabled={submitting}
+            disabled={busy}
             required
           />
         </div>
@@ -72,7 +90,7 @@ export default function CreateTicketDrawer({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             maxLength={10000}
-            disabled={submitting}
+            disabled={busy}
             required
           />
         </div>
@@ -81,16 +99,16 @@ export default function CreateTicketDrawer({
             type="button"
             className={styles.btnGhost}
             onClick={handleClose}
-            disabled={submitting}
+            disabled={busy}
           >
             Cancel
           </button>
           <button
             type="submit"
             className={styles.btnPrimary}
-            disabled={submitting || !valid}
+            disabled={busy || !valid}
           >
-            {submitting ? "Submitting…" : "Create ticket"}
+            {busy ? "Submitting…" : "Create ticket"}
           </button>
         </div>
       </form>
