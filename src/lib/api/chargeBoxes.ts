@@ -352,8 +352,9 @@ export type ChargerTransaction = {
   energyKwh?: number;
   totalDriverCost?: number;
   status?: string;
-  startedAt?: string;
-  stoppedAt?: string;
+  /** Instant — ISO string or Jackson epoch-second number. */
+  startedAt?: string | number;
+  stoppedAt?: string | number;
 };
 
 export type ChargerBooking = {
