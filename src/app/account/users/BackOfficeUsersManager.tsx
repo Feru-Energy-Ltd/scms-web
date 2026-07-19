@@ -16,7 +16,7 @@ import {
 import { fetchAdminRoles } from "@/lib/api/security";
 import { asArray } from "@/lib/api/normalize";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
-import { getRoleLabel } from "@/lib/auth/roles";
+import { getRoleLabel, isHiddenRole } from "@/lib/auth/roles";
 import { getStoredPermissions } from "@/lib/auth/session";
 import {
   getApiErrorMessage,
@@ -86,7 +86,10 @@ export default function BackOfficeUsersManager({
       if (rolesResult.status === "fulfilled") {
         setRoles(
           asArray<RoleRow>(rolesResult.value).filter(
-            (r) => typeof r.id === "number" && typeof r.name === "string",
+            (r) =>
+              typeof r.id === "number" &&
+              typeof r.name === "string" &&
+              !isHiddenRole(r.name),
           ),
         );
       } else {

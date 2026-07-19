@@ -1,3 +1,4 @@
+import { isHiddenRole } from "@/lib/auth/roles";
 import { apiRequestAuth, type Page } from "./http";
 
 export type SystemAdminUser = {
@@ -53,18 +54,24 @@ export async function fetchSystemAdmins(
 
 function normalizeSystemAdminPage(raw: Page<SystemAdminUser>): SystemAdminUser[] {
   const content = raw?.content ?? [];
-  return content.map((admin) => ({
-    ...admin,
-    roles: normalizeRoleNames(admin.roles),
-  }));
+  return content
+    .filter((admin) => !rawRoleNames(admin.roles).some(isHiddenRole))
+    .map((admin) => ({
+      ...admin,
+      roles: normalizeRoleNames(admin.roles),
+    }));
 }
 
-function normalizeRoleNames(roles: unknown): string[] {
+function rawRoleNames(roles: unknown): string[] {
   if (Array.isArray(roles)) return roles.map(String);
   if (roles && typeof roles === "object") {
     return Object.values(roles as Record<string, unknown>).map(String);
   }
   return [];
+}
+
+function normalizeRoleNames(roles: unknown): string[] {
+  return rawRoleNames(roles).filter((name) => !isHiddenRole(name));
 }
 
 export async function createSystemAdmin(

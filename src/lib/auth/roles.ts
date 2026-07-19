@@ -17,6 +17,15 @@ export const ROLE_LABEL_BY_CODE: Record<string, string> = {
   VIEWER: "Viewer",
 };
 
+/**
+ * Reserved role that must never be shown in the UI or offered for assignment.
+ */
+export const HIDDEN_ROLE_CODES: ReadonlySet<string> = new Set(["SYSTEM_ADMIN_MASTER"]);
+
+export function isHiddenRole(roleCode: string): boolean {
+  return HIDDEN_ROLE_CODES.has(roleCode);
+}
+
 export function getRoleLabel(roleCode: string): string {
   return ROLE_LABEL_BY_CODE[roleCode] ?? roleCode;
 }

@@ -14,6 +14,7 @@ import {
   type RoleMatrixRow,
   type RolePermissionRow,
 } from "@/lib/security/permissionMatrix";
+import { isHiddenRole } from "@/lib/auth/roles";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 import PermissionMatrixView from "./PermissionMatrixView";
@@ -25,7 +26,7 @@ function toRolePermissionRows(raw: RoleRow[]): RolePermissionRow[] {
   const rows: RolePermissionRow[] = [];
   for (const row of raw) {
     const name = row.name;
-    if (typeof name !== "string" || !name) continue;
+    if (typeof name !== "string" || !name || isHiddenRole(name)) continue;
     const perms = row.permissions;
     const permissions = Array.isArray(perms) ? perms.map(String) : [];
     rows.push({ name, permissions });
