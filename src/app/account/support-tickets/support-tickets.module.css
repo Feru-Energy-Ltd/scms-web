@@ -298,3 +298,188 @@
   gap: 8px;
   margin-top: 8px;
 }
+
+.attachmentHint {
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.fileInputHidden {
+  display: none;
+}
+
+.attachButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  border: 1px dashed var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.attachButton:hover:not(:disabled) {
+  background: var(--color-surface-2);
+}
+
+.attachButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pendingAttachmentList {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pendingAttachmentItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  background: var(--color-surface-2);
+}
+
+.pendingPreviewWrap {
+  flex: 0 0 100%;
+}
+
+.pendingPreviewImg {
+  max-width: 220px;
+  max-height: 140px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  object-fit: cover;
+}
+
+.pendingAttachmentMeta {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.pendingAttachmentName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.pendingAttachmentSize {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.removeAttachmentBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.removeAttachmentBtn:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+.attachmentSection {
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  background: var(--color-surface);
+}
+
+.attachmentHeading {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.attachmentList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attachmentLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.attachmentLink:hover {
+  background: color-mix(in oklab, var(--color-primary) 8%, var(--color-surface));
+}
+
+.attachmentName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachmentSize {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.messageAttachmentList {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.messageAttachmentItem {
+  margin: 0;
+}
+
+.messageAttachmentPreviewLink {
+  display: inline-block;
+  line-height: 0;
+}
+
+.messageAttachmentPreviewImg {
+  max-width: min(100%, 220px);
+  max-height: 140px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  object-fit: cover;
+}

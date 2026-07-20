@@ -11,6 +11,7 @@ import RowActionsMenu from "@/components/account/RowActionsMenu";
 import {
   createSupportTicket,
   fetchSupportTickets,
+  uploadTicketAttachment,
   TICKET_STATUS_LABELS,
   type SupportTicket,
   type TicketStatus,
@@ -86,9 +87,19 @@ export default function SupportTicketsPage() {
     void load();
   }, [canRead, load]);
 
-  async function handleCreate(input: { subject: string; message: string }) {
+  async function handleCreate(input: {
+    subject: string;
+    message: string;
+    files: File[];
+  }) {
     try {
       const ticket = await createSupportTicket(input);
+      const messageId = ticket.messages.at(-1)?.id;
+      if (messageId != null) {
+        for (const file of input.files) {
+          await uploadTicketAttachment(ticket.id, file, messageId);
+        }
+      }
       toast.success("Support ticket created.");
       setCreateOpen(false);
       router.push(`/account/support-tickets/${ticket.id}`);

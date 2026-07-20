@@ -2,6 +2,7 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import Drawer from "@/components/account/Drawer";
+import TicketAttachmentField from "./TicketAttachmentField";
 import styles from "./support-tickets.module.css";
 
 type Props = {
@@ -9,12 +10,14 @@ type Props = {
   onSubmit: (input: {
     subject: string;
     message: string;
+    files: File[];
   }) => void | Promise<void>;
 };
 
 export default function CreateTicketDrawer({ onClose, onSubmit }: Props) {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [pending, setPending] = useState(false);
   const inFlightRef = useRef(false);
 
@@ -29,7 +32,7 @@ export default function CreateTicketDrawer({ onClose, onSubmit }: Props) {
     inFlightRef.current = true;
     setPending(true);
     try {
-      await onSubmit({ subject: trimmedSubject, message: trimmedMessage });
+      await onSubmit({ subject: trimmedSubject, message: trimmedMessage, files });
     } finally {
       inFlightRef.current = false;
       setPending(false);
@@ -77,6 +80,12 @@ export default function CreateTicketDrawer({ onClose, onSubmit }: Props) {
             required
           />
         </div>
+        <TicketAttachmentField
+          id="create-ticket-attachments"
+          files={files}
+          onChange={setFiles}
+          disabled={pending}
+        />
         <div className={styles.formActions}>
           <button
             type="button"

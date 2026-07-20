@@ -1,7 +1,13 @@
-import { supportApiPath } from "../config";
+import { supportApiPath, API_BASE_URL } from "../config";
 import { apiRequestAuth, type Page } from "./http";
+import { getAccessToken } from "../auth/session";
 
 const BASE = supportApiPath("/tickets");
+
+export const SUPPORT_ATTACHMENT_MAX_COUNT = 5;
+export const SUPPORT_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+export const SUPPORT_ATTACHMENT_ACCEPT =
+  "image/jpeg,image/png,image/gif,image/webp,application/pdf,text/plain,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
 export type TicketStatus =
   | "OPEN"
@@ -14,7 +20,16 @@ export type TicketSource = "MOBILE" | "WEB";
 
 export type AuthorType = "CUSTOMER" | "PROVIDER" | "ADMIN" | "SYSTEM";
 
-export type MessageChannel = "APP" | "EMAIL" | "ADMIN_PORTAL";
+export type MessageChannel = "APP" | "WEB" | "EMAIL" | "ADMIN_PORTAL";
+
+export interface TicketAttachment {
+  id: number;
+  fileName: string;
+  contentType: string;
+  url: string;
+  sizeBytes: number | null;
+  createdAt: string;
+}
 
 export interface TicketMessage {
   id: number;
@@ -23,6 +38,7 @@ export interface TicketMessage {
   body: string;
   channel: MessageChannel;
   createdAt: string;
+  attachments?: TicketAttachment[];
 }
 
 export interface SupportTicket {
@@ -77,6 +93,32 @@ export async function createSupportTicket(input: {
   });
 }
 
+export async function uploadTicketAttachment(
+  ticketId: number,
+  file: File,
+  messageId?: number,
+): Promise<SupportTicket> {
+  const form = new FormData();
+  form.append("file", file);
+  const q = messageId != null ? `?messageId=${messageId}` : "";
+  const token = getAccessToken();
+  const res = await fetch(
+    new URL(`${BASE}/${ticketId}/attachments${q}`, API_BASE_URL).toString(),
+    {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    },
+  );
+  if (!res.ok) {
+    const body = (await res.json().catch(() => undefined)) as
+      | { message?: string }
+      | undefined;
+    throw new Error(body?.message ?? `Attachment upload failed (${res.status})`);
+  }
+  return (await res.json()) as SupportTicket;
+}
+
 export async function replyToTicket(
   id: number,
   message: string,
@@ -105,3 +147,21 @@ export const TICKET_STATUS_LABELS: Record<TicketStatus, string> = {
   RESOLVED: "Resolved",
   CLOSED: "Closed",
 };
+
+export function formatAttachmentSize(bytes: number | null | undefined): string {
+  if (bytes == null || !Number.isFinite(bytes)) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function isImageContentType(contentType: string): boolean {
+  return contentType.startsWith("image/");
+}
+
+export function countTicketAttachments(ticket: Pick<SupportTicket, "messages">): number {
+  return ticket.messages.reduce(
+    (total, message) => total + (message.attachments?.length ?? 0),
+    0,
+  );
+}

@@ -7,9 +7,12 @@ import { ArrowLeft, CheckCircle2, RotateCcw, Send } from "lucide-react";
 import Link from "next/link";
 import { SkeletonLine, SkeletonTable } from "@/components/account/Skeleton";
 import {
+  countTicketAttachments,
   fetchSupportTicket,
   replyToTicket,
   updateTicketStatus,
+  uploadTicketAttachment,
+  SUPPORT_ATTACHMENT_MAX_COUNT,
   TICKET_STATUS_LABELS,
   type SupportTicket,
   type TicketMessage,
@@ -19,12 +22,15 @@ import { getStoredPermissions } from "@/lib/auth/session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import { formatApiUtcDateTime } from "@/lib/datetime/formatUtc";
 import { useTicketBreadcrumb } from "./useTicketBreadcrumb";
+import TicketAttachmentField from "../TicketAttachmentField";
+import TicketMessageAttachments from "../TicketMessageAttachments";
 import styles from "../support-tickets.module.css";
 
 const CHANNEL_LABELS: Record<TicketMessage["channel"], string> = {
-  APP: "App",
+  APP: "Mobile app",
+  WEB: "Web",
   EMAIL: "Email",
-  ADMIN_PORTAL: "Portal",
+  ADMIN_PORTAL: "Support portal",
 };
 
 function bubbleClass(authorType: TicketMessage["authorType"]) {
@@ -46,6 +52,7 @@ export default function SupportTicketDetailPage() {
   const [ticket, setTicket] = useState<SupportTicket | null>(null);
   const [loading, setLoading] = useState(true);
   const [reply, setReply] = useState("");
+  const [replyFiles, setReplyFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
 
@@ -84,14 +91,26 @@ export default function SupportTicketDetailPage() {
   const isTerminal =
     ticket?.status === "RESOLVED" || ticket?.status === "CLOSED";
 
+  const attachmentSlotsLeft = Math.max(
+    0,
+    SUPPORT_ATTACHMENT_MAX_COUNT - countTicketAttachments(ticket ?? { messages: [] }),
+  );
+
   async function handleReply() {
     const body = reply.trim();
     if (!body || !ticket) return;
     setSending(true);
     try {
-      const updated = await replyToTicket(ticket.id, body);
+      let updated = await replyToTicket(ticket.id, body);
+      const messageId = updated.messages.at(-1)?.id;
+      if (messageId != null) {
+        for (const file of replyFiles) {
+          updated = await uploadTicketAttachment(ticket.id, file, messageId);
+        }
+      }
       setTicket(updated);
       setReply("");
+      setReplyFiles([]);
       toast.success(isProvider ? "Message sent." : "Reply sent to the requester.");
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not send your reply." });
@@ -236,7 +255,8 @@ export default function SupportTicketDetailPage() {
               <span className={styles.channelTag}>{CHANNEL_LABELS[m.channel]}</span>
               <span>{formatApiUtcDateTime(m.createdAt)}</span>
             </div>
-            <p className={styles.bubbleBody}>{m.body}</p>
+            {m.body.trim() ? <p className={styles.bubbleBody}>{m.body}</p> : null}
+            <TicketMessageAttachments attachments={m.attachments ?? []} />
           </div>
         ))}
       </div>
@@ -262,6 +282,15 @@ export default function SupportTicketDetailPage() {
             onChange={(e) => setReply(e.target.value)}
             disabled={sending}
           />
+          {attachmentSlotsLeft > 0 ? (
+            <TicketAttachmentField
+              id="reply-attachments"
+              files={replyFiles}
+              onChange={setReplyFiles}
+              disabled={sending}
+              maxCount={attachmentSlotsLeft}
+            />
+          ) : null}
           <div className={styles.replyActions}>
             <button
               type="button"
