@@ -209,8 +209,20 @@ export default function AccountChargingSessionsPage() {
         size: PAGE_SIZE,
       });
       if (requestId !== requestIdRef.current) return;
+      const pages = res.totalPages ?? 0;
+      setTotalPages(pages);
+      // After stop/filter, totalPages can shrink below the current index.
+      // Clamp and bail so the next load (triggered by setPage) fills the table.
+      if (pages > 0 && page >= pages) {
+        setPage(pages - 1);
+        return;
+      }
+      if (pages === 0 && page !== 0) {
+        setPage(0);
+        setRows([]);
+        return;
+      }
       setRows(res.content ?? []);
-      setTotalPages(res.totalPages ?? 0);
     } catch (e) {
       if (requestId !== requestIdRef.current) return;
       showApiErrorToast(e, {
