@@ -12,6 +12,8 @@ type MenuEntry = {
   item: AppMenuItem;
   /** Empty = always visible when logged in. User needs any listed permission. */
   permissions: string[];
+  /** If set, user must also have any of these roles. */
+  roles?: string[];
   /** Hide this entry if the user has any of these permissions (e.g. replace view-only with actionable item). */
   hideIfPermissions?: string[];
 };
@@ -74,41 +76,51 @@ const MENU_SECTIONS: { label: string; entries: MenuEntry[] }[] = [
         item: { name: "Support Tickets", url: "/account/support-tickets" },
         permissions: ["admin:support:read", "provider:support:read"],
       },
-      {
-        item: { name: "Pricing", url: "/account/pricing" },
-        permissions: ["admin:pricing:read", "provider:pricing:read"],
-      },
     ],
   },
   {
     label: "Settings",
     entries: [
       {
+        item: { name: "Pricing", url: "/account/pricing" },
+        permissions: ["admin:pricing:read", "provider:pricing:read"],
+      },
+      {
         item: { name: "Roles & Permissions", url: "/account/permissions" },
-        permissions: ["admin:roles:read", "provider:roles:read"],
+        permissions: ["admin:roles:read"],
+        roles: ["SYSTEM_ADMIN_MASTER", "SYSTEM_ADMIN_MANAGER"],
       },
     ],
   },
 ];
 
-function isEntryVisible(entry: MenuEntry, permSet: Set<string>): boolean {
+function isEntryVisible(
+  entry: MenuEntry,
+  permSet: Set<string>,
+  roleSet: Set<string>,
+): boolean {
   if (entry.hideIfPermissions?.some((p) => permSet.has(p))) return false;
+  if (entry.roles?.length && !entry.roles.some((r) => roleSet.has(r))) {
+    return false;
+  }
   if (entry.permissions.length === 0) return true;
   return entry.permissions.some((p) => permSet.has(p));
 }
 
 /**
- * Build grouped sidebar menu based on the user's JWT permissions.
+ * Build grouped sidebar menu based on the user's JWT permissions (and optional roles).
  * Sections with no visible items are omitted.
  */
 export function getMenuSectionsForPermissions(
   permissions: string[],
+  roles: string[] = [],
 ): AppMenuSection[] {
   const permSet = new Set(permissions);
+  const roleSet = new Set(roles);
   return MENU_SECTIONS.map((section) => ({
     label: section.label,
     items: section.entries
-      .filter((entry) => isEntryVisible(entry, permSet))
+      .filter((entry) => isEntryVisible(entry, permSet, roleSet))
       .map((entry) => entry.item),
   })).filter((section) => section.items.length > 0);
 }
@@ -116,6 +128,11 @@ export function getMenuSectionsForPermissions(
 /**
  * Flat menu list (all sections merged). Useful for active-route matching.
  */
-export function getMenuForPermissions(permissions: string[]): AppMenuItem[] {
-  return getMenuSectionsForPermissions(permissions).flatMap((s) => s.items);
+export function getMenuForPermissions(
+  permissions: string[],
+  roles: string[] = [],
+): AppMenuItem[] {
+  return getMenuSectionsForPermissions(permissions, roles).flatMap(
+    (s) => s.items,
+  );
 }

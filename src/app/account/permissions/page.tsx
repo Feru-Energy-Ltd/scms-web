@@ -1,16 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { fetchAdminRoles, fetchProviderRoles } from "@/lib/api/security";
+import { useCallback, useEffect, useState } from "react";
+import { fetchAdminRoles } from "@/lib/api/security";
 import { asArray } from "@/lib/api/normalize";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import { getStoredPermissions } from "@/lib/auth/session";
 import {
   ADMIN_MATRIX_COLUMNS,
   buildAdminMatrix,
-  buildProviderMatrix,
   MATRIX_LEGEND,
-  PROVIDER_MATRIX_COLUMNS,
   type RoleMatrixRow,
   type RolePermissionRow,
 } from "@/lib/security/permissionMatrix";
@@ -21,6 +19,11 @@ import PermissionMatrixView from "./PermissionMatrixView";
 import matrixStyles from "./permissions.module.css";
 
 type RoleRow = Record<string, unknown>;
+
+const ALLOWED_ROLES = new Set([
+  "SYSTEM_ADMIN_MASTER",
+  "SYSTEM_ADMIN_MANAGER",
+]);
 
 function toRolePermissionRows(raw: RoleRow[]): RolePermissionRow[] {
   const rows: RolePermissionRow[] = [];
@@ -37,38 +40,52 @@ function toRolePermissionRows(raw: RoleRow[]): RolePermissionRow[] {
 export default function AccountPermissionsPage() {
   const [matrixRows, setMatrixRows] = useState<RoleMatrixRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"admin" | "provider">("admin");
 
-  const { providerId } = useMemo(() => getAccessTokenContext(), []);
-  const perms = useMemo(() => new Set(getStoredPermissions()), []);
-
-  const columns = viewMode === "provider" ? PROVIDER_MATRIX_COLUMNS : ADMIN_MATRIX_COLUMNS;
+  // Re-read each render so canView stays aligned with the sidebar after an
+  // access-token refresh (e.g. 401 retry) updates roles/permissions.
+  const userCtx = getAccessTokenContext();
+  const perms = new Set(getStoredPermissions());
+  const roles = userCtx.roles?.length
+    ? userCtx.roles
+    : userCtx.role
+      ? [userCtx.role]
+      : [];
+  const canView =
+    perms.has("admin:roles:read") &&
+    roles.some((role) => ALLOWED_ROLES.has(role));
 
   const load = useCallback(async () => {
+    if (!canView) {
+      setMatrixRows([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      if (perms.has("admin:roles:read")) {
-        setViewMode("admin");
-        const raw = await fetchAdminRoles();
-        setMatrixRows(buildAdminMatrix(toRolePermissionRows(asArray<RoleRow>(raw))));
-      } else if (perms.has("provider:roles:read") && providerId != null) {
-        setViewMode("provider");
-        const raw = await fetchProviderRoles(providerId);
-        setMatrixRows(buildProviderMatrix(toRolePermissionRows(asArray<RoleRow>(raw))));
-      } else {
-        setMatrixRows([]);
-      }
+      const raw = await fetchAdminRoles();
+      setMatrixRows(buildAdminMatrix(toRolePermissionRows(asArray<RoleRow>(raw))));
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Could not load roles." });
       setMatrixRows([]);
     } finally {
       setLoading(false);
     }
-  }, [perms, providerId]);
+  }, [canView]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  if (!canView) {
+    return (
+      <div>
+        <h1 className={styles.h1}>Roles and permissions</h1>
+        <p className={styles.muted}>
+          You do not have permission to access this page.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -91,18 +108,17 @@ export default function AccountPermissionsPage() {
       ) : matrixRows.length === 0 ? (
         <p className={styles.muted}>No roles.</p>
       ) : (
-        <PermissionMatrixView rows={matrixRows} columns={columns} />
+        <PermissionMatrixView rows={matrixRows} columns={ADMIN_MATRIX_COLUMNS} />
       )}
 
       <div className={matrixStyles.notes}>
         <strong>Notes</strong>
         <ul>
           <li>Hover a cell to see underlying permission keys.</li>
-          {viewMode === "provider" ? (
-            <li>Assign team roles via <strong>Assign team roles</strong> in the sidebar (owners).</li>
-          ) : (
-            <li>Assign platform roles via <strong>by clicking on Staff</strong> in the sidebar.</li>
-          )}
+          <li>
+            Assign platform roles via <strong>by clicking on Staff</strong> in
+            the sidebar.
+          </li>
         </ul>
       </div>
     </div>

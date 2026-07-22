@@ -67,14 +67,20 @@ export default function AccountShell({
   const pathname = usePathname();
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  // Re-read each render so sidebar roles stay aligned with permission checks
+  // after an access-token refresh (e.g. 401 retry). AccountShell outlives pages.
   const permissions = getStoredPermissions();
-  const menuSections = useMemo(
-    () => getMenuSectionsForPermissions(permissions),
-    [permissions],
-  );
+  const userCtx = getAccessTokenContext();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [identityType] = useState(() => getStoredIdentityType() || "Account");
-  const [userCtx] = useState(() => getAccessTokenContext());
+  const menuSections = useMemo(() => {
+    const roles = userCtx.roles?.length
+      ? userCtx.roles
+      : userCtx.role
+        ? [userCtx.role]
+        : [];
+    return getMenuSectionsForPermissions(permissions, roles);
+  }, [permissions, userCtx.roles, userCtx.role]);
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [providerBusinessName, setProviderBusinessName] = useState<string | null>(
     null,
@@ -278,22 +284,14 @@ export default function AccountShell({
                 >
                   Notifications
                 </button>
-                <button
-                  type="button"
+                <Link
+                  href="/account/support-tickets"
                   role="menuitem"
                   className={styles.topNavMenuItem}
                   onClick={closeUserMenu}
                 >
                   Help
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className={styles.topNavMenuItem}
-                  onClick={closeUserMenu}
-                >
-                  Settings
-                </button>
+                </Link>
                 <button
                   type="button"
                   role="menuitem"
