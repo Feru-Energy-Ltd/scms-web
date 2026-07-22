@@ -5,17 +5,21 @@ import { useRouter } from "next/navigation";
 import { SkeletonLine } from "@/components/account/Skeleton";
 import { fetchPricingAssignments, type PricingAssignment } from "@/lib/api/pricing";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
-import { getStoredPermissions } from "@/lib/auth/session";
+import { parseApiUtcDateTime } from "@/lib/datetime/formatUtc";
+import { getPricingPermissions } from "@/lib/security/pricingPermissions";
 import styles from "./provider.module.css";
 
 export default function PricingTab({ providerId }: { providerId: number }) {
   const router = useRouter();
   const [assignment, setAssignment] = useState<PricingAssignment | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const canManage = getStoredPermissions().includes("admin:pricing:update");
+  const { canRead, canManage } = getPricingPermissions();
 
   useEffect(() => {
+    if (!canRead) {
+      setLoading(false);
+      return;
+    }
     let alive = true;
     (async () => {
       try {
@@ -31,9 +35,13 @@ export default function PricingTab({ providerId }: { providerId: number }) {
     return () => {
       alive = false;
     };
-  }, [providerId]);
+  }, [canRead, providerId]);
 
   if (loading) return <SkeletonLine width="260px" />;
+
+  if (!canRead) {
+    return <p>You do not have permission to view pricing.</p>;
+  }
 
   return (
     <div>
@@ -41,9 +49,8 @@ export default function PricingTab({ providerId }: { providerId: number }) {
         <div className={styles.info}>
           <h1 style={{ fontSize: "1.1rem" }}>{assignment.pricingPlanName}</h1>
           {(() => {
-            const d = assignment.assignedAt ? new Date(assignment.assignedAt) : null;
-            const valid = d && !Number.isNaN(d.getTime());
-            return valid ? (
+            const d = parseApiUtcDateTime(assignment.assignedAt);
+            return d ? (
               <p className={styles.infoRow}>Assigned {d.toLocaleDateString()}</p>
             ) : null;
           })()}

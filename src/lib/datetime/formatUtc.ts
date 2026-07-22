@@ -5,8 +5,16 @@
  *
  * Jackson may also emit Instant as an epoch-second number when dates-as-timestamps
  * is enabled — `new Date(seconds)` wrongly treats that as milliseconds (→ 1970).
+ *
+ * With `WRITE_DATES_AS_TIMESTAMPS`, Jackson serializes `LocalDateTime` as an array:
+ * `[year, month, day, hour, minute, second?, nano?]`, where month is 1-based.
  */
-export type ApiDateTimeInput = string | number | null | undefined;
+export type ApiDateTimeInput =
+  | string
+  | number
+  | number[]
+  | null
+  | undefined;
 
 function fromEpochNumber(n: number): Date | null {
   if (!Number.isFinite(n)) return null;
@@ -16,11 +24,31 @@ function fromEpochNumber(n: number): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+/** Jackson LocalDateTime array: [y, M, d, H?, m?, s?, nano?] — month is 1-based. */
+function fromJacksonLocalDateTimeArray(parts: number[]): Date | null {
+  if (parts.length < 3) return null;
+  const [year, month, day, hour = 0, minute = 0, second = 0] = parts;
+  if (
+    ![year, month, day, hour, minute, second].every(
+      (n) => typeof n === "number" && Number.isFinite(n),
+    )
+  ) {
+    return null;
+  }
+  // Construct as UTC so it matches how we treat zone-less LocalDateTime strings.
+  const d = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 export function parseApiUtcDateTime(value: ApiDateTimeInput): Date | null {
   if (value == null || value === "") return null;
 
   if (typeof value === "number") {
     return fromEpochNumber(value);
+  }
+
+  if (Array.isArray(value)) {
+    return fromJacksonLocalDateTimeArray(value);
   }
 
   const trimmed = String(value).trim();

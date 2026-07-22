@@ -12,6 +12,7 @@ const RESOURCE_CATEGORIES: { key: string; resources: string[] }[] = [
   { key: "wallet", resources: ["wallet"] },
   { key: "vehicles", resources: ["vehicles"] },
   { key: "reports", resources: ["reports"] },
+  { key: "pricing", resources: ["pricing"] },
   { key: "sessions", resources: ["sessions"] },
   { key: "reservations", resources: ["reservations"] },
   { key: "transactions", resources: ["transactions"] },

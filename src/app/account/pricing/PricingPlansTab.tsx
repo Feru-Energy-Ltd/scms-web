@@ -26,7 +26,17 @@ const STATUS_FILTERS: { label: string; value: string }[] = [
   { label: "Archived", value: "ARCHIVED" },
 ];
 
-export default function PricingPlansTab() {
+interface Props {
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
+}
+
+export default function PricingPlansTab({
+  canCreate = false,
+  canUpdate = false,
+  canDelete = false,
+}: Props) {
   const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [operators, setOperators] = useState<ProviderListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,26 +153,33 @@ export default function PricingPlansTab() {
           </div>
         </div>
 
-        <AddIconButton
-          label="New plan"
-          onClick={() => {
-            setEditPlan(null);
-            setShowModal(true);
-          }}
-        />
+        {canCreate && (
+          <AddIconButton
+            label="New plan"
+            onClick={() => {
+              setEditPlan(null);
+              setShowModal(true);
+            }}
+          />
+        )}
       </div>
 
       {loading ? (
         <p className={rlStyles.muted}>Loading…</p>
       ) : plans.length === 0 ? (
         <p className={rlStyles.muted}>
-          No pricing plans found.{" "}
-          <button
-            className={rlStyles.buttonPrimary}
-            onClick={() => { setEditPlan(null); setShowModal(true); }}
-          >
-            Create your first plan
-          </button>
+          No pricing plans found.
+          {canCreate && (
+            <>
+              {" "}
+              <button
+                className={rlStyles.buttonPrimary}
+                onClick={() => { setEditPlan(null); setShowModal(true); }}
+              >
+                Create your first plan
+              </button>
+            </>
+          )}
         </p>
       ) : (
         <div className={rlStyles.tableWrap}>
@@ -175,7 +192,9 @@ export default function PricingPlansTab() {
                 <th className={rlStyles.th}>Grace</th>
                 <th className={rlStyles.th}>Reservation</th>
                 <th className={rlStyles.th}>Status</th>
-                <th className={rlStyles.th}>Actions</th>
+                {(canUpdate || canDelete) && (
+                  <th className={rlStyles.th}>Actions</th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -187,34 +206,36 @@ export default function PricingPlansTab() {
                   <td className={rlStyles.td}>{plan.idleGraceMinutes} min</td>
                   <td className={rlStyles.td}>RWF {plan.reservationFee.toFixed(2)}</td>
                   <td className={rlStyles.td}>{statusBadge(plan.status)}</td>
-                  <td className={rlStyles.td}>
-                    <div className={rlStyles.linkRow}>
-                      {plan.status === "DRAFT" && (
-                        <>
+                  {(canUpdate || canDelete) && (
+                    <td className={rlStyles.td}>
+                      <div className={rlStyles.linkRow}>
+                        {plan.status === "DRAFT" && canUpdate && (
+                          <>
+                            <button
+                              className={styles.actionBtn}
+                              onClick={() => { setEditPlan(plan); setShowModal(true); }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className={styles.activateBtn}
+                              onClick={() => void handleActivate(plan.id)}
+                            >
+                              Activate
+                            </button>
+                          </>
+                        )}
+                        {plan.status === "ACTIVE" && canDelete && (
                           <button
-                            className={styles.actionBtn}
-                            onClick={() => { setEditPlan(plan); setShowModal(true); }}
+                            className={styles.deactivateBtn}
+                            onClick={() => setConfirmDeactivateId(plan.id)}
                           >
-                            Edit
+                            Deactivate
                           </button>
-                          <button
-                            className={styles.activateBtn}
-                            onClick={() => void handleActivate(plan.id)}
-                          >
-                            Activate
-                          </button>
-                        </>
-                      )}
-                      {plan.status === "ACTIVE" && (
-                        <button
-                          className={styles.deactivateBtn}
-                          onClick={() => setConfirmDeactivateId(plan.id)}
-                        >
-                          Deactivate
-                        </button>
-                      )}
-                    </div>
-                  </td>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

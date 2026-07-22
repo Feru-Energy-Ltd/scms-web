@@ -127,7 +127,8 @@ export interface PricingAssignment {
   operatorId: number;
   pricingPlanId: number;
   pricingPlanName: string;
-  assignedAt: string;
+  /** ISO string, or Jackson LocalDateTime array `[y, M, d, H, m, …]`. */
+  assignedAt: string | number[];
 }
 
 const ASSIGNMENTS_BASE = "/api/v1/admin/pricing-assignments";
