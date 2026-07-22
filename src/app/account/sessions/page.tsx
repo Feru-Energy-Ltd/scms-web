@@ -11,15 +11,25 @@ import {
   fetchChargingSessions,
   stopChargingSession,
   type ChargingSession,
+  type ChargingSessionStatus,
 } from "@/lib/api/sessions";
 import { cellDateTime, cellText } from "@/lib/account/cellDisplay";
-import { withOptionalProviderFilter } from "@/lib/account/providerDataTableFilter";
+import { scopeAndProviderFilters } from "@/lib/account/providerDataTableFilter";
 import { useAdminProviderFilter } from "@/lib/account/useAdminProviderFilter";
 import { getStoredPermissions } from "@/lib/auth/session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 
 const PAGE_SIZE = 20;
-const LIVE_STATUSES = new Set(["ACTIVE", "IDLE"]);
+const LIVE_STATUSES = new Set<string>(["ACTIVE", "IDLE"]);
+
+const SESSION_SCOPE_OPTIONS = [
+  { value: "active", label: "Active / idle" },
+  { value: "all", label: "All (last 30 days)" },
+  { value: "ACTIVE", label: "ACTIVE" },
+  { value: "IDLE", label: "IDLE" },
+  { value: "ENERGY_SETTLED", label: "ENERGY SETTLED" },
+  { value: "SETTLED", label: "SETTLED" },
+];
 
 function fmtEnergy(kwh: number | null | undefined): string {
   if (kwh == null) return "—";
@@ -36,7 +46,9 @@ function fmtMoney(n: number | null | undefined): string {
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
+function SessionStatusBadge({
+  status,
+}: Readonly<{ status: string }>) {
   if (LIVE_STATUSES.has(status)) {
     return <span className={styles.badgeOk}>{status}</span>;
   }
@@ -44,6 +56,115 @@ function StatusBadge({ status }: { status: string }) {
     return <span className={styles.badge}>{status.replaceAll("_", " ")}</span>;
   }
   return <span className={styles.badgeNo}>{status}</span>;
+}
+
+function SessionIdCell({
+  transactionId,
+}: Readonly<{ transactionId: number }>) {
+  return <span className={styles.muted}>#{transactionId}</span>;
+}
+
+function SessionStopActions({
+  session,
+  acting,
+  onStop,
+}: Readonly<{
+  session: ChargingSession;
+  acting: boolean;
+  onStop: (session: ChargingSession) => void;
+}>) {
+  return (
+    <RowActionsMenu
+      label={`Actions for session ${session.transactionId}`}
+      items={[
+        {
+          label: "Stop session",
+          onClick: () => onStop(session),
+          hidden: !LIVE_STATUSES.has(session.status),
+          destructive: true,
+          disabled: acting,
+        },
+      ]}
+    />
+  );
+}
+
+function buildSessionColumns(opts: {
+  canStop: boolean;
+  acting: boolean;
+  onRequestStop: (session: ChargingSession) => void;
+}): DataTableColumn<ChargingSession>[] {
+  const cols: DataTableColumn<ChargingSession>[] = [
+    {
+      id: "transaction",
+      header: "Session",
+      cell: (row) => <SessionIdCell transactionId={row.transactionId} />,
+    },
+    {
+      id: "charger",
+      header: "Charge box",
+      cell: (row) => cellText(row.chargerId),
+    },
+    {
+      id: "connector",
+      header: "Connector",
+      cell: (row) => cellText(row.connectorId),
+    },
+    {
+      id: "status",
+      header: "Status",
+      cell: (row) => <SessionStatusBadge status={cellText(row.status)} />,
+    },
+    {
+      id: "energy",
+      header: "Energy",
+      cell: (row) => fmtEnergy(row.energyKwh),
+    },
+    {
+      id: "cost",
+      header: "Cost",
+      cell: (row) => fmtMoney(row.totalDriverCost),
+    },
+    {
+      id: "duration",
+      header: "Duration",
+      cell: (row) =>
+        row.durationMinutes != null ? `${row.durationMinutes} min` : "—",
+    },
+    {
+      id: "started",
+      header: "Started",
+      cell: (row) => cellDateTime(row.startedAt),
+    },
+    {
+      id: "stopped",
+      header: "Stopped",
+      cell: (row) => cellDateTime(row.stoppedAt),
+    },
+  ];
+
+  if (opts.canStop) {
+    cols.push({
+      id: "actions",
+      header: "Actions",
+      cell: (row) => (
+        <SessionStopActions
+          session={row}
+          acting={opts.acting}
+          onStop={opts.onRequestStop}
+        />
+      ),
+    });
+  }
+
+  return cols;
+}
+
+function resolveSessionStatusFilter(
+  scopeFilter: string,
+): ChargingSessionStatus | undefined {
+  if (scopeFilter === "active" || scopeFilter === "all") return undefined;
+  return scopeFilter as ChargingSessionStatus;
 }
 
 export default function AccountChargingSessionsPage() {
@@ -82,10 +203,7 @@ export default function AccountChargingSessionsPage() {
       const res = await fetchChargingSessions({
         chargerId: appliedSearch || undefined,
         activeOnly: scopeFilter === "active",
-        status:
-          scopeFilter === "active" || scopeFilter === "all"
-            ? undefined
-            : (scopeFilter as "ACTIVE" | "IDLE" | "ENERGY_SETTLED" | "SETTLED"),
+        status: resolveSessionStatusFilter(scopeFilter),
         providerId,
         page,
         size: PAGE_SIZE,
@@ -125,103 +243,18 @@ export default function AccountChargingSessionsPage() {
     }
   }
 
-  const columns = useMemo<DataTableColumn<ChargingSession>[]>(() => {
-    const cols: DataTableColumn<ChargingSession>[] = [
-      {
-        id: "transaction",
-        header: "Session",
-        cell: (row) => (
-          <span className={styles.muted}>#{row.transactionId}</span>
-        ),
-      },
-      {
-        id: "charger",
-        header: "Charge box",
-        cell: (row) => cellText(row.chargerId),
-      },
-      {
-        id: "connector",
-        header: "Connector",
-        cell: (row) => cellText(row.connectorId),
-      },
-      {
-        id: "status",
-        header: "Status",
-        cell: (row) => <StatusBadge status={cellText(row.status)} />,
-      },
-      {
-        id: "energy",
-        header: "Energy",
-        cell: (row) => fmtEnergy(row.energyKwh),
-      },
-      {
-        id: "cost",
-        header: "Cost",
-        cell: (row) => fmtMoney(row.totalDriverCost),
-      },
-      {
-        id: "duration",
-        header: "Duration",
-        cell: (row) =>
-          row.durationMinutes != null ? `${row.durationMinutes} min` : "—",
-      },
-      {
-        id: "started",
-        header: "Started",
-        cell: (row) => cellDateTime(row.startedAt),
-      },
-      {
-        id: "stopped",
-        header: "Stopped",
-        cell: (row) => cellDateTime(row.stoppedAt),
-      },
-    ];
-
-    if (canStop) {
-      cols.push({
-        id: "actions",
-        header: "Actions",
-        cell: (row) => (
-          <RowActionsMenu
-            label={`Actions for session ${row.transactionId}`}
-            items={[
-              {
-                label: "Stop session",
-                onClick: () => setStopTarget(row),
-                hidden: !LIVE_STATUSES.has(row.status),
-                destructive: true,
-                disabled: acting,
-              },
-            ]}
-          />
-        ),
-      });
-    }
-
-    return cols;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canStop, acting]);
+  const columns = useMemo(
+    () =>
+      buildSessionColumns({
+        canStop,
+        acting,
+        onRequestStop: setStopTarget,
+      }),
+    [canStop, acting],
+  );
 
   const filters = useMemo(
-    () =>
-      withOptionalProviderFilter(
-        [
-          {
-            id: "scope",
-            label: "Scope",
-            options: [
-              { value: "active", label: "Active / idle" },
-              { value: "all", label: "All (last 30 days)" },
-              { value: "ACTIVE", label: "ACTIVE" },
-              { value: "IDLE", label: "IDLE" },
-              { value: "ENERGY_SETTLED", label: "ENERGY SETTLED" },
-              { value: "SETTLED", label: "SETTLED" },
-            ],
-          },
-        ],
-        isAdmin,
-        providers,
-      ),
+    () => scopeAndProviderFilters(SESSION_SCOPE_OPTIONS, isAdmin, providers),
     [isAdmin, providers],
   );
 

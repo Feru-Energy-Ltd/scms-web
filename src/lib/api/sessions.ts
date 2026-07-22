@@ -15,7 +15,7 @@ export type ChargingSession = {
   operatorId: number | null;
   energyKwh: number | null;
   totalDriverCost: number | null;
-  status: ChargingSessionStatus | string;
+  status: ChargingSessionStatus;
   durationMinutes: number;
   startedAt: string;
   stoppedAt: string | null;
@@ -23,7 +23,7 @@ export type ChargingSession = {
 
 export type FetchSessionsOptions = {
   chargerId?: string;
-  status?: ChargingSessionStatus | "";
+  status?: ChargingSessionStatus;
   activeOnly?: boolean;
   from?: string;
   to?: string;

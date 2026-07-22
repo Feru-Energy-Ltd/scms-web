@@ -7,7 +7,7 @@ import styles from "@/components/account/ResourceList.module.css";
 import { fetchReservations, type ReservationSummary } from "@/lib/api/chargeBoxes";
 import { asArray } from "@/lib/api/normalize";
 import { cellDateTime, cellText } from "@/lib/account/cellDisplay";
-import { withOptionalProviderFilter } from "@/lib/account/providerDataTableFilter";
+import { scopeAndProviderFilters } from "@/lib/account/providerDataTableFilter";
 import { useAdminProviderFilter } from "@/lib/account/useAdminProviderFilter";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 
@@ -26,7 +26,14 @@ const FAILED_STATUSES = new Set([
   "Deleted",
 ]);
 
-function StatusBadge({ status }: { status: string }) {
+const RESERVATION_SCOPE_OPTIONS = [
+  { value: "active", label: "Active only" },
+  { value: "", label: "All reservations" },
+];
+
+function ReservationStatusBadge({
+  status,
+}: Readonly<{ status: string }>) {
   if (ACTIVE_STATUSES.has(status) || SUCCESS_STATUSES.has(status)) {
     return <span className={styles.badgeOk}>{status}</span>;
   }
@@ -35,6 +42,46 @@ function StatusBadge({ status }: { status: string }) {
   }
   return <span className={styles.badge}>{status}</span>;
 }
+
+const RESERVATION_COLUMNS: DataTableColumn<ReservationRow>[] = [
+  {
+    id: "chargeBoxId",
+    header: "Charge box",
+    cell: (row) => cellText(row.chargeBoxId),
+  },
+  {
+    id: "connectorId",
+    header: "Connector",
+    cell: (row) => cellText(row.connectorId),
+  },
+  {
+    id: "plateNumber",
+    header: "Plate number",
+    cell: (row) => cellText(row.plateNumber),
+  },
+  {
+    id: "status",
+    header: "Status",
+    cell: (row) => (
+      <ReservationStatusBadge status={cellText(row.status)} />
+    ),
+  },
+  {
+    id: "scheduledStart",
+    header: "Start",
+    cell: (row) => cellDateTime(row.scheduledStart),
+  },
+  {
+    id: "scheduledEnd",
+    header: "Expiry",
+    cell: (row) => cellDateTime(row.scheduledEnd),
+  },
+  {
+    id: "locationAddress",
+    header: "Location",
+    cell: (row) => cellText(row.locationAddress),
+  },
+];
 
 export default function AccountReservationsPage() {
   const [rows, setRows] = useState<ReservationRow[]>([]);
@@ -77,60 +124,10 @@ export default function AccountReservationsPage() {
     void load();
   }, [load]);
 
-  const columns = useMemo<DataTableColumn<ReservationRow>[]>(
-    () => [
-      {
-        id: "chargeBoxId",
-        header: "Charge box",
-        cell: (row) => cellText(row.chargeBoxId),
-      },
-      {
-        id: "connectorId",
-        header: "Connector",
-        cell: (row) => cellText(row.connectorId),
-      },
-      {
-        id: "plateNumber",
-        header: "Plate number",
-        cell: (row) => cellText(row.plateNumber),
-      },
-      {
-        id: "status",
-        header: "Status",
-        cell: (row) => <StatusBadge status={cellText(row.status)} />,
-      },
-      {
-        id: "scheduledStart",
-        header: "Start",
-        cell: (row) => cellDateTime(row.scheduledStart),
-      },
-      {
-        id: "scheduledEnd",
-        header: "Expiry",
-        cell: (row) => cellDateTime(row.scheduledEnd),
-      },
-      {
-        id: "locationAddress",
-        header: "Location",
-        cell: (row) => cellText(row.locationAddress),
-      },
-    ],
-    [],
-  );
-
   const filters = useMemo(
     () =>
-      withOptionalProviderFilter(
-        [
-          {
-            id: "scope",
-            label: "Scope",
-            options: [
-              { value: "active", label: "Active only" },
-              { value: "", label: "All reservations" },
-            ],
-          },
-        ],
+      scopeAndProviderFilters(
+        RESERVATION_SCOPE_OPTIONS,
         isAdmin,
         providers,
       ),
@@ -149,7 +146,7 @@ export default function AccountReservationsPage() {
       />
 
       <DataTable
-        columns={columns}
+        columns={RESERVATION_COLUMNS}
         rows={rows}
         getRowKey={(row, i) => `${cellText(row.id)}-${i}`}
         manual

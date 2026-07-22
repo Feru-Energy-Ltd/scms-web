@@ -27,3 +27,16 @@ export function withOptionalProviderFilter<Row>(
   if (!isAdmin) return filters;
   return [...filters, providerDataTableFilter(providers) as DataTableFilter<Row>];
 }
+
+/** Scope filter + optional admin provider filter (shared by list pages). */
+export function scopeAndProviderFilters<Row>(
+  scopeOptions: { value: string; label: string }[],
+  isAdmin: boolean,
+  providers: ProviderListItem[],
+): DataTableFilter<Row>[] {
+  return withOptionalProviderFilter(
+    [{ id: "scope", label: "Scope", options: scopeOptions }],
+    isAdmin,
+    providers,
+  );
+}
