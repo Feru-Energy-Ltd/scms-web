@@ -35,6 +35,10 @@ const MENU_SECTIONS: { label: string; entries: MenuEntry[] }[] = [
         item: { name: "Reservations", url: "/account/reservations" },
         permissions: ["admin:reservations:read", "provider:reservations:read"],
       },
+      {
+        item: { name: "Charging Sessions", url: "/account/sessions" },
+        permissions: ["admin:sessions:read", "provider:sessions:read"],
+      },
     ],
   },
   {
