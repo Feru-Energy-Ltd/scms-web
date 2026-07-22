@@ -328,7 +328,12 @@ export default function AccountChargingSessionsPage() {
         }}
         page={page}
         totalPages={totalPages}
-        onPageChange={setPage}
+        onPageChange={(nextPage) => {
+          // Keep the input aligned with the committed filter used by fetches.
+          // Uncommitted typing must not stay visible while paging prior results.
+          setSearch(appliedSearch);
+          setPage(nextPage);
+        }}
         emptyMessage={
           scopeFilter === "active"
             ? "No active or idle sessions."
