@@ -67,10 +67,12 @@ export default function AccountShell({
   const pathname = usePathname();
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  // Re-read each render so sidebar roles stay aligned with permission checks
+  // after an access-token refresh (e.g. 401 retry). AccountShell outlives pages.
   const permissions = getStoredPermissions();
+  const userCtx = getAccessTokenContext();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [identityType] = useState(() => getStoredIdentityType() || "Account");
-  const [userCtx] = useState(() => getAccessTokenContext());
   const menuSections = useMemo(() => {
     const roles = userCtx.roles?.length
       ? userCtx.roles
