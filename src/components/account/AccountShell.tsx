@@ -23,6 +23,7 @@ import {
   Tags,
   User,
   Users,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
@@ -52,6 +53,7 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   "/account/pricing": Tags,
   "/account/stations": MapPin,
   "/account/charge-boxes": BatteryCharging,
+  "/account/sessions": Zap,
   "/account/users": User,
   "/account/invitations": Mail,
   "/account/billing": CreditCard,
