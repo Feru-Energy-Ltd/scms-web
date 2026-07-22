@@ -72,8 +72,8 @@ export default function ProviderPricingView() {
     <div>
       <h1 className={rlStyles.h1}>Pricing</h1>
       <p className={rlStyles.muted}>
-        Your operator pricing plan. Rates are set by SafariCharge and apply to
-        charging sessions at your stations.
+        Rates are agreed between you and SafariCharge. They apply to
+        all your stations. If you need to change the rates, please contact SafariCharge.
       </p>
 
       {plan ? (
