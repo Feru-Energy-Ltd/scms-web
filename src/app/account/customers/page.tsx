@@ -75,18 +75,13 @@ export default function AccountCustomersPage() {
                 <th className={styles.th}>Name</th>
                 <th className={styles.th}>Email</th>
                 <th className={styles.th}>Phone</th>
-                <th className={styles.th}>Gender</th>
                 <th className={styles.th}>Status</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row, i) => {
                 const id = cell(row, "id", "customerId");
-                const active = row.active;
-                const activeBool =
-                  typeof active === "boolean"
-                    ? active
-                    : active === "true" || active === 1;
+                const active = row.enabled;
                 return (
                   <tr key={`${id}-${i}`}>
                     <td className={styles.td}>
@@ -98,13 +93,10 @@ export default function AccountCustomersPage() {
                       {cell(row, "phoneNumber", "phone")}
                     </td>
                     <td className={styles.td}>
-                      {cell(row, "gender", "sex")}
-                    </td>
-                    <td className={styles.td}>
                       <span
-                        className={activeBool ? styles.badgeOk : styles.badgeNo}
+                        className={active ? styles.badgeOk : styles.badgeNo}
                       >
-                        {activeBool ? "Active" : "Inactive"}
+                        {active ? "Active" : "Inactive"}
                       </span>
                     </td>
                   </tr>
