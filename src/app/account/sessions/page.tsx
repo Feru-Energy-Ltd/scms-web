@@ -31,6 +31,15 @@ const SESSION_SCOPE_OPTIONS = [
   { value: "SETTLED", label: "SETTLED" },
 ];
 
+const LAST_30_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** Explicit window matching the “All (last 30 days)” / historical scopes. */
+function last30DaysBounds(): { from: string; to: string } {
+  const to = new Date();
+  const from = new Date(to.getTime() - LAST_30_DAYS_MS);
+  return { from: from.toISOString(), to: to.toISOString() };
+}
+
 function fmtEnergy(kwh: number | null | undefined): string {
   if (kwh == null) return "—";
   return `${Number(kwh).toFixed(3)} kWh`;
@@ -200,10 +209,14 @@ export default function AccountChargingSessionsPage() {
     const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
+      const activeOnly = scopeFilter === "active";
       const res = await fetchChargingSessions({
         chargerId: appliedSearch || undefined,
-        activeOnly: scopeFilter === "active",
+        activeOnly,
         status: resolveSessionStatusFilter(scopeFilter),
+        // Historical scopes: send the window explicitly so the list matches the UI label
+        // (backend also defaults to 30 days, but the client should not rely on that alone).
+        ...(activeOnly ? {} : last30DaysBounds()),
         providerId,
         page,
         size: PAGE_SIZE,
