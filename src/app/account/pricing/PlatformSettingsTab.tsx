@@ -12,7 +12,7 @@ import toast from "react-hot-toast";
 import EditConfigModal, { type ConfigSection } from "./EditConfigModal";
 import styles from "./pricing.module.css";
 
-export default function PlatformSettingsTab() {
+export default function PlatformSettingsTab({ canUpdate = false }: { canUpdate?: boolean }) {
   const [config, setConfig] = useState<PlatformConfigResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [editSection, setEditSection] = useState<ConfigSection | null>(null);
@@ -62,9 +62,11 @@ export default function PlatformSettingsTab() {
         <div className={styles.configCard}>
           <div className={styles.cardHeader}>
             <span className={styles.cardTitle}>Revenue Split</span>
-            <button className={styles.cardEditBtn} onClick={() => setEditSection("revenue")}>
-              Edit
-            </button>
+            {canUpdate && (
+              <button className={styles.cardEditBtn} onClick={() => setEditSection("revenue")}>
+                Edit
+              </button>
+            )}
           </div>
           <div className={styles.cardRow}>
             Platform margin: <span className={styles.cardValue}>RWF {config.platformMarginPerKwh.toFixed(2)}/kWh</span>
@@ -81,9 +83,11 @@ export default function PlatformSettingsTab() {
         <div className={styles.configCard}>
           <div className={styles.cardHeader}>
             <span className={styles.cardTitle}>Pricing Guardrails</span>
-            <button className={styles.cardEditBtn} onClick={() => setEditSection("guardrails")}>
-              Edit
-            </button>
+            {canUpdate && (
+              <button className={styles.cardEditBtn} onClick={() => setEditSection("guardrails")}>
+                Edit
+              </button>
+            )}
           </div>
           <div className={styles.cardRow}>
             Energy rate: <span className={styles.cardValue}>RWF {config.minEnergyRate.toFixed(2)} – {config.maxEnergyRate.toFixed(2)}</span>
@@ -97,9 +101,11 @@ export default function PlatformSettingsTab() {
         <div className={styles.configCard}>
           <div className={styles.cardHeader}>
             <span className={styles.cardTitle}>Wallet Limits</span>
-            <button className={styles.cardEditBtn} onClick={() => setEditSection("wallet")}>
-              Edit
-            </button>
+            {canUpdate && (
+              <button className={styles.cardEditBtn} onClick={() => setEditSection("wallet")}>
+                Edit
+              </button>
+            )}
           </div>
           <div className={styles.cardRow}>
             Min top-up: <span className={styles.cardValue}>RWF {config.minTopup.toFixed(2)}</span>
@@ -116,9 +122,11 @@ export default function PlatformSettingsTab() {
         <div className={styles.configCard}>
           <div className={styles.cardHeader}>
             <span className={styles.cardTitle}>Session Rules</span>
-            <button className={styles.cardEditBtn} onClick={() => setEditSection("session")}>
-              Edit
-            </button>
+            {canUpdate && (
+              <button className={styles.cardEditBtn} onClick={() => setEditSection("session")}>
+                Edit
+              </button>
+            )}
           </div>
           <div className={styles.cardRow}>
             Reservation window: <span className={styles.cardValue}>{config.reservationWindowMinutes} min</span>

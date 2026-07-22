@@ -14,6 +14,7 @@ import {
 } from "@/lib/api/pricing";
 import { fetchActiveProviders, type ProviderListItem } from "@/lib/api/serviceProviders";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
+import { parseApiUtcDateTime } from "@/lib/datetime/formatUtc";
 import toast from "react-hot-toast";
 import AssignPlanModal from "./AssignPlanModal";
 import styles from "./pricing.module.css";
@@ -21,9 +22,15 @@ import rlStyles from "@/components/account/ResourceList.module.css";
 
 interface Props {
   preselectedOperatorId?: number | null;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-export default function AssignmentsTab({ preselectedOperatorId }: Props) {
+export default function AssignmentsTab({
+  preselectedOperatorId,
+  canUpdate = false,
+  canDelete = false,
+}: Props) {
   const [assignments, setAssignments] = useState<PricingAssignment[]>([]);
   const [operators, setOperators] = useState<ProviderListItem[]>([]);
   const [plans, setPlans] = useState<PricingPlan[]>([]);
@@ -66,13 +73,12 @@ export default function AssignmentsTab({ preselectedOperatorId }: Props) {
 
   // Auto-open assign modal from approval flow
   useEffect(() => {
-    if (preselectedOperatorId != null && operators.length > 0) {
-      const op = operators.find((o) => o.id === preselectedOperatorId);
-      if (op) {
-        setAssignOperator({ id: op.id, name: op.businessName });
-      }
+    if (!canUpdate || preselectedOperatorId == null || operators.length === 0) return;
+    const op = operators.find((o) => o.id === preselectedOperatorId);
+    if (op) {
+      setAssignOperator({ id: op.id, name: op.businessName });
     }
-  }, [preselectedOperatorId, operators]);
+  }, [canUpdate, preselectedOperatorId, operators]);
 
   const handleAssign = async (pricingPlanId: number) => {
     if (!assignOperator) return;
@@ -124,7 +130,9 @@ export default function AssignmentsTab({ preselectedOperatorId }: Props) {
               <th className={rlStyles.th}>Operator</th>
               <th className={rlStyles.th}>Assigned Plan</th>
               <th className={rlStyles.th}>Assigned Date</th>
-              <th className={rlStyles.th}>Actions</th>
+              {(canUpdate || canDelete) && (
+                <th className={rlStyles.th}>Actions</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -142,33 +150,38 @@ export default function AssignmentsTab({ preselectedOperatorId }: Props) {
                   </td>
                   <td className={rlStyles.td}>
                     {assignment
-                      ? new Date(assignment.assignedAt).toLocaleDateString()
+                      ? (parseApiUtcDateTime(assignment.assignedAt)?.toLocaleDateString() ??
+                        "\u2014")
                       : "\u2014"}
                   </td>
-                  <td className={rlStyles.td}>
-                    <div className={rlStyles.linkRow}>
-                      <button
-                        className={styles.actionBtn}
-                        onClick={() =>
-                          setAssignOperator({
-                            id: op.id,
-                            name: op.businessName,
-                            currentPlanId: assignment?.pricingPlanId,
-                          })
-                        }
-                      >
-                        {assignment ? "Change" : "Assign"}
-                      </button>
-                      {assignment && (
-                        <button
-                          className={styles.deactivateBtn}
-                          onClick={() => setConfirmRemoveId(op.id)}
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                  </td>
+                  {(canUpdate || canDelete) && (
+                    <td className={rlStyles.td}>
+                      <div className={rlStyles.linkRow}>
+                        {canUpdate && (
+                          <button
+                            className={styles.actionBtn}
+                            onClick={() =>
+                              setAssignOperator({
+                                id: op.id,
+                                name: op.businessName,
+                                currentPlanId: assignment?.pricingPlanId,
+                              })
+                            }
+                          >
+                            {assignment ? "Change" : "Assign"}
+                          </button>
+                        )}
+                        {canDelete && assignment && (
+                          <button
+                            className={styles.deactivateBtn}
+                            onClick={() => setConfirmRemoveId(op.id)}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               );
             })}

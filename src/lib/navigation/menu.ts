@@ -72,7 +72,7 @@ const MENU_SECTIONS: { label: string; entries: MenuEntry[] }[] = [
       },
       {
         item: { name: "Pricing", url: "/account/pricing" },
-        permissions: ["admin:providers:read"],
+        permissions: ["admin:pricing:read", "provider:pricing:read"],
       },
     ],
   },

@@ -1,18 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { getAccessTokenContext } from "@/lib/auth/jwtContext";
+import { getStoredPermissions } from "@/lib/auth/session";
+import { getPricingPermissions } from "@/lib/security/pricingPermissions";
 import PricingPlansTab from "./PricingPlansTab";
 import AssignmentsTab from "./AssignmentsTab";
 import PlatformSettingsTab from "./PlatformSettingsTab";
+import ProviderPricingView from "./ProviderPricingView";
 import styles from "./pricing.module.css";
 import rlStyles from "@/components/account/ResourceList.module.css";
 
 type Tab = "plans" | "assignments" | "settings";
 
 export default function PricingPage() {
-  const [ctx] = useState(() => getAccessTokenContext());
+  const storedPerms = useMemo(() => getStoredPermissions(), []);
+  const perms = useMemo(() => getPricingPermissions(storedPerms), [storedPerms]);
+  const isAdmin = storedPerms.includes("admin:pricing:read");
+  const isProvider = storedPerms.includes("provider:pricing:read");
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const assignOperatorId = searchParams.get("assign");
@@ -22,7 +27,7 @@ export default function PricingPage() {
         : "plans",
   );
 
-  if (ctx.identityType !== "SYSTEM_ADMIN") {
+  if (!isAdmin && !isProvider) {
     return (
       <div>
         <h1 className={rlStyles.h1}>Pricing</h1>
@@ -31,6 +36,10 @@ export default function PricingPage() {
         </p>
       </div>
     );
+  }
+
+  if (!isAdmin) {
+    return <ProviderPricingView />;
   }
 
   return (
@@ -61,15 +70,23 @@ export default function PricingPage() {
         </button>
       </div>
 
-      {tab === "plans" && <PricingPlansTab />}
+      {tab === "plans" && (
+        <PricingPlansTab
+          canCreate={perms.canCreate}
+          canUpdate={perms.canUpdate}
+          canDelete={perms.canDelete}
+        />
+      )}
       {tab === "assignments" && (
         <AssignmentsTab
+          canUpdate={perms.canUpdate}
+          canDelete={perms.canDelete}
           preselectedOperatorId={
             assignOperatorId ? Number(assignOperatorId) : null
           }
         />
       )}
-      {tab === "settings" && <PlatformSettingsTab />}
+      {tab === "settings" && <PlatformSettingsTab canUpdate={perms.canUpdate} />}
     </div>
   );
 }

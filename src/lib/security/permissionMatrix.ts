@@ -43,6 +43,7 @@ export const ADMIN_MATRIX_COLUMNS: MatrixColumn[] = [
   { key: "transactions", label: "Transactions", resources: ["transactions"] },
   { key: "energy", label: "Energy", resources: ["energy"] },
   { key: "reservations", label: "Reservations", resources: ["reservations"] },
+  { key: "pricing", label: "Pricing", resources: ["pricing"] },
   { key: "sessions", label: "Charging session", resources: ["sessions"] },
   { key: "roles", label: "Roles & Permissions", resources: ["roles"] },
 ];
@@ -57,6 +58,7 @@ export const PROVIDER_MATRIX_COLUMNS: MatrixColumn[] = [
   { key: "transactions", label: "Transactions", resources: ["transactions"] },
   { key: "energy", label: "Energy", resources: ["energy"] },
   { key: "reservations", label: "Reservations", resources: ["reservations"] },
+  { key: "pricing", label: "Pricing", resources: ["pricing"] },
   { key: "sessions", label: "Charging session", resources: ["sessions"] },
   { key: "roles", label: "Roles", resources: ["roles"] },
 ];
