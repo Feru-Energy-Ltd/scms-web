@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { fetchAdminRoles } from "@/lib/api/security";
 import { asArray } from "@/lib/api/normalize";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
@@ -41,19 +41,18 @@ export default function AccountPermissionsPage() {
   const [matrixRows, setMatrixRows] = useState<RoleMatrixRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const userCtx = useMemo(() => getAccessTokenContext(), []);
-  const perms = useMemo(() => new Set(getStoredPermissions()), []);
-  const canView = useMemo(() => {
-    const roles = userCtx.roles?.length
-      ? userCtx.roles
-      : userCtx.role
-        ? [userCtx.role]
-        : [];
-    return (
-      perms.has("admin:roles:read") &&
-      roles.some((role) => ALLOWED_ROLES.has(role))
-    );
-  }, [perms, userCtx.roles, userCtx.role]);
+  // Re-read each render so canView stays aligned with the sidebar after an
+  // access-token refresh (e.g. 401 retry) updates roles/permissions.
+  const userCtx = getAccessTokenContext();
+  const perms = new Set(getStoredPermissions());
+  const roles = userCtx.roles?.length
+    ? userCtx.roles
+    : userCtx.role
+      ? [userCtx.role]
+      : [];
+  const canView =
+    perms.has("admin:roles:read") &&
+    roles.some((role) => ALLOWED_ROLES.has(role));
 
   const load = useCallback(async () => {
     if (!canView) {
