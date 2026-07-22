@@ -9,6 +9,7 @@ const STATIC_SEGMENTS: Record<string, string> = {
   "service-providers": "Service Providers",
   permissions: "Roles & Permissions",
   customers: "Customers",
+  vehicles: "Vehicles",
   "support-tickets": "Support Tickets",
   pricing: "Pricing",
   stations: "Charging Stations",
