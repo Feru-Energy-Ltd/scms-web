@@ -213,23 +213,6 @@ export default function BillingPage() {
             <button type="button" className={styles.button} onClick={() => void loadTransactions()}>
               Refresh
             </button>
-            <button
-              type="button" className={styles.button}
-              disabled={txPage <= 0}
-              onClick={() => setTxPage((p) => Math.max(0, p - 1))}
-            >
-              Previous
-            </button>
-            <button
-              type="button" className={styles.button}
-              disabled={txData != null && txPage >= txData.totalPages - 1}
-              onClick={() => setTxPage((p) => p + 1)}
-            >
-              Next
-            </button>
-            <span className={styles.muted}>
-              Page {txPage + 1}{txData ? ` of ${txData.totalPages}` : ""}
-            </span>
           </div>
 
           <DateRangeHint
@@ -358,6 +341,26 @@ export default function BillingPage() {
               </table>
             </div>
           )}
+
+          <div className={styles.toolbar}>
+            <button
+              type="button" className={styles.button}
+              disabled={txPage <= 0}
+              onClick={() => setTxPage((p) => Math.max(0, p - 1))}
+            >
+              Previous
+            </button>
+            <button
+              type="button" className={styles.button}
+              disabled={txData != null && txPage >= txData.totalPages - 1}
+              onClick={() => setTxPage((p) => p + 1)}
+            >
+              Next
+            </button>
+            <span className={styles.muted}>
+              Page {txPage + 1}{txData ? ` of ${txData.totalPages}` : ""}
+            </span>
+          </div>
         </>
       )}
 

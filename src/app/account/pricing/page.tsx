@@ -7,6 +7,7 @@ import { getPricingPermissions } from "@/lib/security/pricingPermissions";
 import PricingPlansTab from "./PricingPlansTab";
 import AssignmentsTab from "./AssignmentsTab";
 import PlatformSettingsTab from "./PlatformSettingsTab";
+import ProviderPricingView from "./ProviderPricingView";
 import styles from "./pricing.module.css";
 import rlStyles from "@/components/account/ResourceList.module.css";
 
@@ -15,6 +16,8 @@ type Tab = "plans" | "assignments" | "settings";
 export default function PricingPage() {
   const storedPerms = useMemo(() => getStoredPermissions(), []);
   const perms = useMemo(() => getPricingPermissions(storedPerms), [storedPerms]);
+  const isAdmin = storedPerms.includes("admin:pricing:read");
+  const isProvider = storedPerms.includes("provider:pricing:read");
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const assignOperatorId = searchParams.get("assign");
@@ -24,7 +27,7 @@ export default function PricingPage() {
         : "plans",
   );
 
-  if (!storedPerms.includes("admin:pricing:read")) {
+  if (!isAdmin && !isProvider) {
     return (
       <div>
         <h1 className={rlStyles.h1}>Pricing</h1>
@@ -33,6 +36,10 @@ export default function PricingPage() {
         </p>
       </div>
     );
+  }
+
+  if (!isAdmin) {
+    return <ProviderPricingView />;
   }
 
   return (
