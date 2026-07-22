@@ -12,27 +12,14 @@ import {
   stopChargingSession,
   type ChargingSession,
 } from "@/lib/api/sessions";
-import {
-  fetchActiveProviders,
-  type ProviderListItem,
-} from "@/lib/api/serviceProviders";
-import { getAccessTokenContext } from "@/lib/auth/jwtContext";
+import { cellDateTime, cellText } from "@/lib/account/cellDisplay";
+import { withOptionalProviderFilter } from "@/lib/account/providerDataTableFilter";
+import { useAdminProviderFilter } from "@/lib/account/useAdminProviderFilter";
 import { getStoredPermissions } from "@/lib/auth/session";
-import { formatApiUtcDateTime } from "@/lib/datetime/formatUtc";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 
 const PAGE_SIZE = 20;
 const LIVE_STATUSES = new Set(["ACTIVE", "IDLE"]);
-
-function text(value: unknown): string {
-  if (value == null || value === "") return "—";
-  return String(value);
-}
-
-function fmtDateTime(value: unknown): string {
-  if (value == null || value === "") return "—";
-  return formatApiUtcDateTime(String(value));
-}
 
 function fmtEnergy(kwh: number | null | undefined): string {
   if (kwh == null) return "—";
@@ -67,28 +54,22 @@ export default function AccountChargingSessionsPage() {
   const [search, setSearch] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
   const [scopeFilter, setScopeFilter] = useState("active");
-  const [providerFilter, setProviderFilter] = useState("");
-  const [providers, setProviders] = useState<ProviderListItem[]>([]);
   const [acting, setActing] = useState(false);
   const [stopTarget, setStopTarget] = useState<ChargingSession | null>(null);
 
   const requestIdRef = useRef(0);
+  const {
+    isAdmin,
+    providers,
+    providerFilter,
+    setProviderFilter,
+    providerId,
+  } = useAdminProviderFilter();
 
   const perms = useMemo(() => new Set(getStoredPermissions()), []);
-  const isAdmin = useMemo(
-    () => getAccessTokenContext()?.identityType === "SYSTEM_ADMIN",
-    [],
-  );
   const canRead =
     perms.has("admin:sessions:read") || perms.has("provider:sessions:read");
   const canStop = perms.has("admin:sessions:update");
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    fetchActiveProviders()
-      .then(setProviders)
-      .catch(() => {});
-  }, [isAdmin]);
 
   const load = useCallback(async () => {
     if (!canRead) {
@@ -98,8 +79,6 @@ export default function AccountChargingSessionsPage() {
     const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
-      const providerId =
-        providerFilter === "" ? undefined : Number(providerFilter);
       const res = await fetchChargingSessions({
         chargerId: appliedSearch || undefined,
         activeOnly: scopeFilter === "active",
@@ -124,7 +103,7 @@ export default function AccountChargingSessionsPage() {
     } finally {
       if (requestId === requestIdRef.current) setLoading(false);
     }
-  }, [canRead, appliedSearch, scopeFilter, providerFilter, page]);
+  }, [canRead, appliedSearch, scopeFilter, providerId, page]);
 
   useEffect(() => {
     void load();
@@ -158,17 +137,17 @@ export default function AccountChargingSessionsPage() {
       {
         id: "charger",
         header: "Charge box",
-        cell: (row) => text(row.chargerId),
+        cell: (row) => cellText(row.chargerId),
       },
       {
         id: "connector",
         header: "Connector",
-        cell: (row) => text(row.connectorId),
+        cell: (row) => cellText(row.connectorId),
       },
       {
         id: "status",
         header: "Status",
-        cell: (row) => <StatusBadge status={text(row.status)} />,
+        cell: (row) => <StatusBadge status={cellText(row.status)} />,
       },
       {
         id: "energy",
@@ -189,12 +168,12 @@ export default function AccountChargingSessionsPage() {
       {
         id: "started",
         header: "Started",
-        cell: (row) => fmtDateTime(row.startedAt),
+        cell: (row) => cellDateTime(row.startedAt),
       },
       {
         id: "stopped",
         header: "Stopped",
-        cell: (row) => fmtDateTime(row.stoppedAt),
+        cell: (row) => cellDateTime(row.stoppedAt),
       },
     ];
 
@@ -223,36 +202,28 @@ export default function AccountChargingSessionsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canStop, acting]);
 
-  const filters = useMemo(() => {
-    const base = [
-      {
-        id: "scope",
-        label: "Scope",
-        options: [
-          { value: "active", label: "Active / idle" },
-          { value: "all", label: "All (last 30 days)" },
-          { value: "ACTIVE", label: "ACTIVE" },
-          { value: "IDLE", label: "IDLE" },
-          { value: "ENERGY_SETTLED", label: "ENERGY SETTLED" },
-          { value: "SETTLED", label: "SETTLED" },
+  const filters = useMemo(
+    () =>
+      withOptionalProviderFilter(
+        [
+          {
+            id: "scope",
+            label: "Scope",
+            options: [
+              { value: "active", label: "Active / idle" },
+              { value: "all", label: "All (last 30 days)" },
+              { value: "ACTIVE", label: "ACTIVE" },
+              { value: "IDLE", label: "IDLE" },
+              { value: "ENERGY_SETTLED", label: "ENERGY SETTLED" },
+              { value: "SETTLED", label: "SETTLED" },
+            ],
+          },
         ],
-      },
-    ];
-    if (isAdmin) {
-      base.push({
-        id: "provider",
-        label: "Provider",
-        options: [
-          { value: "", label: "All providers" },
-          ...providers.map((p) => ({
-            value: String(p.id),
-            label: p.businessName || p.displayName || `Provider ${p.id}`,
-          })),
-        ],
-      });
-    }
-    return base;
-  }, [isAdmin, providers]);
+        isAdmin,
+        providers,
+      ),
+    [isAdmin, providers],
+  );
 
   if (!canRead) {
     return (

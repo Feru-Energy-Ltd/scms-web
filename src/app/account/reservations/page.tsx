@@ -5,13 +5,10 @@ import DataTable, { type DataTableColumn } from "@/components/account/DataTable"
 import PageHeader from "@/components/account/PageHeader";
 import styles from "@/components/account/ResourceList.module.css";
 import { fetchReservations, type ReservationSummary } from "@/lib/api/chargeBoxes";
-import {
-  fetchActiveProviders,
-  type ProviderListItem,
-} from "@/lib/api/serviceProviders";
 import { asArray } from "@/lib/api/normalize";
-import { getAccessTokenContext } from "@/lib/auth/jwtContext";
-import { formatApiUtcDateTime } from "@/lib/datetime/formatUtc";
+import { cellDateTime, cellText } from "@/lib/account/cellDisplay";
+import { withOptionalProviderFilter } from "@/lib/account/providerDataTableFilter";
+import { useAdminProviderFilter } from "@/lib/account/useAdminProviderFilter";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 
 type ReservationRow = Partial<ReservationSummary> & Record<string, unknown>;
@@ -29,16 +26,6 @@ const FAILED_STATUSES = new Set([
   "Deleted",
 ]);
 
-function text(value: unknown): string {
-  if (value == null || value === "") return "—";
-  return String(value);
-}
-
-function fmtDateTime(value: unknown): string {
-  if (value == null || value === "") return "—";
-  return formatApiUtcDateTime(String(value));
-}
-
 function StatusBadge({ status }: { status: string }) {
   if (ACTIVE_STATUSES.has(status) || SUCCESS_STATUSES.has(status)) {
     return <span className={styles.badgeOk}>{status}</span>;
@@ -54,33 +41,21 @@ export default function AccountReservationsPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-
-  // "" = all reservations, "active" = active only.
   const [scopeFilter, setScopeFilter] = useState("active");
 
-  // Admin-only provider drill-down. "" = all providers.
-  const isAdmin = useMemo(
-    () => getAccessTokenContext()?.identityType === "SYSTEM_ADMIN",
-    [],
-  );
-  const [providerFilter, setProviderFilter] = useState("");
-  const [providers, setProviders] = useState<ProviderListItem[]>([]);
-
   const requestIdRef = useRef(0);
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    fetchActiveProviders()
-      .then(setProviders)
-      .catch(() => {});
-  }, [isAdmin]);
+  const {
+    isAdmin,
+    providers,
+    providerFilter,
+    setProviderFilter,
+    providerId,
+  } = useAdminProviderFilter();
 
   const load = useCallback(async () => {
     const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
-      const providerId =
-        providerFilter === "" ? undefined : Number(providerFilter);
       const raw = (await fetchReservations(page, PAGE_SIZE, {
         active: scopeFilter === "active",
         providerId,
@@ -96,7 +71,7 @@ export default function AccountReservationsPage() {
     } finally {
       if (requestId === requestIdRef.current) setLoading(false);
     }
-  }, [page, scopeFilter, providerFilter]);
+  }, [page, scopeFilter, providerId]);
 
   useEffect(() => {
     void load();
@@ -107,68 +82,60 @@ export default function AccountReservationsPage() {
       {
         id: "chargeBoxId",
         header: "Charge box",
-        cell: (row) => text(row.chargeBoxId),
+        cell: (row) => cellText(row.chargeBoxId),
       },
       {
         id: "connectorId",
         header: "Connector",
-        cell: (row) => text(row.connectorId),
+        cell: (row) => cellText(row.connectorId),
       },
       {
         id: "plateNumber",
         header: "Plate number",
-        cell: (row) => text(row.plateNumber),
+        cell: (row) => cellText(row.plateNumber),
       },
       {
         id: "status",
         header: "Status",
-        cell: (row) => <StatusBadge status={text(row.status)} />,
+        cell: (row) => <StatusBadge status={cellText(row.status)} />,
       },
       {
         id: "scheduledStart",
         header: "Start",
-        cell: (row) => fmtDateTime(row.scheduledStart),
+        cell: (row) => cellDateTime(row.scheduledStart),
       },
       {
         id: "scheduledEnd",
         header: "Expiry",
-        cell: (row) => fmtDateTime(row.scheduledEnd),
+        cell: (row) => cellDateTime(row.scheduledEnd),
       },
       {
         id: "locationAddress",
         header: "Location",
-        cell: (row) => text(row.locationAddress),
+        cell: (row) => cellText(row.locationAddress),
       },
     ],
     [],
   );
 
-  const filters = useMemo(() => {
-    const base = [
-      {
-        id: "scope",
-        label: "Scope",
-        options: [
-          { value: "active", label: "Active only" },
-          { value: "", label: "All reservations" },
+  const filters = useMemo(
+    () =>
+      withOptionalProviderFilter(
+        [
+          {
+            id: "scope",
+            label: "Scope",
+            options: [
+              { value: "active", label: "Active only" },
+              { value: "", label: "All reservations" },
+            ],
+          },
         ],
-      },
-    ];
-    if (isAdmin) {
-      base.push({
-        id: "provider",
-        label: "Provider",
-        options: [
-          { value: "", label: "All providers" },
-          ...providers.map((p) => ({
-            value: String(p.id),
-            label: p.businessName || p.displayName || `Provider ${p.id}`,
-          })),
-        ],
-      });
-    }
-    return base;
-  }, [isAdmin, providers]);
+        isAdmin,
+        providers,
+      ),
+    [isAdmin, providers],
+  );
 
   return (
     <div>
@@ -184,7 +151,7 @@ export default function AccountReservationsPage() {
       <DataTable
         columns={columns}
         rows={rows}
-        getRowKey={(row, i) => `${text(row.id)}-${i}`}
+        getRowKey={(row, i) => `${cellText(row.id)}-${i}`}
         manual
         loading={loading}
         filters={filters}
