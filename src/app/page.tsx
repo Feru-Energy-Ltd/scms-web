@@ -141,6 +141,11 @@ export default function LoginPage() {
             Sign up
           </button>
         </div>
+        <p className={styles.legalNote}>
+          <Link href="/legal/privacy" target="_blank" rel="noopener noreferrer">
+            Privacy Policy
+          </Link>
+        </p>
       </div>
     </main>
   );

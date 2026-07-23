@@ -15,11 +15,17 @@ export default function SignUpPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isSubmitting) return;
+
+    if (!agreedToTerms) {
+      toast.error("Please agree to the Privacy Policy to continue.");
+      return;
+    }
 
     setIsSubmitting(true);
     setFieldErrors({});
@@ -168,7 +174,32 @@ export default function SignUpPage() {
             error={fieldErrors.phone?.[0]}
           />
 
-          <button className={styles.primaryButton} type="submit" disabled={isSubmitting}>
+          <label className={styles.agreement}>
+            <input
+              className={styles.agreementCheckbox}
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+            />
+            <span>
+              I agree to the Safaricharge{" "}
+              <Link
+                href="/legal/privacy"
+                className={styles.agreementLink}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Privacy Policy
+              </Link>
+              .
+            </span>
+          </label>
+
+          <button
+            className={styles.primaryButton}
+            type="submit"
+            disabled={isSubmitting || !agreedToTerms}
+          >
             {isSubmitting ? "Creating account..." : "Sign up"}
           </button>
         </form>

@@ -1,0 +1,179 @@
+.main {
+  min-height: 100vh;
+  padding: 32px 16px 48px;
+}
+
+.shell {
+  width: min(720px, 100%);
+  margin: 0 auto;
+  border-radius: 18px;
+  border: 1px solid var(--color-border);
+  background: color-mix(in oklab, var(--color-surface) 94%, transparent);
+  padding: 28px 24px 32px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 28px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.brandMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 112px;
+  height: 40px;
+}
+
+.brandLogo {
+  max-width: 100%;
+  max-height: 40px;
+  height: auto;
+  width: auto;
+}
+
+.brandName {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.backLink {
+  font-size: 13px;
+  color: var(--color-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+.intro {
+  margin-bottom: 28px;
+}
+
+.pageTitle {
+  margin: 0 0 8px;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  color: var(--color-primary);
+}
+
+.updated {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.section {
+  margin-bottom: 28px;
+}
+
+.sectionTitle {
+  margin: 0 0 12px;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.subTitle {
+  margin: 16px 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.paragraph {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--color-text-muted);
+}
+
+.list {
+  margin: 0 0 12px;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.listItem {
+  position: relative;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--color-text-muted);
+}
+
+.listItem::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+.termLabel {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.contactCard {
+  margin-top: 8px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: color-mix(in oklab, var(--color-surface) 88%, transparent);
+}
+
+.contactRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.contactLink {
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.contactLink:hover {
+  color: var(--color-primary);
+}
+
+@media (max-width: 560px) {
+  .shell {
+    padding: 22px 16px 28px;
+  }
+
+  .pageTitle {
+    font-size: 24px;
+  }
+
+  .brandName {
+    display: none;
+  }
+}
