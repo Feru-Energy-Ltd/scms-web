@@ -6,7 +6,7 @@ import styles from "./privacy.module.css";
 export const metadata: Metadata = {
   title: "Privacy Policy · Safaricharge",
   description:
-    "Privacy policy for SafariCharge and the Charging Stations Management System.",
+    "Privacy policy for SafariCharge CMS and Mobile App.",
 };
 
 function Section({

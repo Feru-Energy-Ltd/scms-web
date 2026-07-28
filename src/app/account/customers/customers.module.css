@@ -1,0 +1,53 @@
+.modalWide {
+  max-width: 640px;
+}
+
+.accountList {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.accountRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.875rem;
+}
+
+.accountRow:last-child {
+  border-bottom: none;
+}
+
+.accountMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.accountName {
+  font-weight: 600;
+}
+
+.accountSub {
+  color: var(--color-text-muted, #666);
+  font-size: 0.8125rem;
+}
+
+.sectionTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin: 16px 0 8px;
+}
+
+.muted {
+  color: var(--color-text-muted, #666);
+  font-size: 0.875rem;
+}
