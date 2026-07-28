@@ -18,8 +18,8 @@ export type Customer = {
 export type CustomerAccount = {
   id: number;
   name: string;
-  accountType: CustomerAccountType | string;
-  status: CustomerAccountStatus | string;
+  accountType: CustomerAccountType;
+  status: CustomerAccountStatus;
   businessName: string | null;
   maxMembers: number | null;
   createdAt: string;

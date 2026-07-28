@@ -2,96 +2,43 @@
 
 import { useState } from "react";
 import type { Customer, UpdateCustomerRequest } from "@/lib/api/customers";
+import FormModal from "@/components/account/FormModal";
 import styles from "../users/adminUsers.module.css";
+import CustomerProfileFields from "./CustomerProfileFields";
 
-interface Props {
+type Props = Readonly<{
   customer: Customer;
   loading: boolean;
   onSave: (data: UpdateCustomerRequest) => void;
   onCancel: () => void;
-}
+}>;
 
 export default function EditCustomerModal({ customer, loading, onSave, onCancel }: Props) {
-  const [firstName, setFirstName] = useState(customer.firstName ?? "");
-  const [lastName, setLastName] = useState(customer.lastName ?? "");
-  const [phone, setPhone] = useState(customer.phone ?? "");
-  const [displayName, setDisplayName] = useState(customer.displayName ?? "");
+  const [profile, setProfile] = useState({
+    firstName: customer.firstName ?? "",
+    lastName: customer.lastName ?? "",
+    displayName: customer.displayName ?? "",
+    phone: customer.phone ?? "",
+  });
 
   function handleSubmit() {
     onSave({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      phone: phone.trim() || undefined,
-      displayName: displayName.trim() || undefined,
+      firstName: profile.firstName.trim(),
+      lastName: profile.lastName.trim(),
+      phone: profile.phone.trim() || undefined,
+      displayName: profile.displayName.trim() || undefined,
     });
   }
 
-  const valid = firstName.trim() && lastName.trim();
+  const valid = profile.firstName.trim() && profile.lastName.trim();
 
   return (
-    <div className={styles.overlay} onClick={onCancel}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <h2 className={styles.modalTitle}>Edit customer</h2>
-
-        <div className={styles.formField}>
-          <span className={styles.formLabel}>Email</span>
-          <p className={styles.readOnlyValue}>{customer.email}</p>
-        </div>
-
-        <div className={styles.formField}>
-          <label className={styles.formLabel} htmlFor="edit-customer-first-name">
-            First name *
-          </label>
-          <input
-            id="edit-customer-first-name"
-            className={styles.formInput}
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            disabled={loading}
-          />
-        </div>
-
-        <div className={styles.formField}>
-          <label className={styles.formLabel} htmlFor="edit-customer-last-name">
-            Last name *
-          </label>
-          <input
-            id="edit-customer-last-name"
-            className={styles.formInput}
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            disabled={loading}
-          />
-        </div>
-
-        <div className={styles.formField}>
-          <label className={styles.formLabel} htmlFor="edit-customer-display-name">
-            Display name
-          </label>
-          <input
-            id="edit-customer-display-name"
-            className={styles.formInput}
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            disabled={loading}
-          />
-        </div>
-
-        <div className={styles.formField}>
-          <label className={styles.formLabel} htmlFor="edit-customer-phone">
-            Phone
-          </label>
-          <input
-            id="edit-customer-phone"
-            className={styles.formInput}
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            disabled={loading}
-          />
-        </div>
-
-        <div className={styles.modalActions}>
+    <FormModal
+      title="Edit customer"
+      loading={loading}
+      onClose={onCancel}
+      actions={
+        <>
           <button type="button" className={styles.cancelBtn} onClick={onCancel} disabled={loading}>
             Cancel
           </button>
@@ -103,8 +50,20 @@ export default function EditCustomerModal({ customer, loading, onSave, onCancel 
           >
             {loading ? "Saving…" : "Save changes"}
           </button>
-        </div>
+        </>
+      }
+    >
+      <div className={styles.formField}>
+        <span className={styles.formLabel}>Email</span>
+        <p className={styles.readOnlyValue}>{customer.email}</p>
       </div>
-    </div>
+
+      <CustomerProfileFields
+        idPrefix="edit-customer"
+        loading={loading}
+        values={profile}
+        onChange={(patch) => setProfile((prev) => ({ ...prev, ...patch }))}
+      />
+    </FormModal>
   );
 }

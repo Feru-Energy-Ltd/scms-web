@@ -8,6 +8,25 @@
   z-index: 1000;
 }
 
+.overlayLayered {
+  background: transparent;
+}
+
+.overlayBackdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: rgba(0, 0, 0, 0.4);
+  cursor: default;
+}
+
+.modalRaised {
+  position: relative;
+  z-index: 1;
+}
+
 .modal {
   background: var(--color-bg);
   border: 1px solid var(--color-border);

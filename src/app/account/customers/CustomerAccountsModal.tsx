@@ -15,16 +15,35 @@ import {
   type UpdateCustomerAccountRequest,
 } from "@/lib/api/customers";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
+import FormModal from "@/components/account/FormModal";
 import modalStyles from "../users/adminUsers.module.css";
 import styles from "./customers.module.css";
+import CustomerAccountFields, {
+  type CustomerAccountFormValues,
+} from "./CustomerAccountFields";
 
-const ACCOUNT_TYPES: CustomerAccountType[] = ["PERSONAL", "TEAM", "ENTERPRISE"];
-const ACCOUNT_STATUSES: CustomerAccountStatus[] = ["ACTIVE", "SUSPENDED", "DEACTIVATED"];
-
-interface Props {
+type Props = Readonly<{
   customer: Customer;
   canManage: boolean;
   onClose: () => void;
+}>;
+
+function toCreateBody(values: CustomerAccountFormValues): CreateCustomerAccountRequest {
+  return {
+    name: values.name.trim(),
+    accountType: values.accountType,
+    businessName: values.businessName.trim() || undefined,
+    maxMembers: values.maxMembers.trim() ? Number(values.maxMembers) : undefined,
+  };
+}
+
+function toUpdateBody(values: CustomerAccountFormValues): UpdateCustomerAccountRequest {
+  return {
+    name: values.name.trim(),
+    status: values.status,
+    businessName: values.businessName.trim() || undefined,
+    maxMembers: values.maxMembers.trim() ? Number(values.maxMembers) : undefined,
+  };
 }
 
 export default function CustomerAccountsModal({ customer, canManage, onClose }: Props) {
@@ -33,10 +52,13 @@ export default function CustomerAccountsModal({ customer, canManage, onClose }: 
   const [acting, setActing] = useState(false);
   const [editAccount, setEditAccount] = useState<CustomerAccount | null>(null);
 
-  const [newName, setNewName] = useState("");
-  const [newType, setNewType] = useState<CustomerAccountType>("TEAM");
-  const [newBusinessName, setNewBusinessName] = useState("");
-  const [newMaxMembers, setNewMaxMembers] = useState("");
+  const [newAccount, setNewAccount] = useState<CustomerAccountFormValues>({
+    name: "",
+    accountType: "TEAM" as CustomerAccountType,
+    status: "ACTIVE" as CustomerAccountStatus,
+    businessName: "",
+    maxMembers: "",
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -56,20 +78,18 @@ export default function CustomerAccountsModal({ customer, canManage, onClose }: 
   }, [load]);
 
   async function handleCreate() {
-    if (!newName.trim()) return;
+    if (!newAccount.name.trim()) return;
     setActing(true);
     try {
-      const body: CreateCustomerAccountRequest = {
-        name: newName.trim(),
-        accountType: newType,
-        businessName: newBusinessName.trim() || undefined,
-        maxMembers: newMaxMembers.trim() ? Number(newMaxMembers) : undefined,
-      };
-      await createCustomerAccount(customer.id, body);
+      await createCustomerAccount(customer.id, toCreateBody(newAccount));
       toast.success("Account created");
-      setNewName("");
-      setNewBusinessName("");
-      setNewMaxMembers("");
+      setNewAccount({
+        name: "",
+        accountType: "TEAM",
+        status: "ACTIVE",
+        businessName: "",
+        maxMembers: "",
+      });
       await load();
     } catch (e) {
       showApiErrorToast(e, { fallbackMessage: "Failed to create account." });
@@ -94,132 +114,88 @@ export default function CustomerAccountsModal({ customer, canManage, onClose }: 
 
   const title = customerDisplayName(customer);
 
-  return (
-    <div className={modalStyles.overlay} onClick={onClose}>
-      <div
-        className={`${modalStyles.modal} ${styles.modalWide}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className={modalStyles.modalTitle}>Customer accounts</h2>
-        <p className={styles.muted}>{title} · {customer.email}</p>
-
-        {loading ? (
-          <p className={styles.muted}>Loading accounts…</p>
-        ) : accounts.length === 0 ? (
-          <p className={styles.muted}>No accounts yet.</p>
-        ) : (
-          <ul className={styles.accountList}>
-            {accounts.map((account) => (
-              <li key={account.id} className={styles.accountRow}>
-                <div className={styles.accountMeta}>
-                  <span className={styles.accountName}>{account.name}</span>
-                  <span className={styles.accountSub}>
-                    {account.accountType} · {account.status}
-                    {account.businessName ? ` · ${account.businessName}` : ""}
-                    {account.maxMembers != null ? ` · max ${account.maxMembers}` : ""}
-                  </span>
-                </div>
-                {canManage && (
-                  <button
-                    type="button"
-                    className={modalStyles.cancelBtn}
-                    disabled={acting}
-                    onClick={() => setEditAccount(account)}
-                  >
-                    Edit
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {canManage && !editAccount && (
-          <>
-            <h3 className={styles.sectionTitle}>Add account</h3>
-            <div className={modalStyles.formField}>
-              <label className={modalStyles.formLabel} htmlFor="new-account-name">
-                Name *
-              </label>
-              <input
-                id="new-account-name"
-                className={modalStyles.formInput}
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                disabled={acting}
-              />
+  const accountsBody = (() => {
+    if (loading) return <p className={styles.muted}>Loading accounts…</p>;
+    if (accounts.length === 0) return <p className={styles.muted}>No accounts yet.</p>;
+    return (
+      <ul className={styles.accountList}>
+        {accounts.map((account) => (
+          <li key={account.id} className={styles.accountRow}>
+            <div className={styles.accountMeta}>
+              <span className={styles.accountName}>{account.name}</span>
+              <span className={styles.accountSub}>
+                {account.accountType} · {account.status}
+                {account.businessName ? ` · ${account.businessName}` : ""}
+                {account.maxMembers != null ? ` · max ${account.maxMembers}` : ""}
+              </span>
             </div>
-            <div className={modalStyles.formField}>
-              <label className={modalStyles.formLabel} htmlFor="new-account-type">
-                Type *
-              </label>
-              <select
-                id="new-account-type"
-                className={modalStyles.formSelect}
-                value={newType}
-                onChange={(e) => setNewType(e.target.value as CustomerAccountType)}
-                disabled={acting}
-              >
-                {ACCOUNT_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
-            <div className={modalStyles.formField}>
-              <label className={modalStyles.formLabel} htmlFor="new-account-business">
-                Business name
-              </label>
-              <input
-                id="new-account-business"
-                className={modalStyles.formInput}
-                value={newBusinessName}
-                onChange={(e) => setNewBusinessName(e.target.value)}
-                disabled={acting}
-              />
-            </div>
-            <div className={modalStyles.formField}>
-              <label className={modalStyles.formLabel} htmlFor="new-account-max">
-                Max members
-              </label>
-              <input
-                id="new-account-max"
-                className={modalStyles.formInput}
-                type="number"
-                min={1}
-                value={newMaxMembers}
-                onChange={(e) => setNewMaxMembers(e.target.value)}
-                disabled={acting}
-              />
-            </div>
-            <div className={modalStyles.modalActions}>
+            {canManage && (
               <button
                 type="button"
-                className={modalStyles.primaryBtn}
-                disabled={acting || !newName.trim()}
-                onClick={() => void handleCreate()}
+                className={modalStyles.cancelBtn}
+                disabled={acting}
+                onClick={() => setEditAccount(account)}
               >
-                {acting ? "Saving…" : "Add account"}
+                Edit
               </button>
-            </div>
-          </>
-        )}
+            )}
+          </li>
+        ))}
+      </ul>
+    );
+  })();
 
-        {editAccount && (
-          <EditAccountForm
-            account={editAccount}
-            acting={acting}
-            onCancel={() => setEditAccount(null)}
-            onSave={(body) => void handleUpdate(editAccount.id, body)}
+  return (
+    <FormModal
+      title="Customer accounts"
+      loading={acting}
+      onClose={onClose}
+      modalClassName={`${modalStyles.modal} ${styles.modalWide}`}
+      subtitle={
+        <p className={styles.muted}>
+          {title} · {customer.email}
+        </p>
+      }
+      actions={
+        <button type="button" className={modalStyles.cancelBtn} onClick={onClose} disabled={acting}>
+          Close
+        </button>
+      }
+    >
+      {accountsBody}
+
+      {canManage && !editAccount && (
+        <>
+          <h3 className={styles.sectionTitle}>Add account</h3>
+          <CustomerAccountFields
+            idPrefix="new-account"
+            loading={acting}
+            values={newAccount}
+            onChange={(patch) => setNewAccount((prev) => ({ ...prev, ...patch }))}
+            showType
           />
-        )}
+          <div className={modalStyles.modalActions}>
+            <button
+              type="button"
+              className={modalStyles.primaryBtn}
+              disabled={acting || !newAccount.name.trim()}
+              onClick={() => void handleCreate()}
+            >
+              {acting ? "Saving…" : "Add account"}
+            </button>
+          </div>
+        </>
+      )}
 
-        <div className={modalStyles.modalActions}>
-          <button type="button" className={modalStyles.cancelBtn} onClick={onClose} disabled={acting}>
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
+      {editAccount && (
+        <EditAccountForm
+          account={editAccount}
+          acting={acting}
+          onCancel={() => setEditAccount(null)}
+          onSave={(body) => void handleUpdate(editAccount.id, body)}
+        />
+      )}
+    </FormModal>
   );
 }
 
@@ -234,72 +210,24 @@ function EditAccountForm({
   onCancel: () => void;
   onSave: (body: UpdateCustomerAccountRequest) => void;
 }) {
-  const [name, setName] = useState(account.name);
-  const [status, setStatus] = useState<CustomerAccountStatus>(
-    (account.status as CustomerAccountStatus) || "ACTIVE",
-  );
-  const [businessName, setBusinessName] = useState(account.businessName ?? "");
-  const [maxMembers, setMaxMembers] = useState(
-    account.maxMembers != null ? String(account.maxMembers) : "",
-  );
+  const [values, setValues] = useState<CustomerAccountFormValues>({
+    name: account.name,
+    accountType: account.accountType,
+    status: account.status || "ACTIVE",
+    businessName: account.businessName ?? "",
+    maxMembers: account.maxMembers != null ? String(account.maxMembers) : "",
+  });
 
   return (
     <>
       <h3 className={styles.sectionTitle}>Edit account</h3>
-      <div className={modalStyles.formField}>
-        <label className={modalStyles.formLabel} htmlFor="edit-account-name">
-          Name *
-        </label>
-        <input
-          id="edit-account-name"
-          className={modalStyles.formInput}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          disabled={acting}
-        />
-      </div>
-      <div className={modalStyles.formField}>
-        <label className={modalStyles.formLabel} htmlFor="edit-account-status">
-          Status
-        </label>
-        <select
-          id="edit-account-status"
-          className={modalStyles.formSelect}
-          value={status}
-          onChange={(e) => setStatus(e.target.value as CustomerAccountStatus)}
-          disabled={acting}
-        >
-          {ACCOUNT_STATUSES.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
-      </div>
-      <div className={modalStyles.formField}>
-        <label className={modalStyles.formLabel} htmlFor="edit-account-business">
-          Business name
-        </label>
-        <input
-          id="edit-account-business"
-          className={modalStyles.formInput}
-          value={businessName}
-          onChange={(e) => setBusinessName(e.target.value)}
-          disabled={acting}
-        />
-      </div>
-      <div className={modalStyles.formField}>
-        <label className={modalStyles.formLabel} htmlFor="edit-account-max">
-          Max members
-        </label>
-        <input
-          id="edit-account-max"
-          className={modalStyles.formInput}
-          type="number"
-          min={1}
-          value={maxMembers}
-          onChange={(e) => setMaxMembers(e.target.value)}
-          disabled={acting}
-        />
-      </div>
+      <CustomerAccountFields
+        idPrefix="edit-account"
+        loading={acting}
+        values={values}
+        onChange={(patch) => setValues((prev) => ({ ...prev, ...patch }))}
+        showStatus
+      />
       <div className={modalStyles.modalActions}>
         <button type="button" className={modalStyles.cancelBtn} onClick={onCancel} disabled={acting}>
           Cancel edit
@@ -307,15 +235,8 @@ function EditAccountForm({
         <button
           type="button"
           className={modalStyles.primaryBtn}
-          disabled={acting || !name.trim()}
-          onClick={() =>
-            onSave({
-              name: name.trim(),
-              status,
-              businessName: businessName.trim() || undefined,
-              maxMembers: maxMembers.trim() ? Number(maxMembers) : undefined,
-            })
-          }
+          disabled={acting || !values.name.trim()}
+          onClick={() => onSave(toUpdateBody(values))}
         >
           {acting ? "Saving…" : "Save account"}
         </button>

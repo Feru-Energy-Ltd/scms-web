@@ -26,6 +26,74 @@ import CreateCustomerModal from "./CreateCustomerModal";
 import EditCustomerModal from "./EditCustomerModal";
 import CustomerAccountsModal from "./CustomerAccountsModal";
 
+function customerStatusLabel(enabled: boolean) {
+  return enabled ? "Active" : "Inactive";
+}
+
+function CustomerStatusCell({ enabled }: Readonly<{ enabled: boolean }>) {
+  return (
+    <span className={enabled ? styles.badgeOk : styles.badgeNo}>
+      {customerStatusLabel(enabled)}
+    </span>
+  );
+}
+
+function CustomerActionsCell({
+  customer,
+  acting,
+  canEdit,
+  canViewAccounts,
+  canSetStatus,
+  onEdit,
+  onManageAccounts,
+  onActivate,
+  onDisable,
+}: Readonly<{
+  customer: Customer;
+  acting: boolean;
+  canEdit: boolean;
+  canViewAccounts: boolean;
+  canSetStatus: boolean;
+  onEdit: (customer: Customer) => void;
+  onManageAccounts: (customer: Customer) => void;
+  onActivate: (customer: Customer) => void;
+  onDisable: (customer: Customer) => void;
+}>) {
+  const label = customerDisplayName(customer);
+  return (
+    <RowActionsMenu
+      label={`Actions for ${label}`}
+      items={[
+        {
+          label: "Edit details",
+          onClick: () => onEdit(customer),
+          hidden: !canEdit,
+          disabled: acting,
+        },
+        {
+          label: "Manage accounts",
+          onClick: () => onManageAccounts(customer),
+          hidden: !canViewAccounts,
+          disabled: acting,
+        },
+        {
+          label: "Activate",
+          onClick: () => onActivate(customer),
+          hidden: !canSetStatus || customer.enabled,
+          disabled: acting,
+        },
+        {
+          label: "Disable",
+          onClick: () => onDisable(customer),
+          hidden: !canSetStatus || !customer.enabled,
+          destructive: true,
+          disabled: acting,
+        },
+      ]}
+    />
+  );
+}
+
 export default function CustomersManager() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,52 +200,26 @@ export default function CustomersManager() {
       {
         id: "status",
         header: "Status",
-        cell: (c) => (
-          <span className={c.enabled ? styles.badgeOk : styles.badgeNo}>
-            {c.enabled ? "Active" : "Inactive"}
-          </span>
-        ),
+        cell: (c) => <CustomerStatusCell enabled={!!c.enabled} />,
       },
       ...(showActions
         ? [
             {
               id: "actions",
               header: "Actions",
-              cell: (customer: Customer) => {
-                const label = customerDisplayName(customer);
-                return (
-                  <RowActionsMenu
-                    label={`Actions for ${label}`}
-                    items={[
-                      {
-                        label: "Edit details",
-                        onClick: () => setEditTarget(customer),
-                        hidden: !canEdit,
-                        disabled: acting,
-                      },
-                      {
-                        label: "Manage accounts",
-                        onClick: () => setAccountsTarget(customer),
-                        hidden: !canViewAccounts,
-                        disabled: acting,
-                      },
-                      {
-                        label: "Activate",
-                        onClick: () => void handleSetStatus(customer, true),
-                        hidden: !canSetStatus || customer.enabled,
-                        disabled: acting,
-                      },
-                      {
-                        label: "Disable",
-                        onClick: () => setDisableTarget(customer),
-                        hidden: !canSetStatus || !customer.enabled,
-                        destructive: true,
-                        disabled: acting,
-                      },
-                    ]}
-                  />
-                );
-              },
+              cell: (customer: Customer) => (
+                <CustomerActionsCell
+                  customer={customer}
+                  acting={acting}
+                  canEdit={canEdit}
+                  canViewAccounts={canViewAccounts}
+                  canSetStatus={canSetStatus}
+                  onEdit={setEditTarget}
+                  onManageAccounts={setAccountsTarget}
+                  onActivate={(c) => void handleSetStatus(c, true)}
+                  onDisable={setDisableTarget}
+                />
+              ),
             } satisfies DataTableColumn<Customer>,
           ]
         : []),
@@ -185,6 +227,38 @@ export default function CustomersManager() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [acting, canEdit, canManageAccounts, canSetStatus, canViewAccounts, showActions],
   );
+
+  const tableBody = (() => {
+    if (loading) return <p className={styles.muted}>Loading…</p>;
+    if (customers.length === 0) return <p className={styles.muted}>No customers found.</p>;
+    return (
+      <DataTable
+        columns={columns}
+        rows={customers}
+        getRowKey={(c) => c.id}
+        searchable
+        searchPlaceholder="Search by name, email, or phone"
+        searchAccessor={(c) =>
+          `${customerDisplayName(c)} ${c.email ?? ""} ${c.phone ?? ""}`
+        }
+        filters={[
+          {
+            id: "status",
+            label: "Status",
+            options: [
+              { value: "", label: "All statuses" },
+              { value: "active", label: "Active" },
+              { value: "inactive", label: "Inactive" },
+            ],
+            predicate: (c, value) =>
+              value === "active" ? !!c.enabled : !c.enabled,
+          },
+        ]}
+        pageSize={10}
+        emptyMessage="No customers match your search."
+      />
+    );
+  })();
 
   return (
     <div>
@@ -202,37 +276,7 @@ export default function CustomersManager() {
 
       {loadError && <p className={styles.error}>{loadError}</p>}
 
-      {loading ? (
-        <p className={styles.muted}>Loading…</p>
-      ) : customers.length === 0 ? (
-        <p className={styles.muted}>No customers found.</p>
-      ) : (
-        <DataTable
-          columns={columns}
-          rows={customers}
-          getRowKey={(c) => c.id}
-          searchable
-          searchPlaceholder="Search by name, email, or phone"
-          searchAccessor={(c) =>
-            `${customerDisplayName(c)} ${c.email ?? ""} ${c.phone ?? ""}`
-          }
-          filters={[
-            {
-              id: "status",
-              label: "Status",
-              options: [
-                { value: "", label: "All statuses" },
-                { value: "active", label: "Active" },
-                { value: "inactive", label: "Inactive" },
-              ],
-              predicate: (c, value) =>
-                value === "active" ? !!c.enabled : !c.enabled,
-            },
-          ]}
-          pageSize={10}
-          emptyMessage="No customers match your search."
-        />
-      )}
+      {tableBody}
 
       {showCreateModal && (
         <CreateCustomerModal
