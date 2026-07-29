@@ -189,6 +189,7 @@ export default function CustomerAccountsModal({ customer, canManage, onClose }: 
 
       {editAccount && (
         <EditAccountForm
+          key={editAccount.id}
           account={editAccount}
           acting={acting}
           onCancel={() => setEditAccount(null)}

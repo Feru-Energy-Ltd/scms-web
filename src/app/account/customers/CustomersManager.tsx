@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import {
   createCustomer,
   customerDisplayName,
-  fetchCustomers,
+  fetchAllCustomers,
   updateCustomer,
   updateCustomerStatus,
   type CreateCustomerRequest,
@@ -116,8 +116,8 @@ export default function CustomersManager() {
     setLoading(true);
     setLoadError(null);
     try {
-      const page = await fetchCustomers(0, 100);
-      setCustomers(page.content ?? []);
+      const list = await fetchAllCustomers();
+      setCustomers(list);
     } catch (e) {
       const message = getApiErrorMessage(e, {
         fallbackMessage: "Could not load customers.",

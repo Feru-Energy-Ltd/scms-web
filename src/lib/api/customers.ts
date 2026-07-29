@@ -55,9 +55,11 @@ export type UpdateCustomerAccountRequest = {
   maxMembers?: number;
 };
 
+const CUSTOMERS_PAGE_SIZE = 100;
+
 export async function fetchCustomers(
   page = 0,
-  size = 50,
+  size = CUSTOMERS_PAGE_SIZE,
   search?: string,
 ): Promise<Page<Customer>> {
   const q = new URLSearchParams({
@@ -76,6 +78,18 @@ export async function fetchCustomers(
     totalPages: raw?.totalPages ?? 0,
     number: raw?.number ?? page,
   };
+}
+
+/** Loads every customer page from the management API (for client-side table filters). */
+export async function fetchAllCustomers(search?: string): Promise<Customer[]> {
+  const first = await fetchCustomers(0, CUSTOMERS_PAGE_SIZE, search);
+  const all = [...(first.content ?? [])];
+  const totalPages = first.totalPages ?? 0;
+  for (let page = 1; page < totalPages; page++) {
+    const next = await fetchCustomers(page, CUSTOMERS_PAGE_SIZE, search);
+    all.push(...(next.content ?? []));
+  }
+  return all;
 }
 
 export async function fetchCustomer(id: number): Promise<Customer> {
