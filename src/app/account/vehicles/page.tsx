@@ -8,6 +8,10 @@ import RowActionsMenu from "@/components/account/RowActionsMenu";
 import ConfirmModal from "@/components/account/ConfirmModal";
 import styles from "@/components/account/ResourceList.module.css";
 import {
+  customerDisplayName,
+  fetchAllCustomers,
+} from "@/lib/api/customers";
+import {
   fetchVehicles,
   setVehicleActive,
   type Vehicle,
@@ -37,6 +41,9 @@ export default function AccountVehiclesPage() {
   const [activeFilter, setActiveFilter] = useState("");
   const [acting, setActing] = useState(false);
   const [disableTarget, setDisableTarget] = useState<Vehicle | null>(null);
+  const [ownerNamesByUserId, setOwnerNamesByUserId] = useState<
+    Map<number, string>
+  >(() => new Map());
 
   const requestIdRef = useRef(0);
 
@@ -77,6 +84,28 @@ export default function AccountVehiclesPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!canRead) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const customers = await fetchAllCustomers();
+        if (cancelled) return;
+        const map = new Map<number, string>();
+        for (const customer of customers) {
+          map.set(customer.userId, customerDisplayName(customer));
+        }
+        setOwnerNamesByUserId(map);
+      } catch (e) {
+        if (cancelled) return;
+        showApiErrorToast(e, { fallbackMessage: "Could not load customer names." });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [canRead]);
 
   async function handleSetActive(vehicle: Vehicle, active: boolean) {
     setActing(true);
@@ -129,8 +158,8 @@ export default function AccountVehiclesPage() {
       },
       {
         id: "owner",
-        header: "Owner ID",
-        cell: (row) => text(row.ownerId),
+        header: "Owner",
+        cell: (row) => text(ownerNamesByUserId.get(row.ownerId)),
       },
       {
         id: "status",
@@ -172,7 +201,7 @@ export default function AccountVehiclesPage() {
 
     return cols;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canUpdate, acting]);
+  }, [canUpdate, acting, ownerNamesByUserId]);
 
   if (!canRead) {
     return (
