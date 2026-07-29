@@ -50,6 +50,7 @@ export default function AccountVehiclesPage() {
   const perms = useMemo(() => new Set(getStoredPermissions()), []);
   const canRead =
     perms.has("admin:vehicles:read") || perms.has("provider:vehicles:read");
+  const canReadCustomers = perms.has("admin:users:read");
   const canUpdate = perms.has("admin:vehicles:update");
 
   const load = useCallback(async () => {
@@ -86,7 +87,7 @@ export default function AccountVehiclesPage() {
   }, [load]);
 
   useEffect(() => {
-    if (!canRead) return;
+    if (!canRead || !canReadCustomers) return;
     let cancelled = false;
     void (async () => {
       try {
@@ -105,7 +106,7 @@ export default function AccountVehiclesPage() {
     return () => {
       cancelled = true;
     };
-  }, [canRead]);
+  }, [canRead, canReadCustomers]);
 
   async function handleSetActive(vehicle: Vehicle, active: boolean) {
     setActing(true);
@@ -159,7 +160,8 @@ export default function AccountVehiclesPage() {
       {
         id: "owner",
         header: "Owner",
-        cell: (row) => text(ownerNamesByUserId.get(row.ownerId)),
+        cell: (row) =>
+          text(ownerNamesByUserId.get(row.ownerId) ?? row.ownerId),
       },
       {
         id: "status",
