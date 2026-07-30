@@ -13,7 +13,7 @@ import {
   type ChargingSession,
   type ChargingSessionStatus,
 } from "@/lib/api/sessions";
-import { cellText, cellTimeAgo } from "@/lib/account/cellDisplay";
+import { cellDateTime, cellText, cellTimeAgo } from "@/lib/account/cellDisplay";
 import { scopeAndProviderFilters } from "@/lib/account/providerDataTableFilter";
 import { useAdminProviderFilter } from "@/lib/account/useAdminProviderFilter";
 import { getStoredPermissions } from "@/lib/auth/session";
@@ -65,6 +65,12 @@ function SessionStatusBadge({
     return <span className={styles.badge}>{status.replaceAll("_", " ")}</span>;
   }
   return <span className={styles.badgeNo}>{status}</span>;
+}
+
+function TimeAgoCell({ value }: Readonly<{ value: unknown }>) {
+  const relative = cellTimeAgo(value);
+  if (relative === "—") return "—";
+  return <span title={cellDateTime(value)}>{relative}</span>;
 }
 
 function SessionStopActions({
@@ -137,12 +143,12 @@ function buildSessionColumns(opts: {
     {
       id: "started",
       header: "Started",
-      cell: (row) => cellTimeAgo(row.startedAt),
+      cell: (row) => <TimeAgoCell value={row.startedAt} />,
     },
     {
       id: "stopped",
       header: "Stopped",
-      cell: (row) => cellTimeAgo(row.stoppedAt),
+      cell: (row) => <TimeAgoCell value={row.stoppedAt} />,
     },
   ];
 
