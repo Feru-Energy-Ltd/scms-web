@@ -1,4 +1,7 @@
-import { formatApiUtcDateTime } from "@/lib/datetime/formatUtc";
+import {
+  formatApiUtcDateTime,
+  formatApiUtcTimeAgo,
+} from "@/lib/datetime/formatUtc";
 
 function asDisplayString(value: unknown): string | null {
   if (value == null || value === "") return null;
@@ -23,4 +26,11 @@ export function cellDateTime(value: unknown): string {
   const raw = asDisplayString(value);
   if (raw == null) return "—";
   return formatApiUtcDateTime(raw);
+}
+
+/** Relative time for table cells (e.g. "5m ago"), or em dash when empty. */
+export function cellTimeAgo(value: unknown): string {
+  const raw = asDisplayString(value);
+  if (raw == null) return "—";
+  return formatApiUtcTimeAgo(raw);
 }

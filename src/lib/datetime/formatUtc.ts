@@ -114,3 +114,28 @@ export function formatApiUtcDateTime(
   }
   return d.toLocaleString(undefined, opts);
 }
+
+/**
+ * Relative time for recent timestamps (e.g. "5m ago", "2h ago").
+ * Falls back to {@link formatApiUtcDateTime} for dates older than a week.
+ */
+export function formatApiUtcTimeAgo(value: ApiDateTimeInput): string {
+  if (value == null || value === "") return "—";
+  const d = parseApiUtcDateTime(value);
+  if (!d) return String(value);
+
+  const seconds = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (seconds < 0) return formatApiUtcDateTime(value);
+  if (seconds < 60) return "Just now";
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+
+  return formatApiUtcDateTime(value);
+}
