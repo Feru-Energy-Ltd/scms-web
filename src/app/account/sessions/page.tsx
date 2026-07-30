@@ -13,7 +13,7 @@ import {
   type ChargingSession,
   type ChargingSessionStatus,
 } from "@/lib/api/sessions";
-import { cellDateTime, cellText } from "@/lib/account/cellDisplay";
+import { cellText, cellTimeAgo } from "@/lib/account/cellDisplay";
 import { scopeAndProviderFilters } from "@/lib/account/providerDataTableFilter";
 import { useAdminProviderFilter } from "@/lib/account/useAdminProviderFilter";
 import { getStoredPermissions } from "@/lib/auth/session";
@@ -67,12 +67,6 @@ function SessionStatusBadge({
   return <span className={styles.badgeNo}>{status}</span>;
 }
 
-function SessionIdCell({
-  transactionId,
-}: Readonly<{ transactionId: number }>) {
-  return <span className={styles.muted}>#{transactionId}</span>;
-}
-
 function SessionStopActions({
   session,
   acting,
@@ -84,7 +78,7 @@ function SessionStopActions({
 }>) {
   return (
     <RowActionsMenu
-      label={`Actions for session ${session.transactionId}`}
+      label={`Actions for ${session.plateNumber || `session ${session.transactionId}`}`}
       items={[
         {
           label: "Stop session",
@@ -105,11 +99,6 @@ function buildSessionColumns(opts: {
 }): DataTableColumn<ChargingSession>[] {
   const cols: DataTableColumn<ChargingSession>[] = [
     {
-      id: "transaction",
-      header: "Session",
-      cell: (row) => <SessionIdCell transactionId={row.transactionId} />,
-    },
-    {
       id: "charger",
       header: "Charge box",
       cell: (row) => cellText(row.chargerId),
@@ -118,6 +107,11 @@ function buildSessionColumns(opts: {
       id: "connector",
       header: "Connector",
       cell: (row) => cellText(row.connectorId),
+    },
+    {
+      id: "plate",
+      header: "Plate",
+      cell: (row) => cellText(row.plateNumber),
     },
     {
       id: "status",
@@ -143,12 +137,12 @@ function buildSessionColumns(opts: {
     {
       id: "started",
       header: "Started",
-      cell: (row) => cellDateTime(row.startedAt),
+      cell: (row) => cellTimeAgo(row.startedAt),
     },
     {
       id: "stopped",
       header: "Stopped",
-      cell: (row) => cellDateTime(row.stoppedAt),
+      cell: (row) => cellTimeAgo(row.stoppedAt),
     },
   ];
 
@@ -356,7 +350,7 @@ export default function AccountChargingSessionsPage() {
       {stopTarget && (
         <ConfirmModal
           title="Stop charging session"
-          message={`Send a remote stop to ${stopTarget.chargerId} (session #${stopTarget.transactionId})? Charging will end when the charger acknowledges.`}
+          message={`Send a remote stop to ${stopTarget.chargerId}${stopTarget.plateNumber ? ` (${stopTarget.plateNumber})` : ` (session #${stopTarget.transactionId})`}? Charging will end when the charger acknowledges.`}
           confirmLabel="Stop session"
           confirmDestructive
           loading={acting}

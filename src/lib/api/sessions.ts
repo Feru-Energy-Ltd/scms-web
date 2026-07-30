@@ -19,6 +19,7 @@ export type ChargingSession = {
   durationMinutes: number;
   startedAt: string;
   stoppedAt: string | null;
+  plateNumber: string | null;
 };
 
 export type FetchSessionsOptions = {
