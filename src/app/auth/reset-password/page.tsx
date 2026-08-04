@@ -16,11 +16,15 @@ import {
   completePasswordReset,
   requestPasswordReset,
 } from "@/lib/api/auth";
-import { hasActiveAccessSession } from "@/lib/auth/session";
+import {
+  getStoredIdentityType,
+  hasActiveAccessSession,
+} from "@/lib/auth/session";
 import {
   buildForgotPasswordPath,
   buildLoginPath,
   identityTypeFromPortal,
+  resolvePortalParam,
   type LoginPortal,
 } from "@/lib/auth/redirect";
 import {
@@ -36,6 +40,11 @@ function ForgotPasswordForm({ portal }: { portal: LoginPortal }) {
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const signInHref = buildLoginPath("/account", portal);
+  const alternatePortal: LoginPortal =
+    portal === "admin" ? "provider" : "admin";
+  const alternatePortalHref = buildForgotPasswordPath(alternatePortal);
+  const alternatePortalLabel =
+    portal === "admin" ? "Provider reset" : "Admin reset";
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -91,10 +100,16 @@ function ForgotPasswordForm({ portal }: { portal: LoginPortal }) {
   return (
     <VerifyEmailLikeLayout
       title="Forgot password"
-      subtitle="Enter the email for your Safaricharge account. We will send a reset link if it is registered."
+      subtitle={
+        portal === "admin"
+          ? "Enter the email for your Safaricharge admin account. We will send a reset link if it is registered."
+          : "Enter the email for your Safaricharge account. We will send a reset link if it is registered."
+      }
       footer={
         <>
           Remember your password? <Link href={signInHref}>Sign in</Link>
+          {" · "}
+          <Link href={alternatePortalHref}>{alternatePortalLabel}</Link>
         </>
       }
     >
@@ -145,6 +160,11 @@ function ResetPasswordForm({
   const [done, setDone] = useState(false);
   const signInHref = buildLoginPath("/account", portal);
   const forgotHref = buildForgotPasswordPath(portal);
+  const alternatePortal: LoginPortal =
+    portal === "admin" ? "provider" : "admin";
+  const alternateSignInHref = buildLoginPath("/account", alternatePortal);
+  const alternateSignInLabel =
+    portal === "admin" ? "Provider sign-in" : "Admin sign-in";
 
   const tooShort = password !== "" && password.length < 8;
   const mismatch =
@@ -184,7 +204,13 @@ function ResetPasswordForm({
       <VerifyEmailLikeLayout
         title="Password updated"
         subtitle="Your password has been changed. Sign in with your new password to continue."
-        footer={<Link href={signInHref}>Sign in</Link>}
+        footer={
+          <>
+            <Link href={signInHref}>Sign in</Link>
+            {" · "}
+            <Link href={alternateSignInHref}>{alternateSignInLabel}</Link>
+          </>
+        }
       />
     );
   }
@@ -286,12 +312,14 @@ function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token")?.trim() ?? "";
-  const portal: LoginPortal =
-    searchParams.get("portal") === "admin" ? "admin" : "provider";
   const isClient = useSyncExternalStore(
     () => () => {},
     () => true,
     () => false,
+  );
+  const portal: LoginPortal = resolvePortalParam(
+    searchParams.get("portal"),
+    isClient ? getStoredIdentityType() : null,
   );
   const shouldRedirectToAccount =
     isClient && !token && hasActiveAccessSession();
