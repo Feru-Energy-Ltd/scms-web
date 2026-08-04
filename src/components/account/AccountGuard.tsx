@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { clearSession, hasActiveAccessSession } from "@/lib/auth/session";
+import {
+  clearSession,
+  getStoredIdentityType,
+  hasActiveAccessSession,
+} from "@/lib/auth/session";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
 import {
   buildLoginPath,
@@ -20,7 +24,7 @@ export default function AccountGuard({
   useEffect(() => {
     if (!hasActiveAccessSession()) {
       const portal = portalFromIdentityType(
-        getAccessTokenContext()?.identityType,
+        getAccessTokenContext()?.identityType ?? getStoredIdentityType(),
       );
       const intended = window.location.pathname + window.location.search;
       clearSession();

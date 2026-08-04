@@ -78,6 +78,20 @@ export function identityTypeFromPortal(
 }
 
 /**
+ * Resolve portal for reset-password flows.
+ * Explicit ?portal= wins; otherwise fall back to a stored identity type
+ * (e.g. prior admin session) so admin resets do not default to provider.
+ */
+export function resolvePortalParam(
+  portalParam: string | null | undefined,
+  fallbackIdentityType?: string | null,
+): LoginPortal {
+  if (portalParam === "admin") return "admin";
+  if (portalParam === "provider") return "provider";
+  return portalFromIdentityType(fallbackIdentityType);
+}
+
+/**
  * Builds the login path carrying ?next= and optional ?portal=admin.
  * Provider portal omits the portal param (cleaner default URLs).
  * Skips next when the intended path is just the default landing page.
