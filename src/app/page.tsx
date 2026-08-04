@@ -1,19 +1,30 @@
 "use client";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
-import { useEffect, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import styles from "./login/login.module.css";
 import { login } from "@/lib/api/auth";
 import { establishSessionFromAuthResponse } from "@/lib/auth/establishSession";
 import { hasActiveAccessSession } from "@/lib/auth/session";
-import { resolveNextFromSearch } from "@/lib/auth/redirect";
+import {
+  buildForgotPasswordPath,
+  buildLoginPath,
+  resolveNextFromSearch,
+  resolvePortalFromSearch,
+  type LoginPortal,
+} from "@/lib/auth/redirect";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import PasswordEyeIcon from "../components/PasswordEyeIcon";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
+  const portal: LoginPortal =
+    searchParams.get("portal") === "admin" ? "admin" : "provider";
+  const nextPath = resolveNextFromSearch(search ? `?${search}` : "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -24,7 +35,7 @@ export default function LoginPage() {
       return;
     }
     setShowForm(true);
-  }, [router]);
+  }, [router, search]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -33,13 +44,15 @@ export default function LoginPage() {
     const formData = new FormData(e.currentTarget);
     const email = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");
+    const activeSearch = window.location.search;
+    const activePortal = resolvePortalFromSearch(activeSearch);
 
     setIsSubmitting(true);
     try {
-      const res = await login(email, password);
+      const res = await login(email, password, activePortal);
       await establishSessionFromAuthResponse(res);
       toast.success("Signed in successfully");
-      router.push(resolveNextFromSearch(window.location.search));
+      router.push(resolveNextFromSearch(activeSearch));
     } catch (err) {
       showApiErrorToast(err, {
         fallbackMessage: "Login failed. Please check your credentials.",
@@ -52,6 +65,12 @@ export default function LoginPage() {
   if (!showForm) {
     return null;
   }
+
+  const alternatePortalHref =
+    portal === "admin"
+      ? buildLoginPath(nextPath, "provider")
+      : buildLoginPath(nextPath, "admin");
+  const forgotHref = buildForgotPasswordPath(portal);
 
   return (
     <main className={styles.main}>
@@ -71,7 +90,9 @@ export default function LoginPage() {
             <span className={styles.brandName}>Safaricharge</span>
           </div>
           <p className={styles.subtitle}>
-            Sign in to access the Safaricharge web CMS.
+            {portal === "admin"
+              ? "Sign in to the Safaricharge admin console."
+              : "Sign in to access the Safaricharge web CMS."}
           </p>
         </header>
 
@@ -123,24 +144,29 @@ export default function LoginPage() {
             >
               {isSubmitting ? "Signing in..." : "Sign in"}
             </button>
-        
           </div>
         </form>
 
         <footer className={styles.footer}>
-          <Link href="/auth/reset-password">Forgot password</Link>
+          <Link href={forgotHref}>Forgot password</Link>
+          {" · "}
+          <Link href={alternatePortalHref}>
+            {portal === "admin" ? "Provider sign-in" : "Admin sign-in"}
+          </Link>
         </footer>
-        <div className={styles.signUpCta}>
-          <p className={styles.signUpText}>Are you a service provider?</p>
-          <button
-            className={styles.secondaryButton}
-            type="button"
-            disabled={isSubmitting}
-            onClick={() => router.push("/sign-up")}
-          >
-            Sign up
-          </button>
-        </div>
+        {portal === "provider" ? (
+          <div className={styles.signUpCta}>
+            <p className={styles.signUpText}>Are you a service provider?</p>
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => router.push("/sign-up")}
+            >
+              Sign up
+            </button>
+          </div>
+        ) : null}
         <p className={styles.legalNote}>
           <Link href="/legal/privacy" target="_blank" rel="noopener noreferrer">
             Privacy Policy
@@ -151,3 +177,10 @@ export default function LoginPage() {
   );
 }
 
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageContent />
+    </Suspense>
+  );
+}

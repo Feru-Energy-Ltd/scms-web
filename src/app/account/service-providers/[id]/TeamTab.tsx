@@ -119,7 +119,7 @@ export default function TeamTab({ providerId }: { providerId: number }) {
     setBusy(true);
     setResettingUserId(resetPasswordTarget.userId);
     try {
-      await requestPasswordReset(resetPasswordTarget.email);
+      await requestPasswordReset(resetPasswordTarget.email, "SERVICE_PROVIDER");
       toast.success(`Password reset email sent to ${resetPasswordTarget.email}`);
       setResetPasswordTarget(null);
     } catch (e) {
