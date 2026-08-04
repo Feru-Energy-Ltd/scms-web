@@ -6,7 +6,6 @@ const KEYS = {
   accessToken: "scms_access_token",
   refreshToken: "scms_refresh_token",
   identityToken: "scms_identity_token",
-  tokenType: "scms_token_type",
   expiresIn: "scms_expires_in",
   identityType: "scms_identity_type",
 };
@@ -29,6 +28,9 @@ export function setSessionTokensFromResponse(res: TokenResponse) {
   localStorage.setItem(KEYS.accessToken, res.accessToken);
   localStorage.setItem(KEYS.refreshToken, res.refreshToken);
   localStorage.setItem(KEYS.expiresIn, String(res.expiresIn));
+  if (res.identityType) {
+    setIdentityType(res.identityType);
+  }
 }
 
 export function getAccessToken() {

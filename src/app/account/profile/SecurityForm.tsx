@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { changePassword } from "@/lib/api/profile";
+import { getAccessTokenContext } from "@/lib/auth/jwtContext";
+import {
+  buildLoginPath,
+  portalFromIdentityType,
+} from "@/lib/auth/redirect";
 import { clearSession } from "@/lib/auth/session";
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import { ApiError } from "@/lib/api/http";
@@ -34,8 +39,11 @@ export default function SecurityForm() {
         newPassword,
       });
       toast.success("Password changed. Please log in again.");
+      const portal = portalFromIdentityType(
+        getAccessTokenContext()?.identityType,
+      );
       clearSession();
-      router.push("/");
+      router.push(buildLoginPath("/account", portal));
     } catch (e) {
       if (e instanceof ApiError && (e.status === 401 || e.status === 400)) {
         setPasswordError("Current password is incorrect");

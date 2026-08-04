@@ -27,6 +27,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { getAccessTokenContext } from "@/lib/auth/jwtContext";
+import {
+  buildLoginPath,
+  portalFromIdentityType,
+} from "@/lib/auth/redirect";
 import { getRoleLabel } from "@/lib/auth/roles";
 import {
   clearSession,
@@ -217,8 +221,9 @@ export default function AccountShell({
   }
 
   function signOut() {
+    const portal = portalFromIdentityType(userCtx.identityType);
     clearSession();
-    router.push("/");
+    router.push(buildLoginPath("/account", portal));
   }
 
   return (

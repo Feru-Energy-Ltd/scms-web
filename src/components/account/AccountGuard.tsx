@@ -2,8 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { clearSession, hasActiveAccessSession } from "@/lib/auth/session";
-import { buildLoginPath } from "@/lib/auth/redirect";
+import {
+  clearSession,
+  getStoredIdentityType,
+  hasActiveAccessSession,
+} from "@/lib/auth/session";
+import { getAccessTokenContext } from "@/lib/auth/jwtContext";
+import {
+  buildLoginPath,
+  portalFromIdentityType,
+} from "@/lib/auth/redirect";
 
 export default function AccountGuard({
   children,
@@ -15,9 +23,12 @@ export default function AccountGuard({
 
   useEffect(() => {
     if (!hasActiveAccessSession()) {
-      clearSession();
+      const portal = portalFromIdentityType(
+        getAccessTokenContext()?.identityType ?? getStoredIdentityType(),
+      );
       const intended = window.location.pathname + window.location.search;
-      router.replace(buildLoginPath(intended));
+      clearSession();
+      router.replace(buildLoginPath(intended, portal));
       return;
     }
     setReady(true); // eslint-disable-line react-hooks/set-state-in-effect -- auth guard must defer render until client-side session check

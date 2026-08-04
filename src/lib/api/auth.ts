@@ -1,12 +1,22 @@
 import { apiRequest } from "./http";
+import type { LoginPortal } from "../auth/redirect";
 import type { ProviderRegistrationPayload, TokenResponse } from "../types/auth";
 
 export type MessageResponse = { message: string };
 
-export async function login(email: string, password: string) {
+export type AuthIdentityType = "SYSTEM_ADMIN" | "SERVICE_PROVIDER";
+
+export async function login(
+  email: string,
+  password: string,
+  portal: LoginPortal = "provider",
+) {
   // Backend runs under /auth context path, and the API gateway routes /auth/**
-  // to the auth-service.
-  return apiRequest<TokenResponse>("/auth/login", {
+  // to the auth-service. Admin and provider use identity-scoped login paths;
+  // /auth/login is customer-only.
+  const path =
+    portal === "admin" ? "/auth/admin/login" : "/auth/providers/login";
+  return apiRequest<TokenResponse>(path, {
     method: "POST",
     body: { email, password },
   });
@@ -59,10 +69,13 @@ export async function acceptAccountInvitation(body: {
   });
 }
 
-export async function requestPasswordReset(email: string) {
+export async function requestPasswordReset(
+  email: string,
+  identityType: AuthIdentityType,
+) {
   await apiRequest<void>("/auth/password/forgot", {
     method: "POST",
-    body: { email },
+    body: { email, identityType },
   });
 }
 

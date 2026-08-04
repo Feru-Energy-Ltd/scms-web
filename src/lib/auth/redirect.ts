@@ -10,6 +10,9 @@
 
 const DEFAULT_REDIRECT = "/account";
 const NEXT_PARAM = "next";
+const PORTAL_PARAM = "portal";
+
+export type LoginPortal = "admin" | "provider";
 
 // Matches ASCII control characters (NUL..US and DEL) used in URL smuggling.
 const CONTROL_CHARS = /[\u0000-\u001F\u007F]/;
@@ -41,14 +44,80 @@ export function sanitizeNextPath(
 }
 
 /**
- * Builds the login path carrying the intended destination as ?next=,
- * e.g. "/?next=%2Faccount%2Fapprovals".
- * Skips the param when the intended path is just the default landing page.
+ * Reads ?portal= from a query string. Only "admin" selects the admin portal;
+ * anything else (including missing) defaults to provider.
  */
-export function buildLoginPath(intendedPath: string): string {
+export function resolvePortalFromSearch(search: string): LoginPortal {
+  const query = search.startsWith("?") ? search.slice(1) : search;
+  for (const pair of query.split("&")) {
+    const eq = pair.indexOf("=");
+    const key = eq === -1 ? pair : pair.slice(0, eq);
+    if (key !== PORTAL_PARAM) continue;
+    const raw = eq === -1 ? "" : pair.slice(eq + 1);
+    let value = raw;
+    try {
+      value = decodeURIComponent(raw);
+    } catch {
+      return "provider";
+    }
+    return value === "admin" ? "admin" : "provider";
+  }
+  return "provider";
+}
+
+export function portalFromIdentityType(
+  identityType: string | null | undefined,
+): LoginPortal {
+  return identityType === "SYSTEM_ADMIN" ? "admin" : "provider";
+}
+
+export function identityTypeFromPortal(
+  portal: LoginPortal,
+): "SYSTEM_ADMIN" | "SERVICE_PROVIDER" {
+  return portal === "admin" ? "SYSTEM_ADMIN" : "SERVICE_PROVIDER";
+}
+
+/**
+ * Resolve portal for reset-password flows.
+ * Explicit ?portal= wins; otherwise fall back to a stored identity type
+ * (e.g. prior admin session) so admin resets do not default to provider.
+ */
+export function resolvePortalParam(
+  portalParam: string | null | undefined,
+  fallbackIdentityType?: string | null,
+): LoginPortal {
+  if (portalParam === "admin") return "admin";
+  if (portalParam === "provider") return "provider";
+  return portalFromIdentityType(fallbackIdentityType);
+}
+
+/**
+ * Builds the login path carrying ?next= and optional ?portal=admin.
+ * Provider portal omits the portal param (cleaner default URLs).
+ * Skips next when the intended path is just the default landing page.
+ */
+export function buildLoginPath(
+  intendedPath: string,
+  portal?: LoginPortal,
+): string {
   const target = sanitizeNextPath(intendedPath);
-  if (target === DEFAULT_REDIRECT) return "/";
-  return `/?${NEXT_PARAM}=${encodeURIComponent(target)}`;
+  const params = new URLSearchParams();
+  if (target !== DEFAULT_REDIRECT) {
+    params.set(NEXT_PARAM, target);
+  }
+  if (portal === "admin") {
+    params.set(PORTAL_PARAM, "admin");
+  }
+  const qs = params.toString();
+  return qs ? `/?${qs}` : "/";
+}
+
+/** Forgot-password path, preserving portal when admin. */
+export function buildForgotPasswordPath(portal: LoginPortal = "provider"): string {
+  if (portal === "admin") {
+    return `/auth/reset-password?${PORTAL_PARAM}=admin`;
+  }
+  return "/auth/reset-password";
 }
 
 /**

@@ -16,7 +16,17 @@ import {
   completePasswordReset,
   requestPasswordReset,
 } from "@/lib/api/auth";
-import { hasActiveAccessSession } from "@/lib/auth/session";
+import {
+  getStoredIdentityType,
+  hasActiveAccessSession,
+} from "@/lib/auth/session";
+import {
+  buildForgotPasswordPath,
+  buildLoginPath,
+  identityTypeFromPortal,
+  resolvePortalParam,
+  type LoginPortal,
+} from "@/lib/auth/redirect";
 import {
   getApiErrorMessage,
   showApiErrorToast,
@@ -25,10 +35,16 @@ import loginStyles from "@/app/login/login.module.css";
 import verifyStyles from "@/app/verify/email/page.module.css";
 import listStyles from "@/components/account/ResourceList.module.css";
 
-function ForgotPasswordForm() {
+function ForgotPasswordForm({ portal }: { portal: LoginPortal }) {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const signInHref = buildLoginPath("/account", portal);
+  const alternatePortal: LoginPortal =
+    portal === "admin" ? "provider" : "admin";
+  const alternatePortalHref = buildForgotPasswordPath(alternatePortal);
+  const alternatePortalLabel =
+    portal === "admin" ? "Provider reset" : "Admin reset";
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -39,7 +55,7 @@ function ForgotPasswordForm() {
 
     setSubmitting(true);
     try {
-      await requestPasswordReset(trimmed);
+      await requestPasswordReset(trimmed, identityTypeFromPortal(portal));
     } catch {
       // Always show the same success state to avoid email enumeration.
     } finally {
@@ -69,7 +85,7 @@ function ForgotPasswordForm() {
               try again
             </button>
             {" · "}
-            <Link href="/">Sign in</Link>
+            <Link href={signInHref}>Sign in</Link>
           </>
         }
       >
@@ -84,10 +100,16 @@ function ForgotPasswordForm() {
   return (
     <VerifyEmailLikeLayout
       title="Forgot password"
-      subtitle="Enter the email for your Safaricharge account. We will send a reset link if it is registered."
+      subtitle={
+        portal === "admin"
+          ? "Enter the email for your Safaricharge admin account. We will send a reset link if it is registered."
+          : "Enter the email for your Safaricharge account. We will send a reset link if it is registered."
+      }
       footer={
         <>
-          Remember your password? <Link href="/">Sign in</Link>
+          Remember your password? <Link href={signInHref}>Sign in</Link>
+          {" · "}
+          <Link href={alternatePortalHref}>{alternatePortalLabel}</Link>
         </>
       }
     >
@@ -122,7 +144,13 @@ function ForgotPasswordForm() {
   );
 }
 
-function ResetPasswordForm({ token }: { token: string }) {
+function ResetPasswordForm({
+  token,
+  portal,
+}: {
+  token: string;
+  portal: LoginPortal;
+}) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [password, setPassword] = useState("");
@@ -130,6 +158,13 @@ function ResetPasswordForm({ token }: { token: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const signInHref = buildLoginPath("/account", portal);
+  const forgotHref = buildForgotPasswordPath(portal);
+  const alternatePortal: LoginPortal =
+    portal === "admin" ? "provider" : "admin";
+  const alternateSignInHref = buildLoginPath("/account", alternatePortal);
+  const alternateSignInLabel =
+    portal === "admin" ? "Provider sign-in" : "Admin sign-in";
 
   const tooShort = password !== "" && password.length < 8;
   const mismatch =
@@ -169,7 +204,13 @@ function ResetPasswordForm({ token }: { token: string }) {
       <VerifyEmailLikeLayout
         title="Password updated"
         subtitle="Your password has been changed. Sign in with your new password to continue."
-        footer={<Link href="/">Sign in</Link>}
+        footer={
+          <>
+            <Link href={signInHref}>Sign in</Link>
+            {" · "}
+            <Link href={alternateSignInHref}>{alternateSignInLabel}</Link>
+          </>
+        }
       />
     );
   }
@@ -181,7 +222,7 @@ function ResetPasswordForm({ token }: { token: string }) {
       footer={
         <>
           Link not working?{" "}
-          <Link href="/auth/reset-password">Request a new reset link</Link>
+          <Link href={forgotHref}>Request a new reset link</Link>
         </>
       }
     >
@@ -276,6 +317,10 @@ function ResetPasswordContent() {
     () => true,
     () => false,
   );
+  const portal: LoginPortal = resolvePortalParam(
+    searchParams.get("portal"),
+    isClient ? getStoredIdentityType() : null,
+  );
   const shouldRedirectToAccount =
     isClient && !token && hasActiveAccessSession();
 
@@ -290,10 +335,10 @@ function ResetPasswordContent() {
   }
 
   if (token) {
-    return <ResetPasswordForm token={token} />;
+    return <ResetPasswordForm token={token} portal={portal} />;
   }
 
-  return <ForgotPasswordForm />;
+  return <ForgotPasswordForm portal={portal} />;
 }
 
 export default function ResetPasswordPage() {
