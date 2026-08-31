@@ -14,6 +14,7 @@ import {
 import { showApiErrorToast } from "@/lib/toast/showApiErrorToast";
 import styles from "@/components/account/ResourceList.module.css";
 import billingStyles from "./billing.module.css";
+import { parseApiUtcDateTime, type ApiDateTimeInput } from "@/lib/datetime/formatUtc";
 import DateRangeFilters, { DateRangeHint, toIsoDayBounds } from "./DateRangeFilters";
 
 type Tab = "transactions" | "settlements";
@@ -103,11 +104,19 @@ export default function BillingPage() {
 
   const fmtKwh = (wh: number) => (wh / 1000).toFixed(3) + " kWh";
 
-  const fmtDate = (iso: string | null) =>
-    iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
+  const fmtDate = (value: ApiDateTimeInput) => {
+    const d = parseApiUtcDateTime(value);
+    return d
+      ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+      : "—";
+  };
 
-  const fmtTime = (iso: string | null) =>
-    iso ? new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }) : "";
+  const fmtTime = (value: ApiDateTimeInput) => {
+    const d = parseApiUtcDateTime(value);
+    return d
+      ? d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
+      : "";
+  };
 
   const truncateCharger = (id: string) => {
     if (id.length <= 12) return id;

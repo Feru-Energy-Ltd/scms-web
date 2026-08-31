@@ -1,3 +1,4 @@
+import type { ApiDateTimeInput } from "../datetime/formatUtc";
 import { csmsApiPath, paymentApiPath } from "../config";
 import { apiRequestAuth } from "./http";
 
@@ -15,8 +16,8 @@ export interface ProviderTransaction {
   totalDriverCost: number;
   status: string;
   durationMinutes: number;
-  createdAt: string;
-  lastUpdatedAt: string;
+  createdAt: ApiDateTimeInput;
+  lastUpdatedAt: ApiDateTimeInput;
 }
 
 export interface PageResponse<T> {
@@ -55,8 +56,8 @@ export interface SettlementHistory {
   momoReferenceId: string | null;
   momoTransactionId: string | null;
   failureReason: string | null;
-  initiatedAt: string;
-  completedAt: string | null;
+  initiatedAt: ApiDateTimeInput;
+  completedAt: ApiDateTimeInput;
 }
 
 function buildSettlementQuery(
