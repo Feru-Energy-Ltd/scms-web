@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+
+export const metadata: Metadata = {
+  title: "Accept invitation",
+};
 
 type Props = { searchParams: Promise<{ token?: string }> };
 

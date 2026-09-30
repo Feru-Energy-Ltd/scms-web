@@ -1,5 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getRoleLabel } from "@/lib/auth/roles";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ role: string }>;
+}): Promise<Metadata> {
+  const { role } = await params;
+  const roleLabel = getRoleLabel(decodeURIComponent(role));
+  return { title: `Role: ${roleLabel}` };
+}
 
 export default async function RolePage({
   params,

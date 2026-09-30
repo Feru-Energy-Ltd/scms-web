@@ -4,9 +4,9 @@ import Link from "next/link";
 import styles from "./privacy.module.css";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy · Safaricharge",
+  title: "Privacy Policy",
   description:
-    "Privacy policy for SafariCharge CMS and Mobile App.",
+    "Privacy policy for SafariCharge CMS.",
 };
 
 function Section({
