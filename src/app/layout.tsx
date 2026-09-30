@@ -11,7 +11,10 @@ const fontSans = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Safaricharge Web CMS - Welcome",
+  title: {
+    default: "Sign in · Safaricharge",
+    template: "%s · Safaricharge",
+  },
   description: "Welcome to the web CMS for Safaricharge",
   icons: {
     icon: "/assets/favico.png",
