@@ -5,10 +5,10 @@ const GENERIC_REQUEST_FAILED = /^Request failed with status \d+$/;
 
 const STATUS_MESSAGES: Readonly<Record<number, string>> = {
   400: "Invalid request. Please check your input.",
-  401: "Invalid email or password. Please try again.",
+  401: "Unauthorized. Please check your credentials.",
   403: "You do not have permission to access this resource.",
   404: "The requested resource was not found.",
-  409: "An account with this email already exists.",
+  409: "The resource already exists.",
   500: "Something went wrong. Please try again later.",
   502: "Bad Gateway. Please try again later.",
   503: "Service Unavailable. Please try again later.",
@@ -67,19 +67,10 @@ export function getApiErrorMessage(
   const fallbackMessage = opts?.fallbackMessage ?? "Something went wrong";
 
   if (err instanceof ApiError) {
-    const statusMessage = defaultMessageForStatus(err.status);
-    if (err.status !== undefined && err.status >= 500 && statusMessage) {
-      return statusMessage;
+    // prioritize error message from backend
+    if (err.status !== undefined && err.status < 500 && err.message) {
+      return err.message;
     }
-
-    const fromBody = extractProblemDetail(err.body);
-    if (fromBody) return fromBody;
-
-    if (isInformativeMessage(err.message)) return err.message;
-
-    if (statusMessage) return statusMessage;
-
-    return fallbackMessage;
   }
 
   if (err instanceof Error) {
