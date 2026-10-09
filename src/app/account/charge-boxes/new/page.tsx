@@ -135,8 +135,8 @@ export default function CreateChargeBoxPage() {
       toast.error("Location address is required for a new station.");
       return;
     }
-    if (!imageDataUrl.startsWith("data:image/")) {
-      toast.error("Please upload a station image .");
+    if (imageDataUrl && !imageDataUrl.startsWith("data:image/")) {
+      toast.error("Please upload a chargebox image .");
       return;
     }
     if (connectorSlots.length !== numConnectors) {
@@ -461,7 +461,6 @@ export default function CreateChargeBoxPage() {
             accept="image/*"
             className={styles.fileInput}
             onChange={onImageChange}
-            required
           />
           {imageDataUrl ? (
             <div className={styles.previewWrap}>

@@ -46,7 +46,7 @@ function rowEnabled(row: ChargerRow): boolean {
   return true;
 }
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 function isAccepted(reg: string): boolean {
   return reg.toLowerCase() === "accepted";

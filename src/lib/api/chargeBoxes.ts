@@ -34,7 +34,7 @@ export type CreateChargeBoxPayload = {
   numberOfConnectors: number;
   connectors: CreateChargeBoxConnectorPayload[];
   type: "HOME" | "PUBLIC";
-  imageBase64: string;
+  imageBase64?: string;
   idTag: string;
 };
 
